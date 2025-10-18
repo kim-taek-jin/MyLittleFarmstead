@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: d21acd9995493134995eaa121ac7833c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - tilledWetDirtTile: {fileID: 11400000, guid: 52b9f987717d0894bac2a81d84a93ff6, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
