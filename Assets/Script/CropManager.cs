@@ -112,6 +112,7 @@ public class CropManager : MonoBehaviour
             if (visual == null) visual = go.AddComponent<Crop>();
             visuals[cell] = visual;
         }
+        visual.SetCellSize(CellWorldSize);
         visual.Bind(data);
     }
 
@@ -121,6 +122,10 @@ public class CropManager : MonoBehaviour
     public TileBase GetTile(Vector3Int cell) => tilemap != null ? tilemap.GetTile(cell) : null;
     public Vector3 GetCellCenter(Vector3Int cell) => tilemap != null ? tilemap.GetCellCenterWorld(cell) : Vector3.zero;
     public Vector3Int WorldToCell(Vector3 world) => tilemap != null ? tilemap.WorldToCell(world) : Vector3Int.zero;
+    // 밭 한 칸의 월드 크기 (Grid 셀 크기 × 스케일)
+    public float CellWorldSize => tilemap != null && tilemap.layoutGrid != null
+        ? Mathf.Abs(tilemap.layoutGrid.cellSize.x * tilemap.transform.lossyScale.x)
+        : 1f;
     public bool IsReady => tilemap != null && Farm != null && Player != null;
 
     // 씬에서 이미 '갈린 흙' 타일로 칠해진 칸은 데이터에도 등록해 둡니다.

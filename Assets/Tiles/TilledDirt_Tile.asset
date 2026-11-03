@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1514134bc4fbd41bb739b1b9a49231, type: 3}
   m_Name: TilledDirt_Tile
   m_EditorClassIdentifier: 
-  m_DefaultSprite: {fileID: 0}
-  m_DefaultGameObject: {fileID: 2630549201229323557, guid: b66c4c7b356c5384493faf79144c191d, type: 3}
-  m_DefaultColliderType: 1
+  m_DefaultSprite: {fileID: 21300000, guid: f7b8d5e4d3af8e9733b7d35557af3de5, type: 3}
+  m_DefaultGameObject: {fileID: 0}
+  m_DefaultColliderType: 0
   m_TilingRules: []

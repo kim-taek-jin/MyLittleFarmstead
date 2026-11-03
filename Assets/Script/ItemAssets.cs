@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 // 아이템 이름 → 스프라이트 연결.
@@ -15,11 +15,16 @@ public class ItemAssets : MonoBehaviour
         public Sprite sprite;
     }
 
+    [Header("픽셀 아트 (Tools/pixelart/generate.py)")]
+    [Tooltip("체크하면 Resources/PixelArt의 통일된 픽셀 아트를 우선 사용합니다. 끄면 아래에 연결된 예전 그림을 사용합니다.")]
+    public bool usePixelArt = true;
+
     private void Awake()
     {
         // 씬을 다시 불러올 때 생기는 중복 GameManager가 Instance를 덮어쓰지 않도록
         if (Instance != null && Instance != this) return;
         Instance = this;
+        PixelArt.Enabled = usePixelArt;
     }
 
     // 아이템 이름으로 스프라이트를 찾을 수 있도록 미리 연결해두는 곳
@@ -46,7 +51,17 @@ public class ItemAssets : MonoBehaviour
     public static Sprite SpriteFor(string itemName)
     {
         if (Instance != null) return Instance.GetSpriteByName(itemName);
-        return GetPlaceholder(itemName);
+        return FindPixelArt(ItemDB.Normalize(itemName)) ?? GetPlaceholder(itemName);
+    }
+
+    // 픽셀 아트 아이콘 (없으면 비슷한 아이템의 아이콘)
+    static Sprite FindPixelArt(string itemName)
+    {
+        if (!PixelArt.Enabled || string.IsNullOrEmpty(itemName)) return null;
+        Sprite sprite = PixelArt.Item(itemName);
+        if (sprite != null) return sprite;
+        ItemDef def = ItemDB.Get(itemName);
+        return def != null && !string.IsNullOrEmpty(def.iconFallback) ? PixelArt.Item(def.iconFallback) : null;
     }
 
     // 아이템 이름을 주면 해당하는 스프라이트를 돌려주는 함수
@@ -55,7 +70,18 @@ public class ItemAssets : MonoBehaviour
         itemName = ItemDB.Normalize(itemName);
         if (string.IsNullOrEmpty(itemName)) return null;
 
-        Sprite sprite = FindAssigned(itemName);
+        // 1) 인스펙터의 Extra Sprites (직접 지정한 그림이 최우선)
+        foreach (var entry in extraSprites)
+        {
+            if (entry != null && entry.sprite != null && entry.itemName == itemName) return entry.sprite;
+        }
+
+        // 2) 통일된 픽셀 아트
+        Sprite sprite = FindPixelArt(itemName);
+        if (sprite != null) return sprite;
+
+        // 3) 예전에 연결해 둔 그림
+        sprite = FindAssigned(itemName);
         if (sprite != null) return sprite;
 
         // 비슷한 아이템 스프라이트 빌려 쓰기 (예: Fertile Hoe → Hoe)
