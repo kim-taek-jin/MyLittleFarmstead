@@ -1,37 +1,37 @@
-using UnityEngine;
-using TMPro; // TextMeshPro¸¦ »ç¿ëÇÏ±â À§ÇØ ÇÊ¿ä
-using System.Collections; // ÄÚ·çÆ¾À» »ç¿ëÇÏ±â À§ÇØ ÇÊ¿ä
+ï»¿using UnityEngine;
+using TMPro; // TextMeshProë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ í•„ìš”
+using System.Collections; // ì½”ë£¨í‹´ì„ ì‚¬ìš©í•˜ê¸° ìœ„í•´ í•„ìš”
 
 public class TypingEffect : MonoBehaviour
 {
-    public TextMeshProUGUI textComponent; // È¿°ú¸¦ Àû¿ëÇÒ ÅØ½ºÆ®
-    public float typingSpeed = 0.05f;     // ±ÛÀÚ´ç ³ªÅ¸³ª´Â ¼Óµµ (ÃÊ)
+    public TextMeshProUGUI textComponent; // íš¨ê³¼ë¥¼ ì ìš©í•  í…ìŠ¤íŠ¸
+    public float typingSpeed = 0.05f;     // ê¸€ìë‹¹ ë‚˜íƒ€ë‚˜ëŠ” ì†ë„ (ì´ˆ)
 
     private string fullText;
     private Coroutine typingCoroutine;
 
-    // ¿ÜºÎ¿¡¼­ ÅØ½ºÆ® È¿°ú¸¦ ½ÃÀÛ½ÃÅ°´Â ÇÔ¼ö
+    // ì™¸ë¶€ì—ì„œ í…ìŠ¤íŠ¸ íš¨ê³¼ë¥¼ ì‹œì‘ì‹œí‚¤ëŠ” í•¨ìˆ˜
     public void RunText(string textToType)
     {
         fullText = textToType;
-        // È¤½Ã ÀÌÀü¿¡ ½ÇÇà ÁßÀÌ´ø ÄÚ·çÆ¾ÀÌ ÀÖ´Ù¸é ¸ØÃã
+        // í˜¹ì‹œ ì´ì „ì— ì‹¤í–‰ ì¤‘ì´ë˜ ì½”ë£¨í‹´ì´ ìˆë‹¤ë©´ ë©ˆì¶¤
         if (typingCoroutine != null)
         {
             StopCoroutine(typingCoroutine);
         }
-        // »õ ÄÚ·çÆ¾ ½ÃÀÛ
+        // ìƒˆ ì½”ë£¨í‹´ ì‹œì‘
         typingCoroutine = StartCoroutine(ShowText());
     }
 
-    // ½ÇÁ¦·Î ±ÛÀÚ¸¦ ÇÏ³ª¾¿ º¸¿©ÁÖ´Â ÄÚ·çÆ¾
+    // ì‹¤ì œë¡œ ê¸€ìë¥¼ í•˜ë‚˜ì”© ë³´ì—¬ì£¼ëŠ” ì½”ë£¨í‹´
     IEnumerator ShowText()
     {
-        textComponent.text = ""; // ÅØ½ºÆ®¸¦ ºñ¿ò
-        // ÅØ½ºÆ®ÀÇ °¢ ±ÛÀÚ¸¦ ¼ø¼­´ë·Î Ã³¸®
+        textComponent.text = ""; // í…ìŠ¤íŠ¸ë¥¼ ë¹„ì›€
+        // í…ìŠ¤íŠ¸ì˜ ê° ê¸€ìë¥¼ ìˆœì„œëŒ€ë¡œ ì²˜ë¦¬
         foreach (char c in fullText.ToCharArray())
         {
-            textComponent.text += c; // ±ÛÀÚ¸¦ ÇÏ³ª Ãß°¡
-            yield return new WaitForSeconds(typingSpeed); // ¼³Á¤µÈ ½Ã°£¸¸Å­ Àá½Ã ¸ØÃã
+            textComponent.text += c; // ê¸€ìë¥¼ í•˜ë‚˜ ì¶”ê°€
+            yield return new WaitForSeconds(typingSpeed); // ì„¤ì •ëœ ì‹œê°„ë§Œí¼ ì ì‹œ ë©ˆì¶¤
         }
     }
 }

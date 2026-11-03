@@ -1,5 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
+// 보관함. E키로 열고, 슬롯을 클릭하면 1개, Shift+클릭하면 전부 옮깁니다.
 public class Storage : MonoBehaviour
 {
     [Header("UI")]
@@ -20,43 +21,49 @@ public class Storage : MonoBehaviour
 
     void Update()
     {
+        if (storagePanel == null) return;
+
         if (isPlayerInRange && Input.GetKeyDown(KeyCode.E))
         {
             bool isActive = !storagePanel.activeSelf;
             storagePanel.SetActive(isActive);
-
-            if (isActive)
-            {
-                UpdateStorageUI();
-            }
+            if (isActive) UpdateStorageUI();
+        }
+        if (storagePanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+        {
+            storagePanel.SetActive(false);
         }
     }
 
-    // ✨ 보관함 UI를 업데이트하는 함수
     public void UpdateStorageUI()
     {
-        // 1. 플레이어 인벤토리 UI 업데이트
-        // 기존 슬롯 삭제
+        if (dataManager == null) dataManager = DataManager.instance;
+        if (dataManager == null) return;
+
         foreach (Transform child in playerInventoryGrid) Destroy(child.gameObject);
-        // 새 슬롯 생성
         foreach (var item in dataManager.inventory)
         {
             GameObject slotGO = Instantiate(storageSlotPrefab, playerInventoryGrid);
-            slotGO.GetComponent<StorageSlot>().Setup(item.Key, true); // true = 플레이어 인벤토리 슬롯
+            StorageSlot slot = slotGO.GetComponent<StorageSlot>();
+            if (slot != null) slot.Setup(item.Key, true, this);
         }
 
-        // 2. 보관함 UI 업데이트
         foreach (Transform child in storageGrid) Destroy(child.gameObject);
         foreach (var item in dataManager.storage)
         {
             GameObject slotGO = Instantiate(storageSlotPrefab, storageGrid);
-            slotGO.GetComponent<StorageSlot>().Setup(item.Key, false); // false = 보관함 슬롯
+            StorageSlot slot = slotGO.GetComponent<StorageSlot>();
+            if (slot != null) slot.Setup(item.Key, false, this);
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player")) isPlayerInRange = true;
+        if (other.CompareTag("Player"))
+        {
+            isPlayerInRange = true;
+            HUD.Toast("Press E to open the storage box.", 2f);
+        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -64,7 +71,7 @@ public class Storage : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = false;
-            storagePanel.SetActive(false);
+            if (storagePanel != null) storagePanel.SetActive(false);
         }
     }
 }

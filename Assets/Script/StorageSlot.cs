@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
@@ -6,49 +6,47 @@ public class StorageSlot : MonoBehaviour
 {
     private string itemName;
     private bool isPlayerInventorySlot; // 이 슬롯이 플레이어 인벤토리용인지, 보관함용인지 구분
+    private Storage owner;
 
-    public void Setup(string name, bool isPlayerSlot)
+    public void Setup(string name, bool isPlayerSlot, Storage storage = null)
     {
         itemName = name;
         isPlayerInventorySlot = isPlayerSlot;
+        owner = storage != null ? storage : FindFirstObjectByType<Storage>();
 
-        // 아이콘과 아이템 개수 설정
-        Image icon = transform.Find("Icon")?.GetComponent<Image>();
+        DataManager data = DataManager.instance;
+        Transform iconTransform = transform.Find("Icon");
+        Image icon = iconTransform != null ? iconTransform.GetComponent<Image>() : null;
         TextMeshProUGUI countText = GetComponentInChildren<TextMeshProUGUI>();
 
         if (icon != null)
         {
-            icon.sprite = ItemAssets.Instance.GetSpriteByName(name);
+            icon.sprite = ItemAssets.SpriteFor(name);
+            icon.preserveAspect = true;
         }
-        if (countText != null)
+        if (countText != null && data != null)
         {
-            countText.text = isPlayerSlot ?
-                DataManager.instance.inventory[name].ToString() :
-                DataManager.instance.storage[name].ToString();
+            var source = isPlayerSlot ? data.inventory : data.storage;
+            countText.text = source.TryGetValue(name, out int count) ? "x" + count : "";
         }
 
-        // 버튼 클릭 이벤트 연결
-        GetComponent<Button>().onClick.AddListener(MoveItem);
+        Button button = GetComponent<Button>();
+        if (button != null)
+        {
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(MoveItem);
+        }
     }
 
+    // 클릭: 1개 이동, Shift+클릭: 전부 이동
     void MoveItem()
     {
-        // 플레이어 인벤토리 슬롯을 클릭했다면 -> 보관함으로 이동
-        if (isPlayerInventorySlot)
-        {
-            Debug.Log(itemName + "을(를) 보관함으로 이동.");
-            DataManager.instance.inventory.Remove(itemName); // 임시로 전체 이동
-            DataManager.instance.storage.Add(itemName, 1); // 임시로 1개 추가
-        }
-        // 보관함 슬롯을 클릭했다면 -> 플레이어 인벤토리로 이동
-        else
-        {
-            Debug.Log(itemName + "을(를) 인벤토리로 이동.");
-            DataManager.instance.storage.Remove(itemName);
-            DataManager.instance.inventory.Add(itemName, 1);
-        }
+        DataManager data = DataManager.instance;
+        if (data == null) return;
 
-        // UI 새로고침 (Storage.cs에 있는 함수를 호출해야 함 - 다음 단계에서 구현)
-        FindObjectOfType<Storage>().UpdateStorageUI();
+        bool moveAll = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        data.MoveItem(itemName, isPlayerInventorySlot, moveAll ? int.MaxValue : 1);
+
+        if (owner != null) owner.UpdateStorageUI();
     }
 }

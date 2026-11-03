@@ -1,6 +1,11 @@
 ﻿using UnityEngine;
-using UnityEngine.SceneManagement; // ✨ 씬(Scene) 관리 기능을 사용하기 위해 추가
+using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
+// 시간대에 따라 빛을 바꿉니다.
+//  - (기존) Directional Light 색 / 카메라 배경색을 Gradient로
+//  - (추가) 씬의 Global Light 2D 밝기를 낮/밤, 비에 맞춰 조절
+// GameTimeManager와 같은 오브젝트(GameManager)에 있을 때만 동작합니다.
 public class LightingManager : MonoBehaviour
 {
     [Header("참조 설정")]
@@ -11,52 +16,85 @@ public class LightingManager : MonoBehaviour
 
     [Header("시간대별 색상")]
     public Gradient lightColor;
+    [Tooltip("체크하면 카메라 배경색도 Gradient 색으로 바꿉니다.")]
+    public bool tintCameraBackground = true;
 
-    // ✨ Awake() 함수 추가: 씬 로드 이벤트를 구독합니다.
+    [Header("2D 전역 조명 밝기")]
+    [Range(0f, 1f)] public float nightIntensity = 0.45f;
+    [Range(0f, 1f)] public float rainMultiplier = 0.8f;
+
+    private Light2D globalLight2D;
+    private float baseIntensity = 1f;
+
     void Awake()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    // ✨ OnDestroy() 함수 추가: 오브젝트 파괴 시 이벤트 구독을 해제합니다.
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // ✨ OnSceneLoaded() 함수 추가: 씬이 로드될 때마다 실행됩니다.
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // 새로 로드된 씬에서 카메라와 조명을 새로 찾습니다.
-        if (mainCamera == null)
-        {
-            mainCamera = Camera.main;
-        }
-        if (directionalLight == null)
-        {
-            directionalLight = FindObjectOfType<Light>();
-        }
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (directionalLight == null) directionalLight = FindFirstObjectByType<Light>();
+        FindGlobalLight();
     }
 
-    // Start() 함수는 이제 GameTimeManager를 찾는 역할만 합니다.
     void Start()
     {
         gameTimeManager = GetComponent<GameTimeManager>();
+        FindGlobalLight();
+    }
+
+    void FindGlobalLight()
+    {
+        globalLight2D = null;
+        foreach (Light2D light in FindObjectsByType<Light2D>(FindObjectsSortMode.None))
+        {
+            if (light.lightType == Light2D.LightType.Global)
+            {
+                globalLight2D = light;
+                baseIntensity = light.intensity;
+                break;
+            }
+        }
     }
 
     void Update()
     {
-        // 조명이나 시간 매니저가 없으면 아무것도 하지 않음 (에러 방지)
-        if (directionalLight == null || gameTimeManager == null) return;
+        if (gameTimeManager == null || !gameTimeManager.enabled) return;
 
-        float timePercent = (gameTimeManager.hour + gameTimeManager.minute / 60f) / 24f;
-        Color currentColor = lightColor.Evaluate(timePercent);
+        float hourValue = gameTimeManager.hour + gameTimeManager.minute / 60f;
+        float timePercent = (hourValue % 24f) / 24f;
 
-        directionalLight.color = currentColor;
-
-        if (mainCamera != null)
+        if (directionalLight != null && lightColor != null)
         {
-            mainCamera.backgroundColor = currentColor;
+            Color currentColor = lightColor.Evaluate(timePercent);
+            directionalLight.color = currentColor;
+            if (tintCameraBackground && mainCamera != null) mainCamera.backgroundColor = currentColor;
         }
+
+        if (globalLight2D != null)
+        {
+            float daylight = GetDaylight(hourValue);
+            float intensity = Mathf.Lerp(nightIntensity, 1f, daylight) * baseIntensity;
+            DataManager data = DataManager.instance;
+            if (data != null && data.raining) intensity *= rainMultiplier;
+            globalLight2D.intensity = intensity;
+        }
+    }
+
+    // 0 = 밤, 1 = 낮. 17~21시에 어두워지고, 4~7시에 밝아집니다.
+    static float GetDaylight(float hour)
+    {
+        if (hour >= 24f) return 0f;
+        if (hour < 4f) return 0f;
+        if (hour < 7f) return Mathf.InverseLerp(4f, 7f, hour);
+        if (hour < 17f) return 1f;
+        if (hour < 21f) return 1f - Mathf.InverseLerp(17f, 21f, hour);
+        return 0f;
     }
 }

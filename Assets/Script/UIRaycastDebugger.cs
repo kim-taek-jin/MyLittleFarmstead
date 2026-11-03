@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 
@@ -6,25 +6,25 @@ public class UIRaycastDebugger : MonoBehaviour
 {
     void Update()
     {
-        // ¸¶¿ì½º¸¦ Å¬¸¯ÇßÀ» ¶§
+        // ë§ˆìš°ìŠ¤ë¥¼ í´ë¦­í–ˆì„ ë•Œ
         if (Input.GetMouseButtonDown(0))
         {
-            // ÇöÀç ¸¶¿ì½º À§Ä¡¿¡ ¾î¶² UI°¡ ÀÖ´ÂÁö È®ÀÎ
+            // í˜„ì¬ ë§ˆìš°ìŠ¤ ìœ„ì¹˜ì— ì–´ë–¤ UIê°€ ìˆëŠ”ì§€ í™•ì¸
             PointerEventData pointerData = new PointerEventData(EventSystem.current);
             pointerData.position = Input.mousePosition;
 
             List<RaycastResult> results = new List<RaycastResult>();
             EventSystem.current.RaycastAll(pointerData, results);
 
-            // ¸¸¾à °¨ÁöµÈ UI°¡ ÀÖ´Ù¸é
+            // ë§Œì•½ ê°ì§€ëœ UIê°€ ìˆë‹¤ë©´
             if (results.Count > 0)
             {
-                // °¡Àå À§¿¡ ÀÖ´Â UIÀÇ ÀÌ¸§À» ÄÜ¼Ö¿¡ Ãâ·Â
-                Debug.Log($"UI Å¬¸¯ °¨Áö! ¹üÀÎ: {results[0].gameObject.name}");
+                // ê°€ì¥ ìœ„ì— ìˆëŠ” UIì˜ ì´ë¦„ì„ ì½˜ì†”ì— ì¶œë ¥
+                Debug.Log($"UI í´ë¦­ ê°ì§€! ë²”ì¸: {results[0].gameObject.name}");
             }
             else
             {
-                Debug.Log("UI Å¬¸¯ÀÌ ¾Æ´Ô.");
+                Debug.Log("UI í´ë¦­ì´ ì•„ë‹˜.");
             }
         }
     }

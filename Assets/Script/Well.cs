@@ -1,31 +1,28 @@
 using UnityEngine;
 
+// ìš°ë¬¼: Eí‚¤ë¡œ ë¬¼ì„ ë§ˆì‹œê³ (ê°ˆì¦ íšŒë³µ), ë¬¼ë¿Œë¦¬ê°œê°€ ìˆìœ¼ë©´ ê°€ë“ ì±„ì›ë‹ˆë‹¤.
 public class Well : MonoBehaviour
 {
     private bool isPlayerInRange;
-    private Hotbar hotbar;
-
-    void Start()
-    {
-        hotbar = FindObjectOfType<Hotbar>();
-    }
 
     void Update()
     {
-        // ÇÃ·¹ÀÌ¾î°¡ ¹üÀ§ ¾È¿¡ ÀÖ°í, EÅ°¸¦ ´­·¶´Ù¸é
-        if (isPlayerInRange && Input.GetKeyDown(KeyCode.E))
+        if (!isPlayerInRange || !Input.GetKeyDown(KeyCode.E)) return;
+
+        DataManager data = DataManager.instance;
+        if (data == null) return;
+
+        data.RefillThirst();
+        int capacity = data.WaterCapacity;
+        if (capacity > 0)
         {
-            // ÇÖ¹Ù¿¡¼­ ¼±ÅÃµÈ ¾ÆÀÌÅÛÀÌ ¹°»Ñ¸®°³ÀÎÁö È®ÀÎ
-            string selectedItem = hotbar?.GetSelectedItemName();
-            if (selectedItem == "Watering Can")
-            {
-                // DataManagerÀÇ °¥Áõ ÇØ¼Ò ÇÔ¼ö¸¦ È£Ãâ
-                DataManager.instance.RefillThirst();
-            }
-            else
-            {
-                Debug.Log("¹°»Ñ¸®°³¸¦ µé°í ÀÖ¾î¾ß ¹°À» ¸¶½Ç ¼ö ÀÖ½À´Ï´Ù.");
-            }
+            data.RefillWater();
+            data.UpdateAllUI();
+            HUD.Toast($"You drink cool water and fill your watering can. ({data.waterCharges}/{capacity})");
+        }
+        else
+        {
+            HUD.Toast("You drink cool, fresh water.");
         }
     }
 
@@ -34,6 +31,7 @@ public class Well : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
+            HUD.Toast("Press E to drink and refill your watering can.", 2.5f);
         }
     }
 

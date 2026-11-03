@@ -1,17 +1,15 @@
 using UnityEngine;
 
+// ì¹¨ëŒ€: Eí‚¤ë¡œ ì ì„ ìë©´ í•˜ë£¨ê°€ ëë‚˜ê³ , ê·¸ë‚ ì˜ ìƒí™œì„ í‰ê°€í•´ ë§ˆìŒ(Heart)ì´ ë³€í•©ë‹ˆë‹¤.
 public class Bed : MonoBehaviour
 {
     private bool isPlayerInRange;
 
     void Update()
     {
-        // ÇÃ·¹ÀÌ¾î°¡ ¹üÀ§ ¾È¿¡ ÀÖ°í, EÅ°¸¦ ´­·¶´Ù¸é
-        if (isPlayerInRange && Input.GetKeyDown(KeyCode.E))
+        if (isPlayerInRange && Input.GetKeyDown(KeyCode.E) && DataManager.instance != null)
         {
-            Debug.Log("ÀáÀÚ±â ½Ãµµ...");
-            // DataManagerÀÇ Sleep ÇÔ¼ö¸¦ È£Ãâ
-            DataManager.instance.Sleep();
+            DataManager.instance.TrySleep();
         }
     }
 
@@ -20,7 +18,7 @@ public class Bed : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
-            Debug.Log("Ä§´ë ±ÙÃ³ÀÔ´Ï´Ù. EÅ°¸¦ ´­·¯ ÀáÀ» Àß ¼ö ÀÖ½À´Ï´Ù.");
+            HUD.Toast("Press E to sleep and end the day.", 2.5f);
         }
     }
 

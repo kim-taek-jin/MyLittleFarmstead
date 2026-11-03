@@ -1,8 +1,8 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.Tilemaps;
 
 [CreateAssetMenu(fileName = "New Basic Tile", menuName = "Tiles/Basic Tile")]
 public class BasicTile : Tile
 {
-    // ÀÌ ½ºÅ©¸³Æ®´Â ¸Ş´º¿¡ ¿É¼ÇÀ» Ãß°¡ÇÏ´Â ¿ªÇÒ¸¸ ÇÏ¹Ç·Î, ¾È¿¡´Â ¾Æ¹«°Íµµ ¾µ ÇÊ¿ä°¡ ¾ø½À´Ï´Ù.
+    // ì´ ìŠ¤í¬ë¦½íŠ¸ëŠ” ë©”ë‰´ì— ì˜µì…˜ì„ ì¶”ê°€í•˜ëŠ” ì—­í• ë§Œ í•˜ë¯€ë¡œ, ì•ˆì—ëŠ” ì•„ë¬´ê²ƒë„ ì“¸ í•„ìš”ê°€ ì—†ìŠµë‹ˆë‹¤.
 }

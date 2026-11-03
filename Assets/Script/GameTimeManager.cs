@@ -1,46 +1,90 @@
 using UnityEngine;
 
+// ê²Œìž„ ì‹œê°„. ì•„ì¹¨ 6ì‹œì— ì‹œìž‘í•˜ê³ , ìž ë“¤ì§€ ì•Šê³  ìƒˆë²½ 2ì‹œ(26ì‹œ)ê°€ ë˜ë©´ ê¸°ì ˆí•©ë‹ˆë‹¤.
 public class GameTimeManager : MonoBehaviour
 {
-    [Header("½Ã°£ ¼³Á¤")]
-    [Tooltip("1ÃÊ´ç °ÔÀÓ ³»¿¡¼­ Èå¸£´Â ½Ã°£(ºÐ)")]
-    public float minutesPerSecond = 60f; // Çö½Ç ½Ã°£ 1ÃÊ°¡ °ÔÀÓ ³» 1½Ã°£(60ºÐ)ÀÌ µÇµµ·Ï ¼³Á¤
+    public static GameTimeManager instance;
 
-    [Header("ÇöÀç °ÔÀÓ ½Ã°£")]
+    [Header("ì‹œê°„ ì„¤ì •")]
+    [Tooltip("í˜„ì‹¤ 1ì´ˆë‹¹ íë¥´ëŠ” ê²Œìž„ ì‹œê°„(ë¶„). 2 = í•˜ë£¨(06:00~02:00)ê°€ ì•½ 10ë¶„")]
+    public float minutesPerSecond = 2f;
+
+    [Tooltip("ì´ ì‹œê°(24 ì´ìƒ = ë‹¤ìŒ ë‚  ìƒˆë²½)ì´ ë˜ë©´ ê¸°ì ˆí•©ë‹ˆë‹¤. 26 = ìƒˆë²½ 2ì‹œ")]
+    public int passOutHour = 26;
+
+    [Header("í˜„ìž¬ ê²Œìž„ ì‹œê°„")]
     public int day = 1;
-    public int hour = 6;
+    public int hour = 6;      // 24 ì´ìƒì´ë©´ ìžì •ì„ ë„˜ê¸´ ìƒˆë²½ (ì˜ˆ: 25 = 01ì‹œ)
     public float minute = 0;
+
+    private bool warnedMidnight;
+    private bool warnedLate;
+
+    // í™”ë©´ í‘œì‹œìš© ì‹œê° (ì˜ˆ: "01:30")
+    public string FormattedTime => $"{hour % 24:00}:{(int)minute:00}";
+
+    void Awake()
+    {
+        if (instance != null && instance != this)
+        {
+            enabled = false; // ì¤‘ë³µ GameManagerëŠ” ê³§ íŒŒê´´ë©ë‹ˆë‹¤.
+            return;
+        }
+        instance = this;
+    }
 
     void Update()
     {
-        // 1. ½Ã°£ °è»ê
-        // Time.deltaTimeÀº ÀÌÀü ÇÁ·¹ÀÓ°ú ÇöÀç ÇÁ·¹ÀÓ »çÀÌÀÇ ½Ã°£ °£°ÝÀÔ´Ï´Ù.
-        // ¿©±â¿¡ minutesPerSecond¸¦ °öÇØ¼­ °ÔÀÓ ³» 'ºÐ'À» °è»êÇÕ´Ï´Ù.
+        DataManager data = DataManager.instance;
+        if (data != null && data.IsGameOver) return;
+
         minute += Time.deltaTime * minutesPerSecond;
-
-        // 2. ºÐ/½Ã/ÀÏ ´ÜÀ§ Á¤¸®
-        if (minute >= 60)
+        while (minute >= 60f)
         {
-            hour++;          // 60ºÐÀÌ ³ÑÀ¸¸é ½Ã°£À» 1 ¿Ã¸®°í
-            minute = 0;      // ºÐÀº 0À¸·Î ¸®¼Â
+            minute -= 60f;
+            hour++;
         }
 
-        if (hour >= 24)
+        if (hour >= 24 && !warnedMidnight)
         {
-            day++;           // 24½Ã°¡ ³ÑÀ¸¸é ³¯Â¥¸¦ 1 ¿Ã¸®°í
-            hour = 0;        // ½Ã°£Àº 0À¸·Î ¸®¼Â
+            warnedMidnight = true;
+            HUD.Toast("It's midnight. You should go to bed soon.");
+        }
+        if (hour >= passOutHour - 1 && !warnedLate)
+        {
+            warnedLate = true;
+            HUD.Toast("You can barely keep your eyes open...");
         }
 
-        // 3. ½Ã°£ Ãâ·Â (Å×½ºÆ®¿ë)
-        // F12¸¦ ´­·¯ ÄÜ¼Ö Ã¢À» ¿­¸é ½Ã°£ÀÌ Èå¸£´Â °ÍÀ» º¼ ¼ö ÀÖ½À´Ï´Ù.
-     //   Debug.Log($"ÇöÀç ½Ã°£: {day}ÀÏÂ÷ {hour:00}:{minute:00}");
+        if (hour >= passOutHour)
+        {
+            if (data != null)
+            {
+                data.PassOut(); // ë‚´ë¶€ì—ì„œ AdvanceDay() í˜¸ì¶œ
+            }
+            else
+            {
+                AdvanceDay();
+            }
+        }
     }
 
     public void AdvanceDay()
     {
-        day++;       // ³¯Â¥¸¦ 1 Áõ°¡
-        hour = 6;    // ¾ÆÄ§ 6½Ã·Î ½Ã°£ ¼³Á¤
+        day++;
+        hour = 6;
         minute = 0;
-        Debug.Log(day + "ÀÏÂ÷ ¾ÆÄ§ÀÌ ¹à¾Ò½À´Ï´Ù.");
+        warnedMidnight = false;
+        warnedLate = false;
+        Debug.Log(day + "ì¼ì°¨ ì•„ì¹¨ì´ ë°ì•˜ìŠµë‹ˆë‹¤.");
+    }
+
+    public void SetTime(int newDay, int newHour, float newMinute)
+    {
+        day = Mathf.Max(1, newDay);
+        hour = newHour;
+        minute = newMinute;
+        warnedMidnight = hour >= 24;
+        warnedLate = hour >= passOutHour - 1;
     }
 }

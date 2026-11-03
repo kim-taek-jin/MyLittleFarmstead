@@ -1113,8 +1113,12 @@ MonoBehaviour:
     price: 50
   - itemName: Corn Seed
     price: 30
-  - itemName: Potaoto Seed
+  - itemName: Potato Seed
     price: 40
+  - itemName: Bread
+    price: 20
+  - itemName: Apple
+    price: 12
 --- !u!61 &648712972
 BoxCollider2D:
   m_ObjectHideFlags: 0

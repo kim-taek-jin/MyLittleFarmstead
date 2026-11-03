@@ -1,24 +1,23 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
+// 처음 시작할 때 보여주는 인트로 패널. 저장 파일이 있으면 건너뜁니다.
 public class IntroManager : MonoBehaviour
 {
     public Button startButton;
 
-    // ✨ 인트로를 이미 보여줬는지 기억하는 static 변수 추가
+    // 인트로를 이미 보여줬는지 기억하는 static 변수
     private static bool introShown = false;
 
     void Start()
     {
-        // ✨ 만약 인트로를 이미 보여줬다면
-        if (introShown)
+        if (introShown || SaveSystem.HasSave())
         {
-            // 즉시 패널을 끄고 함수를 종료 (시간은 건드리지 않음)
+            introShown = true;
             this.gameObject.SetActive(false);
             return;
         }
 
-        // 처음 시작하는 경우:
         if (startButton != null)
         {
             startButton.onClick.AddListener(CloseIntro);
@@ -28,10 +27,18 @@ public class IntroManager : MonoBehaviour
 
     void CloseIntro()
     {
-        Time.timeScale = 1f; // 게임 시간 다시 흐르게 함
-        this.gameObject.SetActive(false); // 패널 끄기
-
-        // ✨ 인트로를 보여줬다고 기록
+        Time.timeScale = 1f;
+        this.gameObject.SetActive(false);
         introShown = true;
+
+        HUD.Announce(
+            "<size=40>A new life begins</size>\n\n" +
+            "<size=26>The city left your world gray. Live well and the color will come back.\n\n" +
+            "WASD: Move    1-5 / Mouse wheel: Select item\n" +
+            "Left click: Use tool / seed    Right click or F: Eat\n" +
+            "E: Interact (well, bed, shop, storage)    C: Craft\n" +
+            "F5: Save    F9: Load\n\n" +
+            "Eat, drink, rest, and go to bed on time to heal your <color=#ff8fb1>Heart</color>.</size>",
+            12f);
     }
 }

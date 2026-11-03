@@ -1,17 +1,23 @@
 using UnityEngine;
 
-// ¾ÆÀÌÅÛ Á¤º¸¸¦ ´ãÀ» °£´ÜÇÑ Å¬·¡½º
+// ì•„ì´í…œ ì •ë³´ë¥¼ ë‹´ì„ ê°„ë‹¨í•œ í´ë˜ìŠ¤
 [System.Serializable]
 public class ItemInfo
 {
     public string itemName;
     public int count;
+
+    public ItemInfo() { }
+    public ItemInfo(string name, int amount) { itemName = name; count = amount; }
 }
 
-// [CreateAssetMenu]¸¦ »ç¿ëÇÏ¸é Unity ¿¡µğÅÍ¿¡¼­ ÀÌ ÆÄÀÏÀ» Á÷Á¢ ¸¸µé ¼ö ÀÖ°Ô µË´Ï´Ù.
+// [CreateAssetMenu]ë¥¼ ì‚¬ìš©í•˜ë©´ Unity ì—ë””í„°ì—ì„œ ì´ íŒŒì¼ì„ ì§ì ‘ ë§Œë“¤ ìˆ˜ ìˆê²Œ ë©ë‹ˆë‹¤.
 [CreateAssetMenu(fileName = "New Recipe", menuName = "Crafting/Recipe")]
 public class Recipe : ScriptableObject
 {
-    public ItemInfo[] requiredItems; // ÇÊ¿äÇÑ Àç·á ¸ñ·Ï
-    public ItemInfo resultItem;      // °á°ú¹° ¾ÆÀÌÅÛ
+    public ItemInfo[] requiredItems; // í•„ìš”í•œ ì¬ë£Œ ëª©ë¡
+    public ItemInfo resultItem;      // ê²°ê³¼ë¬¼ ì•„ì´í…œ
+
+    [Tooltip("ë¹„ì–´ìˆì§€ ì•Šìœ¼ë©´, ì´ ì•„ì´í…œì„ ê°€ì§€ê³  ìˆì–´ì•¼ ì œì‘ ê°€ëŠ¥ (ì†Œëª¨ë˜ì§€ ì•ŠìŒ). ì˜ˆ: Campfire")]
+    public string requiredStation = "";
 }

@@ -8,26 +8,42 @@ public class HotbarSlot : MonoBehaviour
     public TextMeshProUGUI itemCountText;
     public GameObject selector;
 
-    // ½½·Ô¿¡ ¾ÆÀÌÅÛ Á¤º¸¸¦ ±×·ÁÁÖ´Â ÇÔ¼ö
+    // ìŠ¬ë¡¯ì— ì•„ì´í…œ ì •ë³´ë¥¼ ê·¸ë ¤ì£¼ëŠ” í•¨ìˆ˜
     public void DrawSlot(string itemName, int count)
     {
-        icon.gameObject.SetActive(true);
-        itemCountText.gameObject.SetActive(true);
+        if (icon != null)
+        {
+            icon.gameObject.SetActive(true);
+            icon.sprite = ItemAssets.SpriteFor(itemName);
+            icon.preserveAspect = true;
+        }
 
-        icon.sprite = ItemAssets.Instance.GetSpriteByName(itemName);
-        itemCountText.text = count.ToString();
+        if (itemCountText != null)
+        {
+            // ë„êµ¬ëŠ” ê°œìˆ˜ ëŒ€ì‹  ë¹ˆì¹¸ (ë¬¼ë¿Œë¦¬ê°œëŠ” ë‚¨ì€ ë¬¼ í‘œì‹œ)
+            string text = count.ToString();
+            ItemDef def = ItemDB.Get(itemName);
+            if (def != null && def.category == ItemCategory.Tool)
+            {
+                text = def.toolType == ToolType.WateringCan && DataManager.instance != null
+                    ? $"{DataManager.instance.waterCharges}"
+                    : "";
+            }
+            itemCountText.gameObject.SetActive(true);
+            itemCountText.text = text;
+        }
     }
 
-    // ½½·ÔÀ» ºñ¿ì´Â ÇÔ¼ö
+    // ìŠ¬ë¡¯ì„ ë¹„ìš°ëŠ” í•¨ìˆ˜
     public void ClearSlot()
     {
-        icon.gameObject.SetActive(false);
-        itemCountText.gameObject.SetActive(false);
+        if (icon != null) icon.gameObject.SetActive(false);
+        if (itemCountText != null) itemCountText.gameObject.SetActive(false);
     }
 
-    // ¼±ÅÃ »óÅÂ¸¦ ¾÷µ¥ÀÌÆ®ÇÏ´Â ÇÔ¼ö
+    // ì„ íƒ ìƒíƒœë¥¼ ì—…ë°ì´íŠ¸í•˜ëŠ” í•¨ìˆ˜
     public void SetSelector(bool isActive)
     {
-        selector.SetActive(isActive);
+        if (selector != null) selector.SetActive(isActive);
     }
 }

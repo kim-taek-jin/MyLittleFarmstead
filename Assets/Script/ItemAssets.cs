@@ -1,13 +1,24 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 
+// 아이템 이름 → 스프라이트 연결.
+// 전용 스프라이트가 없으면 비슷한 아이템 스프라이트를 빌려 쓰고,
+// 그것도 없으면 아이템 색으로 만든 임시 아이콘을 자동 생성합니다.
 public class ItemAssets : MonoBehaviour
 {
-    // ✨ 싱글턴 패턴: 이 게임에 단 하나의 ItemAssets만 존재하도록 함
     public static ItemAssets Instance { get; private set; }
+
+    [System.Serializable]
+    public class NamedSprite
+    {
+        public string itemName;
+        public Sprite sprite;
+    }
 
     private void Awake()
     {
+        // 씬을 다시 불러올 때 생기는 중복 GameManager가 Instance를 덮어쓰지 않도록
+        if (Instance != null && Instance != this) return;
         Instance = this;
     }
 
@@ -16,10 +27,9 @@ public class ItemAssets : MonoBehaviour
     public Sprite hoeSprite;
     public Sprite wateringCanSprite;
     public Sprite scytheSprite;
-    public Sprite woodSprite; // Wood 스프라이트도 추가하면 좋습니다.
-    public Sprite stoneSprite; // ✨ 1. Stone 스프라이트 변수 추가
+    public Sprite woodSprite;
+    public Sprite stoneSprite;
     public Sprite carrotSprite;
-    // ✨ 새로운 작물 스프라이트 변수 추가
     public Sprite strawberrySeedSprite;
     public Sprite strawberrySprite;
     public Sprite cornSeedSprite;
@@ -27,9 +37,44 @@ public class ItemAssets : MonoBehaviour
     public Sprite potatoSeedSprite;
     public Sprite potatoSprite;
 
+    [Header("추가 아이템 스프라이트 (이름으로 연결, 코드 수정 없이 추가 가능)")]
+    public List<NamedSprite> extraSprites = new List<NamedSprite>();
+
+    private static readonly Dictionary<string, Sprite> placeholderCache = new Dictionary<string, Sprite>();
+
+    // ItemAssets가 없는 씬에서도 안전하게 쓸 수 있는 정적 함수
+    public static Sprite SpriteFor(string itemName)
+    {
+        if (Instance != null) return Instance.GetSpriteByName(itemName);
+        return GetPlaceholder(itemName);
+    }
+
     // 아이템 이름을 주면 해당하는 스프라이트를 돌려주는 함수
     public Sprite GetSpriteByName(string itemName)
     {
+        itemName = ItemDB.Normalize(itemName);
+        if (string.IsNullOrEmpty(itemName)) return null;
+
+        Sprite sprite = FindAssigned(itemName);
+        if (sprite != null) return sprite;
+
+        // 비슷한 아이템 스프라이트 빌려 쓰기 (예: Fertile Hoe → Hoe)
+        ItemDef def = ItemDB.Get(itemName);
+        if (def != null && !string.IsNullOrEmpty(def.iconFallback))
+        {
+            sprite = FindAssigned(def.iconFallback);
+            if (sprite != null) return sprite;
+        }
+        return GetPlaceholder(itemName);
+    }
+
+    Sprite FindAssigned(string itemName)
+    {
+        foreach (var entry in extraSprites)
+        {
+            if (entry != null && entry.sprite != null && entry.itemName == itemName) return entry.sprite;
+        }
+
         switch (itemName)
         {
             case "Carrot Seed": return carrotSeedSprite;
@@ -37,42 +82,56 @@ public class ItemAssets : MonoBehaviour
             case "Watering Can": return wateringCanSprite;
             case "Scythe": return scytheSprite;
             case "Wood": return woodSprite;
-            case "Stone": return stoneSprite; // ✨ 2. Stone 케이스 추가
+            case "Stone": return stoneSprite;
             case "Carrot": return carrotSprite;
-            // ✨ 새로운 작물 case 추가
             case "Strawberry Seed": return strawberrySeedSprite;
             case "Strawberry": return strawberrySprite;
             case "Corn Seed": return cornSeedSprite;
             case "Corn": return cornSprite;
             case "Potato Seed": return potatoSeedSprite;
             case "Potato": return potatoSprite;
-            default:
-                Debug.LogWarning("해당하는 아이템 스프라이트를 찾을 수 없음: " + itemName);
-                return null;
+            default: return null;
         }
     }
-    // ItemAssets.cs 스크립트 안에 추가
 
-    // 아이템 이름을 주면 해당하는 '판매 가격'을 돌려주는 함수
+    // 아이템 이름을 주면 해당하는 '기본 판매 가격'을 돌려주는 함수 (시장 보정 전)
     public int GetSellPriceByName(string itemName)
     {
-        switch (itemName)
-        {
-            // ✨ 여기서 각 아이템의 판매 가격을 설정합니다.
-            case "Carrot": return 25;
-            case "Carrot Seed": return 5;
-            case "Wood": return 2;
-            case "Stone": return 5;
-            case "Sunshine Shard": return 100;
-            case "Earth's Breath": return 100;
-            // ✨ 새로운 작물 판매 가격 추가
-            case "Strawberry": return 120;
-            case "Corn": return 50;
-            case "Potato": return 80;
+        ItemDef def = ItemDB.Get(itemName);
+        return def != null ? Mathf.Max(1, def.sellPrice) : 1;
+    }
 
-            // 목록에 없는 아이템은 기본값 1골드로 설정
-            default:
-                return 1;
+    // 아이템 색으로 동그란 임시 아이콘을 만듭니다.
+    static Sprite GetPlaceholder(string itemName)
+    {
+        if (string.IsNullOrEmpty(itemName)) return null;
+        if (placeholderCache.TryGetValue(itemName, out Sprite cached) && cached != null) return cached;
+
+        ItemDef def = ItemDB.Get(itemName);
+        Color fill = def != null ? def.color : Color.gray;
+        Color edge = Color.Lerp(fill, Color.black, 0.45f);
+
+        const int size = 32;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Point;
+        tex.wrapMode = TextureWrapMode.Clamp;
+        Vector2 center = new Vector2(size / 2f - 0.5f, size / 2f - 0.5f);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x, y), center);
+                Color c = d > 13f ? Color.clear : (d > 11f ? edge : fill);
+                // 위쪽에 살짝 하이라이트
+                if (d <= 11f && y > 18 && x < 16) c = Color.Lerp(c, Color.white, 0.25f);
+                tex.SetPixel(x, y, c);
+            }
         }
+        tex.Apply();
+
+        Sprite sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        sprite.name = "Placeholder_" + itemName;
+        placeholderCache[itemName] = sprite;
+        return sprite;
     }
 }

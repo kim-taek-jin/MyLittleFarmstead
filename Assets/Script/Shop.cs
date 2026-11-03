@@ -1,7 +1,8 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
 
 [System.Serializable]
 public class ItemForSale
@@ -10,6 +11,8 @@ public class ItemForSale
     public int price;
 }
 
+// 시장 상점. E키로 열고, 구매/판매 탭을 전환합니다.
+// 판매 가격은 '살아있는 시장'(오늘의 수요, 많이 팔면 하락, 흥정 보너스)에 따라 변합니다.
 public class Shop : MonoBehaviour
 {
     [Header("UI")]
@@ -26,66 +29,81 @@ public class Shop : MonoBehaviour
     public List<ItemForSale> itemsForSale = new List<ItemForSale>();
 
     private bool isPlayerInRange;
+    private bool isBuyMode = true;
     private DataManager dataManager;
 
     void Start()
     {
         dataManager = DataManager.instance;
-        buyButton.onClick.AddListener(ShowBuyPanel);
-        sellButton.onClick.AddListener(ShowSellPanel);
+        if (buyButton != null) buyButton.onClick.AddListener(ShowBuyPanel);
+        if (sellButton != null) sellButton.onClick.AddListener(ShowSellPanel);
+        if (shopPanel != null) shopPanel.SetActive(false);
     }
 
     void Update()
     {
+        if (shopPanel == null) return;
+
         if (isPlayerInRange && Input.GetKeyDown(KeyCode.E))
         {
             bool isActive = !shopPanel.activeSelf;
             shopPanel.SetActive(isActive);
-
-            // ✨ 상점 창이 열릴 때, 기본적으로 '구매' 탭이 보이도록 수정
-            if (isActive)
-            {
-                ShowBuyPanel();
-            }
+            if (isActive) ShowBuyPanel();
+        }
+        if (shopPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+        {
+            shopPanel.SetActive(false);
         }
     }
 
     void ShowBuyPanel()
     {
+        isBuyMode = true;
         buyItemGrid.SetActive(true);
         sellItemGrid.SetActive(false);
-        UpdateShopUI(true); // '구매' 모드로 UI 업데이트
+        UpdateShopUI(true);
     }
 
     void ShowSellPanel()
     {
+        isBuyMode = false;
         buyItemGrid.SetActive(false);
         sellItemGrid.SetActive(true);
-        UpdateShopUI(false); // '판매' 모드로 UI 업데이트
+        UpdateShopUI(false);
+
+        if (dataManager != null)
+        {
+            MarketState m = dataManager.market;
+            string bonus = m.haggleBonus > 0f ? $"  |  Haggle bonus +{m.haggleBonus * 100f:0}%" : "";
+            HUD.Toast($"Today's demand: {m.demandItem} (+{MarketState.DemandBonus * 100f:0}%){bonus}", 4f);
+        }
     }
 
-    public void UpdateShopUI(bool isBuyMode)
+    public void UpdateShopUI(bool buyMode)
     {
-        Transform gridParent = isBuyMode ? buyItemGrid.transform : sellItemGrid.transform;
+        if (dataManager == null) dataManager = DataManager.instance;
+        Transform gridParent = buyMode ? buyItemGrid.transform : sellItemGrid.transform;
 
         foreach (Transform child in gridParent)
         {
             Destroy(child.gameObject);
         }
 
-        if (isBuyMode)
+        if (buyMode)
         {
             foreach (var item in itemsForSale)
             {
                 GameObject slotGO = Instantiate(shopSlotPrefab, gridParent);
                 ShopSlot slotScript = slotGO.GetComponent<ShopSlot>();
-                if (slotScript != null) slotScript.SetupForBuy(item.itemName, item.price, this);
+                if (slotScript != null) slotScript.SetupForBuy(ItemDB.Normalize(item.itemName), item.price, this);
             }
         }
-        else
+        else if (dataManager != null)
         {
-            foreach (var item in dataManager.inventory)
+            // 도구는 팔 수 없습니다. 목록을 복사해서 순회 (판매 중 인벤토리 변경 대비)
+            foreach (var item in dataManager.inventory.ToList())
             {
+                if (!ItemDB.CanSell(item.Key)) continue;
                 GameObject slotGO = Instantiate(shopSlotPrefab, gridParent);
                 ShopSlot slotScript = slotGO.GetComponent<ShopSlot>();
                 if (slotScript != null) slotScript.SetupForSell(item.Key, item.Value, this);
@@ -93,12 +111,17 @@ public class Shop : MonoBehaviour
         }
     }
 
+    public void RefreshCurrentTab()
+    {
+        UpdateShopUI(isBuyMode);
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
-            // ✨ 플레이어가 들어왔을 때 Debug.Log는 굳이 필요 없으므로 삭제 (선택 사항)
+            HUD.Toast("Press E to trade with the merchant.", 2.5f);
         }
     }
 
@@ -107,7 +130,7 @@ public class Shop : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = false;
-            shopPanel.SetActive(false);
+            if (shopPanel != null) shopPanel.SetActive(false);
         }
     }
 }

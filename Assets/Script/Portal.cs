@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class Portal : MonoBehaviour
@@ -11,24 +11,13 @@ public class Portal : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
-        {
-            // ✨ 1. 현재 씬이 "Farm"인지 확인합니다.
-            if (SceneManager.GetActiveScene().name == "Farm")
-            {
-                // ✨ 2. Farm 씬에 있는 CropManager를 찾습니다.
-                CropManager cropManager = FindObjectOfType<CropManager>();
-                if (cropManager != null)
-                {
-                    // ✨ 3. CropManager에게 저장을 명령합니다.
-                    cropManager.SaveCropData();
-                }
-            }
+        if (!other.CompareTag("Player")) return;
+        if (DataManager.instance != null && DataManager.instance.IsGameOver) return;
+        if (string.IsNullOrEmpty(destinationSceneName)) return;
 
-            // 4. 스폰 위치를 기록하고 씬을 이동합니다.
-            SceneData.nextPlayerPosition = destinationPosition;
-            SceneData.hasNextPlayerPosition = true;
-            SceneManager.LoadScene(destinationSceneName);
-        }
+        // 농장 데이터는 항상 DataManager에 있으므로 따로 저장할 필요가 없습니다.
+        SceneData.nextPlayerPosition = destinationPosition;
+        SceneData.hasNextPlayerPosition = true;
+        SceneManager.LoadScene(destinationSceneName);
     }
 }

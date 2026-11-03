@@ -1,7 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
+using System.Linq;
 
+// 제작 창. 버튼 또는 C키로 열고 닫습니다.
+// 씬에 연결된 레시피(allRecipes) + 코드로 추가되는 기본 레시피(요리, 도구 업그레이드)를 보여줍니다.
 public class CraftingManager : MonoBehaviour
 {
     public GameObject craftingPanel;
@@ -9,105 +13,155 @@ public class CraftingManager : MonoBehaviour
     public Transform recipeContentParent;
     public Recipe[] allRecipes;
 
+    [Tooltip("체크하면 코드에 정의된 기본 레시피(요리, 구리 물뿌리개)를 함께 보여줍니다.")]
+    public bool includeBuiltInRecipes = true;
+
     private DataManager dataManager;
+    private readonly List<Recipe> recipes = new List<Recipe>();
 
     void Start()
     {
-        dataManager = FindFirstObjectByType<DataManager>();
-        craftingPanel.SetActive(false);
-        //DisplayRecipes(); // Start에서 미리 호출할 필요는 없습니다.
+        dataManager = DataManager.instance;
+        if (craftingPanel != null) craftingPanel.SetActive(false);
+        BuildRecipeList();
     }
 
-    // 제작 창을 켜고 끄는 함수
-    public void ToggleCraftingWindow()
+    void Update()
     {
-        craftingPanel.SetActive(!craftingPanel.activeSelf);
+        if (Input.GetKeyDown(KeyCode.C)) ToggleCraftingWindow();
+        if (craftingPanel != null && craftingPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape)) craftingPanel.SetActive(false);
+    }
 
-        // 창을 열 때마다 레시피 목록을 새로고침해서 버튼 상태를 업데이트
-        if (craftingPanel.activeSelf)
+    void BuildRecipeList()
+    {
+        recipes.Clear();
+        if (allRecipes != null) recipes.AddRange(allRecipes.Where(r => r != null && r.resultItem != null));
+        if (!includeBuiltInRecipes) return;
+
+        foreach (Recipe recipe in CreateBuiltInRecipes())
         {
-            DisplayRecipes();
+            bool exists = recipes.Any(r => r.resultItem.itemName == recipe.resultItem.itemName);
+            if (!exists) recipes.Add(recipe);
         }
     }
 
-    // 모든 레시피를 UI에 표시하는 함수
+    static IEnumerable<Recipe> CreateBuiltInRecipes()
+    {
+        yield return Make("Copper Watering Can", 1, "", new ItemInfo("Watering Can", 1), new ItemInfo("Stone", 10), new ItemInfo("Wood", 5));
+        yield return Make("Roasted Carrot", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Wood", 1));
+        yield return Make("Baked Potato", 1, "Campfire", new ItemInfo("Potato", 1), new ItemInfo("Wood", 1));
+        yield return Make("Corn Soup", 1, "Campfire", new ItemInfo("Corn", 2));
+        yield return Make("Strawberry Jam", 1, "Campfire", new ItemInfo("Strawberry", 3));
+    }
+
+    static Recipe Make(string result, int count, string station, params ItemInfo[] required)
+    {
+        Recipe recipe = ScriptableObject.CreateInstance<Recipe>();
+        recipe.name = "Recipe_" + result;
+        recipe.resultItem = new ItemInfo(result, count);
+        recipe.requiredItems = required;
+        recipe.requiredStation = station;
+        return recipe;
+    }
+
+    // 제작 창을 켜고 끄는 함수 (씬의 Craft 버튼에 연결되어 있음)
+    public void ToggleCraftingWindow()
+    {
+        if (craftingPanel == null) return;
+        craftingPanel.SetActive(!craftingPanel.activeSelf);
+        if (craftingPanel.activeSelf) DisplayRecipes();
+    }
+
+    bool CanCraft(Recipe recipe, out string reason)
+    {
+        reason = "";
+        if (dataManager == null) dataManager = DataManager.instance;
+        if (dataManager == null) return false;
+
+        if (!string.IsNullOrEmpty(recipe.requiredStation) && !dataManager.HasItem(recipe.requiredStation))
+        {
+            reason = $"Needs a {recipe.requiredStation}.";
+            return false;
+        }
+        foreach (ItemInfo requiredItem in recipe.requiredItems)
+        {
+            if (!dataManager.HasItem(requiredItem.itemName, requiredItem.count))
+            {
+                reason = $"Not enough {requiredItem.itemName}.";
+                return false;
+            }
+        }
+        return true;
+    }
+
     void DisplayRecipes()
     {
-        // 기존에 있던 슬롯들은 모두 삭제
+        if (recipeContentParent == null || recipeSlotPrefab == null) return;
+
         foreach (Transform child in recipeContentParent)
         {
             Destroy(child.gameObject);
         }
 
-        // 모든 레시피를 순회하면서 슬롯을 하나씩 생성
-        foreach (Recipe recipe in allRecipes)
+        foreach (Recipe recipe in recipes)
         {
             GameObject slotGO = Instantiate(recipeSlotPrefab, recipeContentParent);
 
-            // 슬롯의 UI 요소들을 가져옴
-            Image itemIcon = slotGO.transform.Find("ItemIcon").GetComponent<Image>();
-            TextMeshProUGUI itemNameText = slotGO.transform.Find("ItemNameText").GetComponent<TextMeshProUGUI>();
-            TextMeshProUGUI requiredItemsText = slotGO.transform.Find("RequiredItemsText").GetComponent<TextMeshProUGUI>();
-            Button craftButton = slotGO.transform.Find("CraftButton").GetComponent<Button>();
+            Image itemIcon = FindChild<Image>(slotGO.transform, "ItemIcon");
+            TextMeshProUGUI itemNameText = FindChild<TextMeshProUGUI>(slotGO.transform, "ItemNameText");
+            TextMeshProUGUI requiredItemsText = FindChild<TextMeshProUGUI>(slotGO.transform, "RequiredItemsText");
+            Button craftButton = FindChild<Button>(slotGO.transform, "CraftButton");
 
-            // UI에 레시피 정보 표시
-            itemNameText.text = recipe.resultItem.itemName;
-            string requiredText = "";
-            foreach (ItemInfo item in recipe.requiredItems)
+            string resultName = recipe.resultItem.itemName;
+            if (itemIcon != null)
             {
-                requiredText += $"{item.itemName} x{item.count} ";
+                itemIcon.sprite = ItemAssets.SpriteFor(resultName);
+                itemIcon.preserveAspect = true;
             }
-            requiredItemsText.text = requiredText;
-
-            // --- 🔽 [디버깅] 버튼 활성화 로직 🔽 ---
-            bool canCraft = true;
-            foreach (ItemInfo requiredItem in recipe.requiredItems)
+            if (itemNameText != null)
             {
-                int ownedCount = dataManager.inventory.ContainsKey(requiredItem.itemName) ? dataManager.inventory[requiredItem.itemName] : 0;
-
-                // --- 🔽 여기가 진짜 디버깅 코드 위치입니다! 🔽 ---
-                Debug.Log($"레시피: {recipe.resultItem.itemName}, 확인 아이템: {requiredItem.itemName}, 필요: {requiredItem.count}, 보유: {ownedCount}");
-
-                if (ownedCount < requiredItem.count)
-                {
-                    canCraft = false;
-                    break;
-                }
+                itemNameText.text = recipe.resultItem.count > 1 ? $"{resultName} x{recipe.resultItem.count}" : resultName;
             }
-            craftButton.interactable = canCraft;
+            if (requiredItemsText != null)
+            {
+                string requiredText = string.Join(", ", recipe.requiredItems.Select(i => $"{i.itemName} x{i.count}"));
+                if (!string.IsNullOrEmpty(recipe.requiredStation)) requiredText += $"  [{recipe.requiredStation}]";
+                requiredItemsText.text = requiredText;
+            }
 
-            // 제작 버튼에 기능 연결
-            craftButton.onClick.AddListener(() => {
-                CraftItem(recipe);
-            });
+            if (craftButton != null)
+            {
+                craftButton.interactable = CanCraft(recipe, out _);
+                Recipe captured = recipe;
+                craftButton.onClick.AddListener(() => CraftItem(captured));
+            }
         }
     }
 
-    // 아이템을 제작하는 함수
     void CraftItem(Recipe recipe)
     {
-        // 1. 재료가 충분한지 확인 (버튼이 활성화되었다면 통과하지만, 안전을 위해 한번 더 체크)
-        foreach (ItemInfo requiredItem in recipe.requiredItems)
+        if (!CanCraft(recipe, out string reason))
         {
-            int ownedCount = dataManager.inventory.ContainsKey(requiredItem.itemName) ? dataManager.inventory[requiredItem.itemName] : 0;
-            if (ownedCount < requiredItem.count)
-            {
-                Debug.Log(requiredItem.itemName + " 재료가 부족합니다! (CraftItem 함수)");
-                return;
-            }
+            HUD.Toast(reason);
+            return;
         }
 
-        // 2. 재료 소모
         foreach (ItemInfo requiredItem in recipe.requiredItems)
         {
             dataManager.RemoveItem(requiredItem.itemName, requiredItem.count);
         }
-
-        // 3. 결과물 아이템 추가
         dataManager.AddItem(recipe.resultItem.itemName, recipe.resultItem.count);
 
-        // 제작 성공 후 목록 새로고침
+        // 물뿌리개를 업그레이드하면 물을 가득 채워 줍니다.
+        if (ItemDB.GetToolType(recipe.resultItem.itemName) == ToolType.WateringCan) dataManager.RefillWater();
+
         DisplayRecipes();
-        Debug.Log(recipe.resultItem.itemName + " 제작 성공!");
+        HUD.Toast($"Crafted {recipe.resultItem.itemName}!");
+    }
+
+    static T FindChild<T>(Transform parent, string name) where T : Component
+    {
+        Transform child = parent.Find(name);
+        return child != null ? child.GetComponent<T>() : null;
     }
 }

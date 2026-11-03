@@ -3,6 +3,9 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.EventSystems;
 
+// 플레이어 입력 → 행동
+//  - 왼쪽 클릭: 들고 있는 도구/씨앗/정수 사용 (다 자란 작물은 손으로 수확)
+//  - 오른쪽 클릭 또는 F: 들고 있는 음식 먹기
 public class PlayerAction : MonoBehaviour
 {
     public static PlayerAction instance;
@@ -14,8 +17,11 @@ public class PlayerAction : MonoBehaviour
     public GameObject sproutPrefab;
     public LayerMask cropLayer;
 
+    [Header("상호작용")]
+    [Tooltip("플레이어로부터 이 거리(월드 단위) 안의 칸만 작업할 수 있습니다.")]
+    public float reach = 3.5f;
+
     private DataManager dataManager;
-    private Hotbar hotbar;
 
     void Awake()
     {
@@ -31,20 +37,13 @@ public class PlayerAction : MonoBehaviour
 
     private void OnDestroy()
     {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
+        if (instance == this) SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         GameObject gridObject = GameObject.Find("Grid");
-        if (gridObject != null)
-        {
-            groundTilemap = gridObject.GetComponentInChildren<Tilemap>();
-        }
-        else
-        {
-            groundTilemap = null;
-        }
+        groundTilemap = gridObject != null ? gridObject.GetComponentInChildren<Tilemap>() : null;
 
         if (SceneData.hasNextPlayerPosition)
         {
@@ -56,90 +55,100 @@ public class PlayerAction : MonoBehaviour
     void Start()
     {
         dataManager = DataManager.instance;
-        hotbar = FindObjectOfType<Hotbar>();
     }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (dataManager == null) dataManager = DataManager.instance;
+        if (dataManager == null || dataManager.IsGameOver || Time.timeScale == 0f) return;
+
+        bool use = Input.GetMouseButtonDown(0);
+        bool eat = Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.F);
+        if (!use && !eat) return;
+        if ((use || Input.GetMouseButtonDown(1)) && IsPointerOverUI()) return;
+
+        string selected = Hotbar.SelectedItem;
+
+        if (eat)
         {
-            if (EventSystem.current.IsPointerOverGameObject()) return;
-
-            Camera cam = Camera.main;
-            if (cam == null) cam = FindObjectOfType<Camera>();
-            if (cam == null) return;
-
-            Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Input.mousePosition);
-            RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero, 0f, cropLayer);
-
-            if (hit.collider != null)
-            {
-                Crop crop = hit.collider.GetComponent<Crop>();
-                if (crop != null)
-                {
-                    if (crop.IsHarvestable()) TryToHarvest(hit.collider.gameObject);
-                    else TryToWater(crop);
-                }
-            }
-            else
-            {
-                if (groundTilemap != null)
-                {
-                    Vector3Int cellPos = groundTilemap.WorldToCell(mouseWorldPos);
-                    TileBase currentTile = groundTilemap.GetTile(cellPos);
-
-                    if (currentTile == dirtTile) TryToTill(cellPos);
-                    else if (currentTile == tilledDirtTile) TryToPlant(cellPos);
-                }
-            }
+            TryEat(selected);
+            return;
         }
+        UseOnWorld(selected);
     }
 
-    void TryToWater(Crop crop)
+    static bool IsPointerOverUI()
     {
-        string selectedItem = hotbar?.GetSelectedItemName();
-        if (selectedItem != "Watering Can") return;
-        if (crop.IsWatered()) return;
-        if (dataManager.UseEnergy(3f))
-        {
-            crop.Water();
-            groundTilemap.SetTile(groundTilemap.WorldToCell(crop.transform.position), tilledWetDirtTile);
-        }
+        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
     }
 
-    void TryToHarvest(GameObject cropObject)
+    void TryEat(string selected)
     {
-        string selectedItem = hotbar?.GetSelectedItemName();
-        if (selectedItem != "Scythe") return;
-        if (dataManager.UseEnergy(4f))
+        if (string.IsNullOrEmpty(selected)) return;
+        if (!ItemDB.IsEdible(selected))
         {
-            dataManager.AddItem("Carrot", 1);
-            Destroy(cropObject);
+            HUD.Toast($"You can't eat {selected}.");
+            return;
         }
+        dataManager.Eat(selected);
     }
 
-    void TryToTill(Vector3Int cellPos)
+    void UseOnWorld(string selected)
     {
-        string selectedItem = hotbar?.GetSelectedItemName();
-        if (selectedItem != "Hoe") return;
-        if (dataManager.UseEnergy(5f))
+        CropManager farm = CropManager.Instance;
+        if (farm == null || !farm.IsReady) return; // 밭이 있는 씬(Farm)에서만
+
+        Camera cam = Camera.main;
+        if (cam == null) cam = FindFirstObjectByType<Camera>();
+        if (cam == null) return;
+
+        Vector3 mouseWorld = cam.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorld.z = 0f;
+        Vector3Int cell = farm.WorldToCell(mouseWorld);
+
+        Vector2 cellCenter = farm.GetCellCenter(cell);
+        if (Vector2.Distance(transform.position, cellCenter) > reach)
         {
-            groundTilemap.SetTile(cellPos, tilledDirtTile);
+            HUD.Toast("That's too far away. Walk closer.", 1.5f);
+            return;
         }
-    }
 
-    void TryToPlant(Vector3Int cellPos)
-    {
-        string selectedItem = hotbar?.GetSelectedItemName();
-        if (string.IsNullOrEmpty(selectedItem) || !selectedItem.Contains("Seed")) return;
+        ItemDef def = ItemDB.Get(selected);
+        ToolType tool = def != null ? def.toolType : ToolType.None;
 
-        Vector3 plantPosition = groundTilemap.GetCellCenterWorld(cellPos);
-        if (Physics2D.OverlapCircle(plantPosition, 0.1f, cropLayer)) return;
-
-        if (dataManager.UseEnergy(2f))
+        // 낫: 주변 3x3 수확
+        if (tool == ToolType.Scythe)
         {
-            dataManager.RemoveItem(selectedItem, 1);
-            Instantiate(sproutPrefab, plantPosition, Quaternion.identity);
+            farm.TryScythe(cell);
+            return;
+        }
+
+        // 다 자란 작물은 무엇을 들고 있든 손으로 수확
+        CropData crop = dataManager.farm.GetCrop(cell.x, cell.y);
+        if (crop != null && crop.IsMature)
+        {
+            farm.TryHarvest(cell);
+            return;
+        }
+
+        if (def == null) return;
+
+        switch (def.category)
+        {
+            case ItemCategory.Tool:
+                if (tool == ToolType.Hoe) farm.TryTill(cell, def.toolTier);
+                else if (tool == ToolType.WateringCan) farm.TryWater(cell, def.toolTier);
+                break;
+            case ItemCategory.Seed:
+                farm.TryPlant(cell, def.name);
+                break;
+            case ItemCategory.Special:
+                farm.TryUseEssence(cell, def.name);
+                break;
+            case ItemCategory.Food:
+            case ItemCategory.Crop:
+                HUD.Toast("Right-click or press F to eat.", 2f);
+                break;
         }
     }
 }
