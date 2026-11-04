@@ -433,7 +433,23 @@ def soil_rim(bg, field, season):
 # ======================================================================
 # Farm
 # ======================================================================
-def farm(season='spring', bg=None, east=9.2, extra_paths=()):
+def gray_canvas(c, darker=0.86):
+    """The same per-colour gray mapping as the gray forest/lake (keeps a limited palette)."""
+    cache = {}
+    for y in range(c.h):
+        for x in range(c.w):
+            p = c.px[y][x]
+            if p is None:
+                continue
+            if p not in cache:
+                r, g, b, a = p
+                lum = (0.3 * r + 0.59 * g + 0.11 * b) * darker
+                cache[p] = (int(lum * 0.94 + r * 0.06), int(lum * 0.95 + g * 0.05), int(min(255, lum + 8)), a)
+            c.px[y][x] = cache[p]
+    return c
+
+
+def farm(season='spring', bg=None, east=9.2, extra_paths=(), gray_home=False):
     """The home farm. Alone it is one screen (the old background: 17.92 x 10.24 around (-0.03, -0.03)).
     farmmap.py passes a bigger BG and `east` to stretch the road and the hedge across the expanded map."""
     big = bg is not None
@@ -500,7 +516,14 @@ def farm(season='spring', bg=None, east=9.2, extra_paths=()):
     bg.prop(fence_v(bot[1] - top[1]), x=top[0], y=bot[1])
 
     # --- home ---
-    bg.prop(cottage(SNOW if season == 'winter' else None), wx=-7.75, wy=-3.85)
+    house = cottage(SNOW if season == 'winter' else None)
+    if gray_home:
+        # ending A: your own house stays gray until the very end (the game draws a colour one over it then)
+        if season == 'winter':
+            snow_cap(house)
+            house.nosnow = True
+        gray_canvas(house)
+    bg.prop(house, wx=-7.75, wy=-3.85)
     bg.prop(mailbox(), wx=-6.25, wy=-3.85)
     bg.prop(log_pile(), wx=-9.0, wy=-2.05)
 

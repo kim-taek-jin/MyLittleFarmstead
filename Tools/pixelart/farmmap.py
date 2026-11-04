@@ -157,6 +157,14 @@ DEBRIS = {
 SEASON_WEEDS = {'summer': SUMMER, 'autumn': AUTUMN_GRASS, 'winter': ramp('#4e4a34', '#7a7454', '#a49c74', '#cfc8a2')}
 
 
+def cottage_color(season):
+    """The cottage in colour, drawn over the gray one after the ending."""
+    c = B.cottage(SNOW if season == 'winter' else None)
+    if season == 'winter':
+        snow_cap(c)
+    return c
+
+
 def debris_variants():
     """Seasonal looks of the debris (spring is the default sprite)."""
     out = {}
@@ -181,7 +189,7 @@ def farmmap(season='spring'):
         (0.35, OY - H - 0.2, 1.55, -5.2),        # south lane to the old railway
         (-9.2, -9.8, 1.0, -8.45),                # west lane to the forest
     ]
-    B.farm(season, bg=bg, east=OX + W + 0.2, extra_paths=lanes)
+    B.farm(season, bg=bg, east=OX + W + 0.2, extra_paths=lanes, gray_home=True)
     ground = season_ground(season)
 
     # a few calm patches of the second grass colour in the new areas

@@ -37,6 +37,9 @@ public static class SpiritDB
         { "Glassfish", new[] { 0, 0, 4, 0 } },
         { "Wild Raspberry", new[] { 0, 0, 0, 1 } },
         { "Watercress", new[] { 0, 0, 1, 0 } },
+        { "Pear", new[] { 0, 0, 1, 1 } },
+        { "Persimmon", new[] { 1, 0, 0, 1 } },
+        { "Dried Persimmon", new[] { 2, 1, 0, 2 } },
     };
 
     public static bool CanEat(string item) => !string.IsNullOrEmpty(item) && food.ContainsKey(item);

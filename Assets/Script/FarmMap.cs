@@ -36,6 +36,7 @@ public static class FarmMap
             // 예전 저장 파일: 이미 그 계절이면 열어 둠
             ForestArea.CheckOpen(DataManager.instance);
             LakeArea.CheckOpen(DataManager.instance);
+            HillArea.CheckOpen(DataManager.instance);
         }
         LayDirt(map);
         SpawnDebris(map, scene, mat);
@@ -49,6 +50,11 @@ public static class FarmMap
         if (forest != null && follow != null) follow.AddRegion(ForestArea.Map.Bounds);
         LakeArea lake = LakeArea.Build(scene, mat);
         if (lake != null && follow != null) follow.AddRegion(LakeArea.Map.Bounds);
+        HillArea hill = HillArea.Build(scene, mat);
+        if (hill != null && follow != null) follow.AddRegion(HillArea.Map.Bounds);
+
+        // 엔딩 뒤: 회색이던 오두막에 색 (배경의 회색 오두막 위에 컬러 오두막을 겹침)
+        if (StoryEvents.EndingSeen) PlaceColorCottage(scene, mat);
     }
 
     // ---------------------------------------------------------------- 바닥 그림
@@ -202,11 +208,29 @@ public static class FarmMap
     }
 
     // 같은 씬 안에 만드는 지역들 (출구 이름 → 맵, 열렸는지)
-    static MapData RegionMap(string to) => to == "Forest" ? ForestArea.Map : to == "Lake" ? LakeArea.Map : null;
-    static bool RegionOpen(string to) => to == "Forest" ? ForestArea.IsOpen : to == "Lake" && LakeArea.IsOpen;
-    static string ArriveLine(string to) => to == "Lake"
-        ? "The reeds rustle as you pass. The air smells of water."
+    static MapData RegionMap(string to) => to == "Forest" ? ForestArea.Map : to == "Lake" ? LakeArea.Map : to == "Hill" ? HillArea.Map : null;
+    static bool RegionOpen(string to) => to == "Forest" ? ForestArea.IsOpen : to == "Lake" ? LakeArea.IsOpen : to == "Hill" && HillArea.IsOpen;
+    static string ArriveLine(string to) => to == "Lake" ? "The reeds rustle as you pass. The air smells of water."
+        : to == "Hill" ? "Leaves crunch underfoot. The path climbs toward the sunset."
         : "The air turns cool and green. You step into the forest.";
+
+    public static readonly Vector2 CottageBase = new Vector2(-7.75f, -3.85f);
+
+    static void PlaceColorCottage(Scene scene, Material mat)
+    {
+        Sprite sprite = PixelArtWorld.SeasonalSprite("cottage_color");
+        if (sprite == null) return;
+        var go = new GameObject("CottageColor");
+        SceneManager.MoveGameObjectToScene(go, scene);
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        if (mat != null) sr.sharedMaterial = mat;
+        sr.sortingOrder = -49;
+        float s = PixelArt.PixelsPerUnit / sprite.pixelsPerUnit;
+        go.transform.localScale = new Vector3(s, s, 1f);
+        go.transform.position = new Vector3(CottageBase.x, CottageBase.y + sprite.rect.height / sprite.pixelsPerUnit * s * 0.5f, 0f);
+        go.AddComponent<SeasonalArt>().baseKey = "cottage_color";
+    }
 
     // 다른 씬에서 농장으로 오는 포털의 도착 위치
     static void PatchArrivals(Scene scene, MapData map)

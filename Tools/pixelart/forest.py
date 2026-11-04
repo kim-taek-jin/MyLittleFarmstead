@@ -173,8 +173,10 @@ def log():
     return c
 
 
-def flower_arch():
+def flower_arch(leaf=None, blossoms=None):
     """The gray thorns of the forest lane, bloomed into an arch once spring comes."""
+    leaf = leaf or P['leaf']
+    blossoms = blossoms or (BLOSSOM, P['white'], P['sun'])
     c = Canvas(56, 52)
     c.shadow(28, 49, 25, 3)
     for (x0, y0, x1, y1) in [(6, 50, 6, 18), (50, 50, 50, 18)]:
@@ -186,9 +188,9 @@ def flower_arch():
     for k in range(40):
         x = [5, 7, 51, 49][k % 4] + (k % 3) - 1 if k < 20 else 8 + (k * 11) % 40
         y = 46 - (k * 7) % 32 if k < 20 else 6 + (k * 5) % 12
-        c.ellipse(x, y, 2.5, 2, P['leaf'])
+        c.ellipse(x, y, 2.5, 2, leaf)
         if k % 2 == 0:
-            col = [BLOSSOM, P['white'], P['sun']][k % 3]
+            col = blossoms[k % 3]
             c.set(x, y - 1, col[3]); c.set(x + 1, y - 1, col[2])
     c.outline()
     return c

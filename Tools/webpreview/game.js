@@ -79,6 +79,10 @@ reg('Moonfin', 'Fish', { sell: 110 });
 reg('Glassfish', 'Fish', { sell: 240 });
 reg('Wild Raspberry', 'Food', { sell: 30, hunger: 5, thirst: 3, heart: 1 });
 reg('Watercress', 'Food', { sell: 25, hunger: 6, thirst: 4 });
+// Sunset Hill (map stage 4-2)
+reg('Pear', 'Food', { sell: 70, hunger: 12, thirst: 8 });
+reg('Persimmon', 'Food', { sell: 60, hunger: 12, desc: 'Hang it on the drying rack on Sunset Hill to make dried persimmons.' });
+reg('Dried Persimmon', 'Food', { sell: 260, hunger: 18, heart: 3, desc: 'Chewy and sweet, dried slowly in the autumn wind.' });
 const iconKey = n => 'Items/' + n.toLowerCase().replace(/'/g, '').replace(/ /g, '_');
 const edible = n => { const d = ITEMS[n]; return d && d.cat !== 'Tool' && d.cat !== 'Seed' && (d.hunger > 0 || d.thirst > 0 || d.heart > 0); };
 const canSell = n => { const d = ITEMS[n]; return d && d.cat !== 'Tool' && d.sell > 0; };
@@ -156,6 +160,7 @@ const SPIRIT_FOOD = {
   'Strawberry Jam': [0, 0, 0, 3], 'Carrot Cake': [0, 1, 0, 2], 'Pumpkin Pie': [0, 1, 0, 2], 'Star Fragment': [1, 1, 1, 1],
   'Wild Garlic': [0, 0, 0, 1], 'Fern Sprout': [0, 1, 0, 0], Morel: [0, 2, 0, 0], 'Spring Greens': [0, 1, 0, 1], 'Morel Soup': [0, 2, 1, 0],
   Bluegill: [0, 0, 2, 0], Moonfin: [0, 0, 3, 0], Glassfish: [0, 0, 4, 0], 'Wild Raspberry': [0, 0, 0, 1], Watercress: [0, 0, 1, 0],
+  Pear: [0, 0, 1, 1], Persimmon: [1, 0, 0, 1], 'Dried Persimmon': [2, 1, 0, 2],
 };
 const COLORS = ['sun', 'earth', 'water', 'bloom'];
 const FORM_NAMES = { spirit_gray: 'Gray Wisp', spirit_prism: 'Prism Spirit', spirit_sun_young: 'Sunny Sprite', spirit_sun_grown: 'Sun Spirit', spirit_earth_young: 'Sprout Sprite', spirit_earth_grown: 'Grove Spirit', spirit_water_young: 'Droplet Sprite', spirit_water_grown: 'River Spirit', spirit_bloom_young: 'Petal Sprite', spirit_bloom_grown: 'Blossom Spirit' };
@@ -216,6 +221,17 @@ const LAKE_THRESH = [10, 25, 45], LAKE_ZONES = ['west cove', 'middle of the lake
 const FISH_POINTS = { Minnow: 1, Carp: 2, Bluegill: 2, Moonfin: 3, Glassfish: 4, 'Golden Koi': 5 };
 const RELEASABLE = ['Minnow', 'Carp', 'Bluegill', 'Moonfin', 'Glassfish'];   // the Golden Koi stays with you
 const lakeBlocked = (cx, cy) => '#~RWB'.includes(lakeAt(cx, cy));
+// Sunset Hill (Assets/Resources/Maps/hill.json): opens in autumn; old fruit trees, a drying rack, the overlook
+const HILL = /*__HILL__*/null;
+const HILB = boundsOf(HILL);
+const hillAt = (cx, cy) => { const c = cx - HILL.originX, r = HILL.originY - 1 - cy; return r >= 0 && r < HILL.height && c >= 0 && c < HILL.width ? HILL.rows[r][c] : '#'; };
+const HCELLS = [];
+HILL.rows.forEach((row, r) => [...row].forEach((ch, c) => HCELLS.push([HILL.originX + c, HILL.originY - 1 - r, ch])));
+const HTREES = HCELLS.filter(([, , ch]) => 'APK'.includes(ch)).slice(0, 6);            // [x, y, kind] in map order
+const HRACK = HCELLS.filter(([, , ch]) => ch === 'D').map(([x, y]) => [x + 0.5, y + 0.5])[0];
+const HBENCH = (() => { const v = HCELLS.filter(([, , ch]) => ch === 'V'); return [(Math.min(...v.map(c => c[0])) + Math.max(...v.map(c => c[0])) + 1) / 2, v[0][1] + 0.5]; })();
+const hillBlocked = (cx, cy) => '#CAPKDRB'.includes(hillAt(cx, cy));
+const FRUIT = { A: 'Apple', P: 'Pear', K: 'Persimmon' }, KIND = { A: 'apple', P: 'pear', K: 'persimmon' };
 const forestBlocked = (cx, cy) => { const ch = forestAt(cx, cy); return '#~wOB'.includes(ch) || (ch === 'L' && !debrisCleared(cx, cy)); };
 const mapAt = (cx, cy) => { const c = cx - MAP.originX, r = MAP.originY - 1 - cy; return r >= 0 && r < MAP.height && c >= 0 && c < MAP.width ? MAP.rows[r][c] : ' '; };
 const MAPCELLS = [];  // [cellX, cellY, glyph]
@@ -230,7 +246,8 @@ const SCENES = {
   farm: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_farmmap_' + seasonKey(), outdoor: true, map: true, bounds: () => MAPB },
   forest: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_forest_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => FORB },
   lake: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_lake_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => LAKB },
-  home: { ww: 18.43, wh: 10.24, cx: 0, cy: -0.027, bg: () => 'World/bg_home' },
+  sunset: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_hill_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => HILB },
+  home: { ww: 18.43, wh: 10.24, cx: 0, cy: -0.027, bg: () => unlocked('ending_seen') ? 'World/bg_home' : 'World/bg_home_gray' },   // ending A: gray until the end
   market: { ww: 18.28, wh: 10.24, cx: 0.09, cy: -0.08, bg: () => 'World/bg_market_' + seasonKey(), outdoor: true },
   haggle: { ww: 17.95, wh: 10.04, cx: -0.035, cy: -0.079, bg: () => 'World/bg_minigame' },
   hill: { ww: 17.92, wh: 10.24, cx: 0, cy: 0, bg: () => 'World/bg_starhill' },
@@ -247,6 +264,7 @@ const LADDER = [8.25, 2.9];
 
 // ------------------------------------------------------------------ state
 let G;  // game state
+function newHill() { return { open: false, tree: [0, 0, 0, 0, 0, 0], fruitDay: [-1, -1, -1, -1, -1, -1], drying: [], restDay: -1 }; }
 function newLake() { return { open: false, clarity: 0, released: 0, restDay: -1, forageDay: -1, forage: [] }; }
 function newForest() { return { open: false, sapling: [-1, -1, -1], watered: [false, false, false], treeAwake: false, forageDay: -1, forage: [], restDay: -1 }; }
 function newGame() {
@@ -261,7 +279,7 @@ function newGame() {
     story: { season: 0, highest: 0, unlocks: [], photos: [], villagers: {}, kindness: 0, shareDay: -1, sharedToday: 0, donationDay: -1,
       fish: {}, starsDay: -1, starsTonight: 0, starsTotal: 0, benchDay: -1,
       spirit: { found: false, xp: 0, pts: [0, 0, 0, 0], forms: [] },
-      forest: newForest(), lake: newLake() },
+      forest: newForest(), lake: newLake(), hill: newHill() },
     selected: 'Hoe', warnedH: false, warnedT: false, milestones: [],
   };
   G.energy = maxEnergy();
@@ -463,11 +481,14 @@ function harvestCell(x, y) {
   if (def.harvest === 'Sunflower') changeHeart(2 * n, 'The sunflower makes you smile.');
 }
 function worldClick(wx, wy) {
-  if (G.scene !== 'farm' && G.scene !== 'forest') return;
+  if (G.scene !== 'farm' && G.scene !== 'forest' && G.scene !== 'sunset') return;
   const cx = Math.floor(wx), cy = Math.floor(wy);
   if (Math.hypot(G.px - (cx + 0.5), G.py - (cy + 0.5)) > 3.5) { toast("That's too far away. Walk closer.", 1.5); return; }
   const item = selectedItem(); const d = ITEMS[item] || {};
   const spot = G.scene === 'forest' ? FSPOTS.findIndex(([x, y]) => x === cx && y === cy) : -1;
+  const tree = G.scene === 'sunset' ? HTREES.findIndex(([x, y]) => x === cx && y === cy) : -1;
+  if (tree >= 0) { useTree(tree, item, d); return; }
+  if (G.scene === 'sunset') return;
   if (spot >= 0) { useSpot(spot, item, d); return; }
   if (item === 'Acorn') { toast('Acorns want to grow in a forest clearing. Look for the ring of pebbles.'); return; }
   const deb = debrisAt(cx, cy); if (deb) { hitDebris(cx, cy, deb, d); return; }
@@ -506,7 +527,11 @@ function worldClick(wx, wy) {
 // ------------------------------------------------------------------ forest (map stage 3)
 const F = () => S().forest;
 // regions built next to the farm (the exit name on the farm map -> its map and whether it's open)
-const REGIONS = { Forest: { map: FOREST, open: () => F().open }, Lake: { map: LAKE, open: () => Lk().open } };
+const REGIONS = {
+  Forest: { map: FOREST, open: () => F().open, scene: 'forest', line: 'The air turns cool and green. You step into the forest.' },
+  Lake: { map: LAKE, open: () => Lk().open, scene: 'lake', line: 'The reeds rustle as you pass. The air smells of water.' },
+  Hill: { map: HILL, open: () => Hl().open, scene: 'sunset', line: 'Leaves crunch underfoot. The path climbs toward the sunset.' },
+};
 const areaOpen = to => !!REGIONS[to] && REGIONS[to].open();
 const forestRestored = () => F().sapling.filter(s => s >= 3).length;
 function forestCheckOpen() { if (F().open || S().season < 1) return false; F().open = true; unlock('forest_open'); return true; }
@@ -577,6 +602,58 @@ function releaseFish() {
     for (let z = before; z < lakeZones(); z++) changeHeart(3, `The ${LAKE_ZONES[z]} runs clear and blue again.`);
     if (!wasClear && lakeClear()) { changeHeart(5, 'The whole lake is clear.'); showAnnounce('[#8fd0ff]The lake is clear[/]\n\nYou can see the pebbles on the bottom.\nWhen night falls, fireflies come out over the water.', 6); }
   }, null, 'Let them go', 'Keep them');
+}
+
+// ------------------------------------------------------------------ Sunset Hill (map stage 4-2)
+const Hl = () => S().hill;
+const hillRevived = () => Hl().tree.filter(t => t >= 2).length;
+function hillCheckOpen() { if (Hl().open || S().season < 3) return false; Hl().open = true; unlock('hill_open'); return true; }
+const hasFruit = i => Hl().tree[i] >= 2 && S().season !== 0 && Hl().fruitDay[i] >= 0 && G.day >= Hl().fruitDay[i];
+function useTree(i, item, d) {
+  const h = Hl(), [, , k] = HTREES[i], kind = KIND[k];
+  if (h.tree[i] === 0) {
+    if (d.tool !== 'scythe') { toast(`An old ${kind} tree, gray and tangled. Prune it with a scythe first.`); return; }
+    if (!useEnergy(4)) return; h.tree[i] = 1; toast(`You cut back the dead branches. The ${kind} tree looks lighter. (It needs Earth's Breath now.)`, 3.5); return;
+  }
+  if (h.tree[i] === 1) {
+    if (item !== "Earth's Breath") { toast(`The pruned ${kind} tree is waiting. Give it Earth's Breath to wake it up.`); return; }
+    remove("Earth's Breath"); h.tree[i] = 2; h.fruitDay[i] = G.day + 3; changeHeart(2, `The old ${kind} tree woke up. Color spreads around it.`);
+    if (hillRevived() === 6) { changeHeart(5, 'The whole orchard is alive again.'); showAnnounce('[#ffb070]The orchard is alive again[/]\n\nApples, pears and persimmons, all in color.\nThe hill glows in the evening light.', 6); }
+    return;
+  }
+  if (hasFruit(i)) { h.fruitDay[i] = G.day + 3; add(FRUIT[k], 2); toast(`You picked 2 ${FRUIT[k]}.` + (k === 'K' ? ' (Hang them on the drying rack!)' : '')); }
+  else toast(S().season === 0 ? "It's resting through the cold. No fruit in winter." : `No fruit yet. Come back in ${Math.max(1, h.fruitDay[i] - G.day)} day(s).`);
+}
+function useRack() {
+  const h = Hl(); const ready = h.drying.filter(d => G.day >= d).length; h.drying = h.drying.filter(d => G.day < d);
+  if (ready) add('Dried Persimmon', ready);
+  const hang = Math.min(G.inv.Persimmon || 0, 8 - h.drying.length);
+  for (let k = 0; k < hang; k++) h.drying.push(G.day + 3);
+  if (hang) remove('Persimmon', hang);
+  toast(ready && hang ? `You took down ${ready} Dried Persimmon and hung up ${hang} more.` : ready ? `You took down ${ready} Dried Persimmon. Chewy and sweet!` :
+    hang ? `You hung up ${hang} persimmon(s). They'll be dried in 3 days.` : h.drying.length ? `The persimmons are still drying. (${h.drying.length} on the rack)` : 'A drying rack. Hang persimmons here and wait a few days.');
+}
+const fieldCleared = () => MAPCELLS.filter(([x, y, ch]) => isDebris(ch) && debrisCleared(x, y)).length / DEBRIS_TOTAL;
+const allVillagers = () => VILLAGERS.every(v => villagerProgress(v.id).wish >= 3);
+function panoramaLayers() {
+  const s = S(), farm = fieldCleared() >= 0.75, forest = s.forest.treeAwake, lake = lakeClear(), village = allVillagers(), home = unlocked('ending_seen'), orchard = hillRevived() === 6;
+  const L = ['pano_base'];
+  if (farm && forest && lake && village && home && orchard) L.push('pano_land', 'pano_mountains');
+  if (forest) L.push('pano_forest'); if (lake) L.push('pano_lake'); if (village) L.push('pano_village');
+  if (farm) L.push('pano_farm'); if (home) L.push('pano_home'); if (orchard) L.push('pano_orchard');
+  const mark = (ok, n) => ok ? `[#ffd84a]${n}[/]` : `[#8a8a92]${n}[/]`;
+  return [L, [mark(farm, 'The old field'), mark(forest, 'The forest'), mark(lake, 'The lake'), mark(village, 'The village'), mark(orchard, 'The orchard'), mark(home, 'Home')].join('   ')];
+}
+// ending A: the last color is yours. When every villager has their colors back and Heart is 90+, the ending starts at home.
+const endingReady = () => !unlocked('ending_seen') && allVillagers() && G.heart >= 90;
+function startHomeEnding() {
+  say('', ['Morning light slips through the window. On the table: one more letter from the city.',
+    '"Your old desk is still empty. Come back. We\'ll pay double."',
+    'You look around the little house. Everything outside has its colors back. Only these walls are still gray.'], null, () =>
+    ask('A letter from the city', 'Write back?', null, () => {
+      unlock('ending_seen'); unlock('chose_village'); changeHeart(5);
+      showAnnounce('[#ffb6d0]The last color was yours[/]\n\nThe walls warm up. The curtains blush. The kettle shines.\nThe gray was never the city\'s. It was yours, and now it\'s gone.\n\n[#ff8fb1]Thank you for playing.[/]  Life in the village goes on.', 20); save();
+    }, () => toast('You fold the letter away. Maybe tomorrow.'), '"I\'m staying. This is home now."', 'Not yet'));
 }
 
 // ------------------------------------------------------------------ spirit
@@ -680,6 +757,7 @@ function endDay(passedOut) {
   let fHead = fHead0;
   if (lakeCheckOpen()) fHead = (fHead ? fHead + '\n' : '') + '[#8fd0ff]The gray reeds south-east of the farm turned green and parted.[/]\nA path leads down to the lake.';
   if (Lk().open) rollLakeForage();
+  if (hillCheckOpen()) fHead = (fHead ? fHead + '\n' : '') + '[#ffb070]The thorns on the south lane turned into an arch of autumn leaves.[/]\nA path climbs up to Sunset Hill.';
   if (fDelta) { delta += fDelta; changeHeart(fDelta); }
   if (fHead) header += '\n' + fHead;
   if (G.raining) report('rain_morning');
@@ -749,6 +827,14 @@ function gather(ob) {
 // ------------------------------------------------------------------ interaction (E)
 function near(x, y, r) { return Math.hypot(G.px - x, G.py - y) <= r; }
 function interact() {
+  if (G.scene === 'sunset') {
+    if (near(HRACK[0], HRACK[1], 1.5)) { useRack(); return; }
+    if (near(HBENCH[0], HBENCH[1], 1.6)) {
+      const [layers, caption] = panoramaLayers(); panel = { kind: 'view', layers, caption };
+      if (Hl().restDay !== G.day) { Hl().restDay = G.day; changeHeart(2, 'You sat on the hill and watched the sun go down over the valley.'); }
+    }
+    return;
+  }
   if (G.scene === 'lake') {
     const spot = LFISH.find(([x, y]) => near(x, y, 1.3)); if (spot || (fishing && fishing.lake)) { fish(spot || fishing.at, true); return; }
     if (near(LSTEPS[0], LSTEPS[1], 1.3)) { releaseFish(); return; }
@@ -872,10 +958,19 @@ function drawPanel() {
     if (sp.found) L.push(`\n[#ff9fc4]Spirit[/]  ${FORM_NAMES[spiritForm(sp)]}   [#ffd84a]Sun ${sp.pts[0]}[/]  [#9dff9d]Earth ${sp.pts[1]}[/]  [#8fd0ff]Water ${sp.pts[2]}[/]  [#ff9fc4]Bloom ${sp.pts[3]}[/]   forms ${sp.forms.length}/10`);
     L.push(`\n[#ffb6d0]Kindness[/] ${s.kindness}/60  ` + (unlocked('starhill') ? `Star Hill open on clear nights. Stars caught: ${s.starsTotal}` : `(sharing box today ${S().shareDay === G.day ? S().sharedToday : 0}/5)`));
     if (s.forest.open) L.push(`[#9dff9d]Forest[/]  clearings restored ${forestRestored()}/3   ${s.forest.treeAwake ? 'The old tree is awake.' : 'The old tree is asleep.'}`);
+    if (s.hill.open) L.push(`[#ffb070]Sunset Hill[/]  orchard trees revived ${hillRevived()}/6   on the drying rack: ${s.hill.drying.length}`);
     if (s.lake.open) L.push(`[#8fd0ff]Lake[/]  clear parts ${lakeZones()}/3   fish released ${s.lake.released}` + (lakeClear() ? '   Fireflies come out at night.' : `   ${LAKE_THRESH.find(t => s.lake.clarity < t) - s.lake.clarity} more to clear the next part`));
     L.push(`\n[#8fb8ff]Fish caught[/]  ` + ['Minnow', 'Carp', 'Golden Koi', 'Bluegill', 'Moonfin', 'Glassfish'].map(f => s.fish[f] ? `${f} x${s.fish[f]}` : '???').join('   '));
     drawRich(L.join('\n'), x + 30, y + 24, 20, 840);
     drawRich('[J] or [Esc] Close', x + w - 24, y + h - 40, 18, 400, 'right', '#c8c0b0');
+  } else if (panel.kind === 'view') {
+    ctx.fillStyle = 'rgba(10,8,12,0.94)'; ctx.fillRect(0, 0, CW, CH);
+    const vw = 1024, vh = 576, vx = (CW - vw) / 2, vy = 14;
+    ctx.fillStyle = '#c89552'; ctx.fillRect(vx - 4, vy - 4, vw + 8, vh + 8);
+    ctx.imageSmoothingEnabled = false;
+    for (const key of panel.layers) { const im = IMG['World/' + key]; if (im) ctx.drawImage(im, vx, vy, vw, vh); }
+    drawRich(panel.caption, CW / 2, vy + vh + 18, 18, 1100, 'center');
+    drawRich('[E] or [Esc] Close', CW / 2, vy + vh + 44, 15, 600, 'center', '#c8c0b0');
   } else if (panel.kind === 'album') {
     const page = panel.page; const reached = page <= S().highest;
     const count = PHOTOS.filter(p => p.season === page && S().photos.includes(p.id)).length;
@@ -912,7 +1007,7 @@ function update(dt) {
     clearPressed(); return;
   }
   if (panel) {
-    if (pressed.Escape || (panel.kind === 'shop' && pressed.KeyE) || (panel.kind === 'craft' && pressed.KeyC) || (panel.kind === 'journal' && pressed.KeyJ) || (panel.kind === 'album' && pressed.KeyP)) panel = null;
+    if (pressed.Escape || (panel.kind === 'view' && (pressed.KeyE || pressed.Space)) || (panel.kind === 'shop' && pressed.KeyE) || (panel.kind === 'craft' && pressed.KeyC) || (panel.kind === 'journal' && pressed.KeyJ) || (panel.kind === 'album' && pressed.KeyP)) panel = null;
     else if (panel.kind === 'album') { if (pressed.ArrowLeft) panel.page = (panel.page + 3) % 4; if (pressed.ArrowRight) panel.page = (panel.page + 1) % 4; }
     clearPressed(); return;
   }
@@ -951,7 +1046,7 @@ function update(dt) {
   if (moving) {
     const l = Math.hypot(mx, my); let sp = 5 * (G.hunger <= 0 || G.thirst <= 0 ? 0.6 : 1);
     const ox = G.px, oy = G.py;
-    const tiles = G.scene === 'forest' || G.scene === 'lake';
+    const tiles = G.scene === 'forest' || G.scene === 'lake' || G.scene === 'sunset';
     G.px += mx / l * sp * dt; if (tiles && feetBlocked()) G.px = ox;   // trees, water, the old tree, logs, reeds
     G.py += my / l * sp * dt; if (tiles && feetBlocked()) G.py = oy;
     if (Math.abs(mx) > Math.abs(my)) { G.dir = 'side'; G.facingLeft = mx < 0; } else G.dir = my > 0 ? 'up' : 'down';
@@ -967,8 +1062,7 @@ function update(dt) {
     else if (G.py > 4.35 && Math.abs(G.px) < 0.7) go('haggle', 0, 0);
     const gate = MAP.exits.find(e => areaOpen(e.to) && inRect(exitRect(e), G.px, G.py));
     if (gate && G.scene === 'farm') {
-      const a = REGIONS[gate.to].map.arrivals.find(a => a.from === 'Farm'); go(gate.to.toLowerCase(), a.x, a.y);
-      toast(gate.to === 'Lake' ? 'The reeds rustle as you pass. The air smells of water.' : 'The air turns cool and green. You step into the forest.');
+      const R = REGIONS[gate.to], a = R.map.arrivals.find(a => a.from === 'Farm'); go(R.scene, a.x, a.y); toast(R.line);
     }
     const thorn = MAP.exits.find(e => e.locked && !areaOpen(e.to) && inRect(exitRect(e), G.px, G.py - 0.4, 0.5));
     if (thorn && performance.now() > (G.signT || 0)) {
@@ -976,6 +1070,8 @@ function update(dt) {
       toast(S().season >= SEASONS.indexOf(thorn.locked) ? 'The gray thorns have started to loosen... Not yet, but soon.' : thorn.sign, 3.5);
     }
   }
+  if (G.scene === 'sunset') { const back = HILL.exits.find(e => inRect(exitRect(e), G.px, G.py)); if (back) go('farm', back.spawnX, back.spawnY); }
+  if (G.scene === 'home' && endingReady() && !announce && !dialogue && !panel) startHomeEnding();
   if (G.scene === 'lake') {
     const back = LAKE.exits.find(e => inRect(exitRect(e), G.px, G.py)); if (back) go('farm', back.spawnX, back.spawnY);
     const l = Lk(); const i = l.forage.findIndex(([x, y]) => near(x + 0.5, y + 0.4, 0.45));
@@ -1024,7 +1120,7 @@ function update(dt) {
   clearPressed();
 }
 function feetBlocked() {
-  const blocked = G.scene === 'lake' ? lakeBlocked : forestBlocked;
+  const blocked = G.scene === 'lake' ? lakeBlocked : G.scene === 'sunset' ? hillBlocked : forestBlocked;
   for (const [dx, dy] of [[-0.2, -0.5], [0.2, -0.5], [-0.2, -0.28], [0.2, -0.28]]) if (blocked(Math.floor(G.px + dx), Math.floor(G.py + dy))) return true;
   return false;
 }
@@ -1033,6 +1129,7 @@ function clampPlayer() {
   if (G.scene === 'farm') { minX = MAPB.x0 + 0.3; maxX = MAPB.x1 - 0.3; minY = MAPB.y0 + 0.5; maxY = Math.abs(G.px) > 0.7 ? MAPB.y1 - 0.8 : MAPB.y1 - 0.35; }
   if (G.scene === 'forest') { minX = FORB.x0 + 0.3; maxX = FORB.x1 - 0.3; minY = FORB.y0 + 0.5; maxY = FORB.y1 - 0.8; }
   if (G.scene === 'lake') { minX = LAKB.x0 + 0.3; maxX = LAKB.x1 - 0.3; minY = LAKB.y0 + 0.5; maxY = LAKB.y1 - 0.8; }
+  if (G.scene === 'sunset') { minX = HILB.x0 + 0.3; maxX = HILB.x1 - 0.3; minY = HILB.y0 + 0.5; maxY = HILB.y1 - 0.8; }
   if (G.scene === 'market') maxY = 2.4;
   if (G.scene === 'home') maxY = 3.0;
   if (G.scene === 'hill') { minX = -8.4; maxX = 8.4; minY = -4.6; maxY = -1.2; }
@@ -1097,6 +1194,10 @@ function drawMaskedGround(c, b, grayKey, colorKey, masks, full) {
   mctx.globalCompositeOperation = 'source-in'; sprite(mctx, colorKey, mid[0], mid[1]); mctx.globalCompositeOperation = 'source-over';
   c.drawImage(maskCanvas, 0, 0);
 }
+function drawHillGround(c) {
+  const h = Hl();
+  drawMaskedGround(c, HILB, sc().bg(), 'World/bg_hill_' + seasonKey(), HTREES.filter((t, i) => h.tree[i] >= 2).map(([x, y]) => ['World/forest_mask', x + 0.5, y + 1.2]), hillRevived() === 6);
+}
 function drawLakeGround(c) {
   const z = lakeZones();
   drawMaskedGround(c, LAKB, sc().bg(), 'World/bg_lake_' + seasonKey(), LAKE.zones.slice(0, z).map(m => ['World/lake_mask_' + m.size, m.x, m.y]), lakeClear());
@@ -1119,6 +1220,7 @@ function renderWorld() {
     updateCamera();
     if (G.scene === 'forest') drawForestGround(c);
     else if (G.scene === 'lake') drawLakeGround(c);
+    else if (G.scene === 'sunset') drawHillGround(c);
     else sprite(c, sc().bg(), (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2);
   } else { const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH); }
   const draws = [];  // [sortY, fn]
@@ -1169,6 +1271,16 @@ function renderWorld() {
     }
     for (const [x, y, item] of f.forage) draws.push([y + 0.3, () => sprite(c, 'World/' + item.toLowerCase().replace(/ /g, '_') + '_ground', x + 0.5, y + 0.4)]);
   }
+  if (G.scene === 'sunset') {
+    const h = Hl();
+    HTREES.forEach(([x, y, k], i) => {
+      const t = h.tree[i], key = t === 0 ? 'orchard_gray' : t === 1 ? 'orchard_pruned' : `orchard_${KIND[k]}_${hasFruit(i) ? 'fruit' : 'bare'}`;
+      draws.push([y + 0.1, () => sprite(c, seasonal(key), x + 0.5, y + 0.05, 1, 'bottom')]);
+    });
+    const rk = h.drying.length === 0 ? 'drying_rack_empty' : h.drying.some(d => G.day >= d) ? 'drying_rack_dried' : 'drying_rack_hung';
+    draws.push([HRACK[1] - 0.5, () => sprite(c, 'World/' + rk, HRACK[0], HRACK[1] - 0.45, 1, 'bottom')]);
+  }
+  if (G.scene === 'farm' && unlocked('ending_seen')) draws.push([-3.85, () => sprite(c, seasonal('cottage_color'), -7.75, -3.85, 1, 'bottom')]);
   if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
   if (G.scene === 'market') {
     draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
@@ -1298,6 +1410,12 @@ function promptText() {
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade with the merchant';
     if (G.px < -7) return 'Back to the farm';
+  } else if (G.scene === 'sunset') {
+    if (near(HRACK[0], HRACK[1], 1.5)) { const h = Hl(); return h.drying.some(d => G.day >= d) ? '[E] Take down the dried persimmons' : has('Persimmon') ? '[E] Hang your persimmons' : h.drying.length ? 'The persimmons are drying' : 'A drying rack for persimmons'; }
+    if (near(HBENCH[0], HBENCH[1], 1.6)) return '[E] Sit and look out over the valley';
+    const i = HTREES.findIndex(([x, y]) => near(x + 0.5, y + 0.5, 1.6));
+    if (i >= 0) { const t = Hl().tree[i], k = HTREES[i][2]; return t === 0 ? `An old ${KIND[k]} tree: prune it (Scythe)` : t === 1 ? `Give it Earth's Breath` : hasFruit(i) ? `Click to pick ${FRUIT[k]}` : `${KIND[k] === 'apple' ? 'An' : 'A'} ${KIND[k]} tree, growing fruit`; }
+    if (G.py < HILB.y0 + 2) return 'Back to the farm ↓';
   } else if (G.scene === 'lake') {
     if (LFISH.some(([x, y]) => near(x, y, 1.3))) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'You need a fishing rod to fish here');
     if (near(LSTEPS[0], LSTEPS[1], 1.3)) return '[E] Let your fish go into the lake';
@@ -1352,6 +1470,17 @@ $('t-forest').onclick = () => {
   forestCheckOpen(); add('Acorn', 3); if (!has('Mattock')) add('Mattock');
   toast('Preview: spring, the forest is open. +3 Acorn, Mattock. The flower arch is at the west end of the farm lane.', 5); uiCanvas.focus();
 };
+$('t-hill2').onclick = () => {
+  if (G.heart < 85) changeHeart(85 - G.heart, 'Preview tool');
+  if (S().season < 3) { S().season = 3; S().highest = 3; unlock('season_autumn'); }
+  forestCheckOpen(); lakeCheckOpen(); hillCheckOpen(); add("Earth's Breath", 6); add('Persimmon', 4);
+  toast('Preview: autumn, Sunset Hill is open (south lane of the farm). +6 Earth\'s Breath, 4 Persimmons.', 5); uiCanvas.focus();
+};
+$('t-ending').onclick = () => {
+  VILLAGERS.forEach(v => { const p = villagerProgress(v.id); p.met = true; p.wish = 3; });
+  if (G.heart < 95) changeHeart(95 - G.heart, 'Preview tool');
+  toast('Preview: every villager has their colors back. Go home: the ending starts there.', 5); uiCanvas.focus();
+};
 $('t-lake').onclick = () => {
   if (G.heart < 60) changeHeart(60 - G.heart, 'Preview tool');
   if (S().season < 2) { S().season = 2; S().highest = Math.max(S().highest, 2); }
@@ -1378,6 +1507,8 @@ if (G.scene === 'haggle' || G.scene === 'hill') { G.scene = 'farm'; G.px = 0.9; 
 G.clearedDebris = G.clearedDebris || []; G.debrisHits = G.debrisHits || {};   // saves from before the bigger farm
 G.story.forest = Object.assign(newForest(), G.story.forest || {});             // saves from before the forest
 G.story.lake = Object.assign(newLake(), G.story.lake || {});                   // saves from before the lake
+G.story.hill = Object.assign(newHill(), G.story.hill || {});                   // saves from before Sunset Hill
+if (G.scene === 'sunset' && !G.story.hill.open) { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
 if (G.scene === 'lake' && !G.story.lake.open) { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
 if (G.scene === 'forest' && !G.story.forest.open) { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
 if (G.story.spirit.found && !G.spirit) G.spirit = { x: G.px, y: G.py, vx: 0, pulse: 0 };

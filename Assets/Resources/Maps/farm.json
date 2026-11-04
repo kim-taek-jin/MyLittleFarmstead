@@ -73,7 +73,7 @@
    "spawnY": 0,
    "locked": "Autumn",
    "art": "thorns",
-   "openArt": "flower_arch",
+   "openArt": "maple_arch",
    "sign": "The hill path is buried in gray thorns. Maybe when autumn comes to your heart..."
   }
  ],
@@ -124,6 +124,11 @@
    "from": "Lake",
    "x": 25.0,
    "y": -10.9
+  },
+  {
+   "from": "Hill",
+   "x": 1.0,
+   "y": -13.4
   }
  ]
 }

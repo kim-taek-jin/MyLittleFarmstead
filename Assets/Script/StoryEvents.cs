@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // 이야기 이벤트: 도시에서 온 편지(선택), 엔딩, 생활 일지
 public static class StoryEvents
@@ -51,20 +53,59 @@ public static class StoryEvents
         }
     }
 
-    // 주민 3명 모두 회복 + 마음 90 이상이면 엔딩 (한 번만)
+    // ---- 엔딩 A: "마지막 색은 나" ----
+    // 주민 3명 모두 색을 되찾고 마음 90 이상이면, 집에서 아침을 맞을 때 엔딩이 시작됩니다.
+    // 그때까지 내 집(오두막 밖, 집 안)만 회색으로 남아 있다가, 도시 편지에 답장을 쓰면 색이 돌아옵니다.
+    public static bool EndingSeen => Data != null && Data.story.IsUnlocked("ending_seen");
+    public static bool EndingReady => Data != null && !EndingSeen && Data.story.AllVillagersRestored && Data.heart >= 90f;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void InitEnding()
+    {
+        SceneManager.sceneLoaded += (scene, mode) => { if (scene.name == "Home") CheckEnding(); };
+    }
+
     public static void CheckEnding()
     {
-        if (Data == null) return;
-        StoryState story = Data.story;
-        if (story.IsUnlocked("ending_seen") || !story.AllVillagersRestored || Data.heart < 90f) return;
+        if (!EndingReady) return;
+        if (SceneManager.GetActiveScene().name == "Home")
+        {
+            if (Object.FindFirstObjectByType<EndingRunner>() == null) new GameObject("Ending").AddComponent<EndingRunner>();
+        }
+        else if (Data.story.Unlock("ending_hint"))
+        {
+            HUD.Toast("Something feels different at home... Maybe it's time to go back.", 5f);
+        }
+    }
 
+    public static void StartHomeEnding()
+    {
+        if (!EndingReady) return;
+        HUD.Say("", new[]
+        {
+            "Morning light slips through the window. On the table: one more letter from the city.",
+            "\"Your old desk is still empty. Come back. We'll pay double.\"",
+            "You look around the little house. Everything outside has its colors back. Only these walls are still gray.",
+        }, null, () =>
+        {
+            HUD.Ask("A letter from the city", "Write back?", null, StayForGood,
+                () => HUD.Toast("You fold the letter away. Maybe tomorrow.", 3f),
+                "\"I'm staying. This is home now.\"", "Not yet");
+        });
+    }
+
+    static void StayForGood()
+    {
+        StoryState story = Data.story;
         story.Unlock("ending_seen");
-        string extra = story.IsUnlocked("chose_village") ? "\nYou chose this village over the city. You never looked back." : "";
+        story.Unlock("chose_village");
+        PixelArtWorld.RefreshSeasonal();          // 집 안이 컬러로
+        Data.ChangeHeart(5f, null);
         HUD.Announce(
-            "<size=46>Happiness, rebuilt</size>\n\n" +
-            "Rosa's bread smells of strawberries again.\nThe forge sings. Mina chases sunflowers.\n" +
-            "The gray city feels like a dream you once had." + extra +
-            "\n\n<size=24><color=#ff8fb1>Thank you for playing.</color>  Life on the farm goes on.</size>",
+            "<size=46><color=#ffb6d0>The last color was yours</color></size>\n\n" +
+            "The walls warm up. The curtains blush. The kettle shines.\n" +
+            "The gray was never the city's. It was yours, and now it's gone.\n\n" +
+            "<size=24><color=#ff8fb1>Thank you for playing.</color>  Life in the village goes on.</size>",
             20f);
         Data.SaveGame();
     }
@@ -118,6 +159,9 @@ public static class StoryEvents
             string tree = forest.treeAwake ? "The old tree is awake." : "The old tree is asleep.";
             sb.Append($"<color=#9dff9d>Forest</color>  clearings restored {forest.Restored}/{ForestState.Clearings}   <size=22>{tree}</size>\n");
         }
+        HillState sunset = story.hill;
+        if (sunset != null && sunset.open)
+            sb.Append($"<color=#ffb070>Sunset Hill</color>  orchard trees revived {sunset.Revived}/{HillState.Trees}   <size=22>on the drying rack: {sunset.drying.Count}</size>\n");
         LakeState lake = story.lake;
         if (lake != null && lake.open)
         {
@@ -135,5 +179,21 @@ public static class StoryEvents
         sb.Append(string.Join("   ", fish));
         sb.Append("\n\n<size=22><color=#c8c0b0>[J] Close</color></size>");
         return sb.ToString();
+    }
+}
+
+// 엔딩 A: 집에서 아침 요약이 닫힌 뒤 엔딩 대화를 시작합니다.
+public class EndingRunner : MonoBehaviour
+{
+    float wait = 0.5f;
+
+    void Update()
+    {
+        if (HUD.AnnouncementOpen || HUD.DialogueOpen) { wait = 0.5f; return; }
+        wait -= Time.deltaTime;
+        if (wait > 0f) return;
+        enabled = false;
+        StoryEvents.StartHomeEnding();
+        Destroy(gameObject);
     }
 }

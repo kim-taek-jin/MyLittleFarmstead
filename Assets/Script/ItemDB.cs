@@ -115,6 +115,11 @@ public static class ItemDB
         Register(new ItemDef { name = "Wild Raspberry", category = ItemCategory.Food, sellPrice = 30, hunger = 5f, thirst = 3f, heart = 1f, color = new Color(0.85f, 0.15f, 0.3f) });
         Register(new ItemDef { name = "Watercress", category = ItemCategory.Food, sellPrice = 25, hunger = 6f, thirst = 4f, color = new Color(0.4f, 0.7f, 0.35f) });
 
+        // ---- 노을 언덕 (맵 4-2단계) ----
+        Register(new ItemDef { name = "Pear", category = ItemCategory.Food, sellPrice = 70, hunger = 12f, thirst = 8f, color = new Color(0.85f, 0.85f, 0.4f) });
+        Register(new ItemDef { name = "Persimmon", category = ItemCategory.Food, sellPrice = 60, hunger = 12f, color = new Color(1f, 0.55f, 0.15f), description = "Sweet and soft. Hang it on the drying rack on Sunset Hill to make dried persimmons." });
+        Register(new ItemDef { name = "Dried Persimmon", category = ItemCategory.Food, sellPrice = 260, hunger = 18f, heart = 3f, color = new Color(0.75f, 0.35f, 0.15f), description = "Chewy and sweet, dried slowly in the autumn wind." });
+
         Register(new ItemDef { name = "Campfire", category = ItemCategory.Station, sellPrice = 20, iconFallback = "Wood", color = new Color(1f, 0.45f, 0.1f), description = "Needed for cooking recipes." });
     }
 

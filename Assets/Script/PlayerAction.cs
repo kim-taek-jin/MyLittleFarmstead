@@ -60,7 +60,7 @@ public class PlayerAction : MonoBehaviour
     void Update()
     {
         if (dataManager == null) dataManager = DataManager.instance;
-        if (dataManager == null || dataManager.IsGameOver || Time.timeScale == 0f || PixelHUD.BagOpen) return;
+        if (dataManager == null || dataManager.IsGameOver || Time.timeScale == 0f || PixelHUD.BagOpen || PixelHUD.ViewOpen) return;
 
         bool use = Input.GetMouseButtonDown(0);
         bool eat = Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.F);
@@ -118,6 +118,8 @@ public class PlayerAction : MonoBehaviour
 
         // 숲 빈터의 묘목 자리 (도토리 심기, 물 주기)
         if (ForestArea.TryUse(cell, def)) return;
+        // 노을 언덕의 과일나무 (가지치기, 대지의 숨결, 열매 따기)
+        if (HillArea.TryUse(cell, def)) return;
 
         // 치울 것 (묵은 밭의 잡초/그루터기/바위, 숲의 통나무)이 있으면 먼저 치움
         Debris debris = Debris.At(cell);

@@ -89,7 +89,7 @@ data = {
          'art': 'reeds_gray', 'openArt': 'reeds_open',
          'sign': "Tall gray reeds have closed over the path to the lake. They'll wake when summer comes to your heart."},
         {'to': 'Hill', 'x0': 0.2, 'y0': -15.0, 'x1': 1.8, 'y1': -14.4, 'spawnX': 0, 'spawnY': 0, 'locked': 'Autumn',
-         'art': 'thorns', 'openArt': 'flower_arch',
+         'art': 'thorns', 'openArt': 'maple_arch',
          'sign': "The hill path is buried in gray thorns. Maybe when autumn comes to your heart..."},
     ],
     'signs': [
@@ -105,6 +105,7 @@ data = {
         {'from': 'MiniGame', 'x': 0.0, 'y': 3.8},
         {'from': 'Forest', 'x': -7.6, 'y': -9.1},
         {'from': 'Lake', 'x': 25.0, 'y': -10.9},
+        {'from': 'Hill', 'x': 1.0, 'y': -13.4},
     ],
 }
 out = os.path.join(os.path.dirname(__file__), '..', '..', 'Assets', 'Resources', 'Maps', 'farm.json')

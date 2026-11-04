@@ -16,6 +16,7 @@ public class PixelHUD : MonoBehaviour
 {
     public static PixelHUD Instance { get; private set; }
     public static bool BagOpen => Instance != null && Instance.bag != null && Instance.bag.activeSelf;
+    public static bool ViewOpen => Instance != null && Instance.view != null && Instance.view.activeSelf;
 
     public const int HotbarSlotCount = 8;
 
@@ -37,6 +38,10 @@ public class PixelHUD : MonoBehaviour
     private RectTransform bagGrid;
     private TextMeshProUGUI bagInfo;
     private readonly List<BagSlot> bagSlots = new List<BagSlot>();
+    private GameObject view;
+    private RectTransform viewLayers;
+    private TextMeshProUGUI viewCaption;
+    private int viewOpenedFrame;
 
     private float nextFontPass;
 
@@ -143,6 +148,53 @@ public class PixelHUD : MonoBehaviour
         }
 
         BuildBag();
+        BuildView();
+    }
+
+    // 노을 언덕 전망대에서 보는 풍경 (그림 층을 겹쳐 보여 줌)
+    void BuildView()
+    {
+        var go = new GameObject("View", typeof(RectTransform));
+        go.transform.SetParent(root, false);
+        Canvas c = go.AddComponent<Canvas>();
+        c.overrideSorting = true;
+        c.sortingOrder = 470;
+        RectTransform rt = (RectTransform)go.transform;
+        rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+        RectTransform shade = Rect("Shade", rt, new Color(0.04f, 0.03f, 0.05f, 0.92f));
+        shade.anchorMin = Vector2.zero; shade.anchorMax = Vector2.one;
+        shade.offsetMin = Vector2.zero; shade.offsetMax = Vector2.zero;
+        RectTransform frame = Box("Frame", rt, new Vector2(0.5f, 0.5f), new Vector2(0f, 50f), new Vector2(1296f, 736f));
+        frame.pivot = new Vector2(0.5f, 0.5f);
+        viewLayers = new GameObject("Layers", typeof(RectTransform)).GetComponent<RectTransform>();
+        viewLayers.SetParent(frame, false);
+        viewLayers.anchorMin = viewLayers.anchorMax = new Vector2(0.5f, 0.5f);
+        viewLayers.sizeDelta = new Vector2(1280f, 720f);
+        viewCaption = Label("Caption", rt, 26f, TextAlignmentOptions.Center);
+        viewCaption.rectTransform.anchorMin = viewCaption.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        viewCaption.rectTransform.anchoredPosition = new Vector2(0f, -360f);
+        viewCaption.rectTransform.sizeDelta = new Vector2(1400f, 90f);
+        view = go;
+        view.SetActive(false);
+    }
+
+    public static void ShowView(List<string> layers, string caption)
+    {
+        PixelHUD hud = Ensure();
+        foreach (Transform child in hud.viewLayers) Destroy(child.gameObject);
+        foreach (string key in layers)
+        {
+            Sprite sprite = PixelArt.Load("World/" + key);
+            if (sprite == null) continue;
+            RectTransform img = Rect(key, hud.viewLayers, Color.white);
+            img.anchorMin = Vector2.zero; img.anchorMax = Vector2.one;
+            img.offsetMin = Vector2.zero; img.offsetMax = Vector2.zero;
+            img.GetComponent<Image>().sprite = sprite;
+        }
+        hud.viewCaption.text = caption + "\n<size=20><color=#c8c0b0>[E] or [Esc] Close</color></size>";
+        hud.view.SetActive(true);
+        hud.viewOpenedFrame = Time.frameCount;
     }
 
     void BuildBag()
@@ -211,7 +263,13 @@ public class PixelHUD : MonoBehaviour
                 if (t.font != PixelFont.Asset) t.font = PixelFont.Asset;
         }
 
-        if (Input.GetKeyDown(KeyCode.I) && !HUD.DialogueOpen && !HUD.AlbumOpen) ToggleBag();
+        if (ViewOpen && Time.frameCount > viewOpenedFrame + 1 &&
+            (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Space)))
+        {
+            view.SetActive(false);
+            return;
+        }
+        if (Input.GetKeyDown(KeyCode.I) && !HUD.DialogueOpen && !HUD.AlbumOpen && !ViewOpen) ToggleBag();
         else if (BagOpen && Input.GetKeyDown(KeyCode.Escape)) bag.SetActive(false);
     }
 

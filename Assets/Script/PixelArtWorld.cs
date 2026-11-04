@@ -63,6 +63,12 @@ public static class PixelArtWorld
     public static Sprite SeasonalSprite(string key)
     {
         DataManager data = DataManager.instance;
+        // 엔딩 A: 엔딩 전까지 집 안은 회색
+        if (key == "bg_home" && data != null && !data.story.IsUnlocked("ending_seen"))
+        {
+            Sprite gray = PixelArt.Load("World/bg_home_gray");
+            if (gray != null) return gray;
+        }
         string season = data != null ? SeasonSystem.Key(data.CurrentSeason) : "winter";
         return PixelArt.Load($"World/{key}_{season}") ?? PixelArt.Load("World/" + key);
     }

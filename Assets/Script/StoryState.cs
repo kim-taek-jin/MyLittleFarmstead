@@ -66,6 +66,9 @@ public class StoryState
     // 호수 (맵 4-1단계): 열림, 놓아주기로 맑히기, 채집, 벤치
     public LakeState lake = new LakeState();
 
+    // 노을 언덕 (맵 4-2단계): 열림, 과수원 되살리기, 곶감, 전망대
+    public HillState hill = new HillState();
+
     public VillagerProgress Get(string id)
     {
         foreach (var v in villagers) if (v.id == id) return v;

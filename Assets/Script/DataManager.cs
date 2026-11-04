@@ -567,6 +567,9 @@ public class DataManager : MonoBehaviour
 
     public bool IsResourceCleared(string sceneName, GameObject go) => clearedResources.Contains(ResourceKey(sceneName, go));
 
+    // 개발용 단축키(DevKeys)에서 하루 넘기기
+    public void DevEndDay() => EndDay(false);
+
     public void MarkResourceCleared(GameObject go)
     {
         clearedResources.Add(ResourceKey(go.scene.name, go));
@@ -699,6 +702,8 @@ public class DataManager : MonoBehaviour
         float forestDelta = ForestArea.Morning(this, raining, timeManager != null ? timeManager.day : 0, lines, out string forestHeadline);
         LakeArea.Morning(this, timeManager != null ? timeManager.day : 0, out string lakeHeadline);
         if (lakeHeadline != null) forestHeadline = forestHeadline == null ? lakeHeadline : forestHeadline + "\n" + lakeHeadline;
+        HillArea.Morning(this, out string hillHeadline);
+        if (hillHeadline != null) forestHeadline = forestHeadline == null ? hillHeadline : forestHeadline + "\n" + hillHeadline;
         if (forestDelta != 0f)
         {
             delta += forestDelta;

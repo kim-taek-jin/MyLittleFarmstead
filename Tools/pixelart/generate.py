@@ -21,6 +21,7 @@ import backgrounds  # noqa: E402
 import farmmap  # noqa: E402
 import forest  # noqa: E402
 import lake  # noqa: E402
+import hill  # noqa: E402
 import villagers  # noqa: E402
 import spirit  # noqa: E402
 
@@ -236,6 +237,23 @@ def main():
         exported['World'].append(export('World', name, canvas))
     for name, fn in lake.ITEMS.items():
         exported['Items'].append(export('Items', name, fn()))
+    # ---- Sunset Hill (map stage 4-2): colour + gray per season, orchard, rack, the overlook panorama ----
+    for season in backgrounds.SEASONS:
+        color = hill.hill(season)
+        export_image('World', f'bg_hill_{season}', color)
+        export_image('World', f'bg_hill_gray_{season}', forest.gray(color))
+        if season == 'autumn':
+            bgs.append(('bg_hill_autumn', color))
+    for name, canvas in hill.world_sprites().items():
+        exported['World'].append(export('World', name, canvas))
+    for name, fn in hill.ITEMS.items():
+        exported['Items'].append(export('Items', name, fn()))
+    for name, img in hill.panorama().items():
+        export_image('World', name, img)
+    # ---- ending A: your house stays gray until the end ----
+    exported['World'].append(export('World', 'cottage_color', farmmap.cottage_color('spring')))
+    exported['World'].append(export('World', 'cottage_color_winter', farmmap.cottage_color('winter')))
+    export_image('World', 'bg_home_gray', forest.gray(backgrounds.home()))
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))
 
