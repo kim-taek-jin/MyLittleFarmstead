@@ -500,13 +500,16 @@ public class DataManager : MonoBehaviour
         return price;
     }
 
-    // 나눔 점수: 나눔 상자, 주민 소원. 30이 되면 별의 언덕이 열립니다.
-    public void AddKindness(int amount)
+    public int Today => timeManager != null ? timeManager.day : 0;
+
+    // 나눔 점수: 나눔 상자(하루 최대 5점), 주민 소원(+3). 60이 되면 별의 언덕이 열립니다.
+    // fromShareBox가 true면 이미 StoryState.AddShare로 점수를 더한 상태입니다.
+    public void AddKindness(int amount, bool fromShareBox = false)
     {
         if (amount <= 0) return;
-        story.kindness += amount;
+        if (!fromShareBox) story.kindness += amount;
 
-        int day = timeManager != null ? timeManager.day : 0;
+        int day = Today;
         if (story.donationDay != day)
         {
             story.donationDay = day;

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // 시장의 나눔 상자. 들고 있는 먹을거리(작물, 음식, 물고기)를 E로 1개, Shift+E로 전부 나눕니다.
 // 나눔 점수가 30이 되면 '별의 언덕'이 열립니다.
@@ -46,14 +46,26 @@ public class DonationBox : MonoBehaviour
             return;
         }
 
+        int room = data.story.ShareRoom(data.Today);
+        if (room <= 0)
+        {
+            HUD.Toast("The sharing box is full for today. Come back tomorrow!", 2.5f);
+            return;
+        }
+
+        // 하루 상한까지 필요한 만큼만 받습니다 (점수 없이 아이템만 사라지지 않도록)
+        int perItem = Mathf.Max(1, ItemDB.Get(item).sellPrice / 10);
         bool all = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-        int count = all ? data.GetCount(item) : 1;
+        int needed = Mathf.CeilToInt(room / (float)perItem);
+        int count = Mathf.Min(data.GetCount(item), all ? needed : 1);
         if (count <= 0) return;
 
-        int value = Mathf.Max(1, ItemDB.Get(item).sellPrice / 10) * count;
         data.RemoveItem(item, count);
-        HUD.Toast($"You shared {item} x{count}.  <color=#ff9fc4>Kindness +{value}</color>  ({data.story.kindness + value})", 3f);
-        data.AddKindness(value);
+        int got = data.story.AddShare(data.Today, perItem * count);
+        int left = data.story.ShareRoom(data.Today);
+        HUD.Toast($"You shared {item} x{count}.  <color=#ff9fc4>Kindness +{got}</color>  ({data.story.kindness}/{StarHill.KindnessToUnlock})" +
+                  (left <= 0 ? "  <color=#c8c0b0>That's plenty for today.</color>" : ""), 3f);
+        data.AddKindness(got, fromShareBox: true);
     }
 
     void OnTriggerEnter2D(Collider2D other)

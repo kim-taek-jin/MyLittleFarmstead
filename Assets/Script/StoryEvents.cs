@@ -104,7 +104,7 @@ public static class StoryEvents
 
         string hill = story.IsUnlocked("starhill")
             ? $"Star Hill open on clear nights. Stars caught: {story.starsTotal}"
-            : $"{StarHill.KindnessToUnlock - story.kindness} more to open Star Hill";
+            : $"{story.kindness}/{StarHill.KindnessToUnlock} to open Star Hill  (sharing box today: {StoryState.ShareCapPerDay - story.ShareRoom(day)}/{StoryState.ShareCapPerDay})";
         sb.Append($"\n<color=#ffb6d0>Kindness</color> {story.kindness}   <size=22>{hill}</size>\n");
 
         sb.Append("\n<color=#8fb8ff>Fish caught</color>  ");

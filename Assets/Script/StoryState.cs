@@ -33,6 +33,23 @@ public class StoryState
     // 나눔 → 별의 언덕
     public int kindness;
     public int donationDay = -1;     // 마지막으로 나눔을 한 날 (하루 첫 나눔 보너스용)
+    public int shareDay = -1;        // 나눔 상자 점수를 받은 날
+    public int sharedToday;          // 그날 나눔 상자로 받은 점수 (하루 상한 있음)
+
+    public const int ShareCapPerDay = 5;
+
+    // 오늘 나눔 상자로 더 받을 수 있는 점수
+    public int ShareRoom(int day) => ShareCapPerDay - (shareDay == day ? sharedToday : 0);
+
+    // 나눔 상자 점수 기록 (상한까지만). 실제로 받은 점수를 돌려줍니다.
+    public int AddShare(int day, int points)
+    {
+        if (shareDay != day) { shareDay = day; sharedToday = 0; }
+        int got = System.Math.Max(0, System.Math.Min(points, ShareCapPerDay - sharedToday));
+        sharedToday += got;
+        kindness += got;
+        return got;
+    }
     public int starsDay = -1;        // 별을 주운 날
     public int starsTonight;         // 그날 밤 주운 별 수
     public int starsTotal;

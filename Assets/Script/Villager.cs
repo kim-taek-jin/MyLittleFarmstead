@@ -152,7 +152,7 @@ public class Villager : MonoBehaviour
 
         VillagerProgress p = Progress;
         p.wishIndex++;
-        Data.AddKindness(5);
+        Data.AddKindness(3);
 
         var rewards = new System.Collections.Generic.List<string>();
         if (wish.gold > 0) { Data.AddGold(wish.gold); rewards.Add($"{wish.gold}G"); }

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 // 별의 언덕. 나눔 점수 30이 되면 열리고, 맑은 밤(20시 이후)에 농장에 빛나는 덩굴이 자랍니다.
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 public class StarHill : MonoBehaviour
 {
     public static bool Active { get; private set; }
-    public const int KindnessToUnlock = 30;
+    public const int KindnessToUnlock = 60;   // 나눔 상자 하루 최대 5점 + 주민 소원 3점씩 → 보통 15~20일째
     public const int StarsPerNight = 10;
 
     static readonly Vector2 LadderPos = new Vector2(8.25f, 2.9f);
