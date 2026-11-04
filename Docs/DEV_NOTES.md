@@ -588,3 +588,15 @@ Unity 없이 게임을 볼 수 있게, 같은 픽셀 아트와 규칙을 자바�
 - [ ] 부두 끝에서 낚시가 되고, 밤에는 문핀이 나오는가
 - [ ] 다 맑힌 뒤 밤에 반딧불이가 밝게 보이는가
   - 어둡게 묻히면: `Sprite-Unlit-Default` 셰이더가 빌드에 포함됐는지 확인 (Project Settings > Graphics > Always Included Shaders)
+
+---
+
+## Unity에서 처음 열 때 (첫 실행 로그 확인 결과)
+
+- **com.unity.2d.pixel-perfect 오류:** 처음 열 때 이 패키지에서 `PixelPerfectCamera`를 찾을 수 없다는 빨간 오류가 몇 줄 나옵니다.
+  - Unity의 API Updater가 자동으로 고치고, 바로 다음 컴파일은 성공합니다.
+  - 게임 코드(Assembly-CSharp)와는 관계없습니다.
+- **빈 장면:** 새로 받은 프로젝트를 열면 Unity는 빈 장면(Untitled)을 띄웁니다. 여기서 ▶을 누르면 아무것도 나오지 않습니다.
+  - `Assets/Editor/FarmPlayStart.cs`를 추가해서 해결했습니다. 이제 ▶을 누르면 항상 Farm 장면부터 시작하고, 빈 장면으로 열리면 Farm 장면을 자동으로 엽니다.
+  - 게임 관리자가 Farm 장면에 있어서, 다른 장면에서 바로 시작하면 게임이 돌아가지 않기 때문입니다.
+  - 끄려면 그 파일을 지우면 됩니다.
