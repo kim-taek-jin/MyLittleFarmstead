@@ -600,3 +600,6 @@ Unity 없이 게임을 볼 수 있게, 같은 픽셀 아트와 규칙을 자바�
   - `Assets/Editor/FarmPlayStart.cs`를 추가해서 해결했습니다. 이제 ▶을 누르면 항상 Farm 장면부터 시작하고, 빈 장면으로 열리면 Farm 장면을 자동으로 엽니다.
   - 게임 관리자가 Farm 장면에 있어서, 다른 장면에서 바로 시작하면 게임이 돌아가지 않기 때문입니다.
   - 끄려면 그 파일을 지우면 됩니다.
+- **UI 크기:** 장면의 원래 UI는 1920×1080 기준 픽셀 위치인데 Canvas Scaler가 Constant Pixel Size여서, Game 창 크기가 다르면 막대·시간·핫바가 화면 밖으로 밀리고 글자가 크게 보였습니다.
+  - `UIScale.cs`가 실행할 때 모든 장면의 Canvas Scaler를 Scale With Screen Size(1920×1080, 가로세로 0.5)로 바꿉니다.
+  - Game 창은 16:9(예: Full HD 1920x1080)로 두는 것을 추천합니다.
