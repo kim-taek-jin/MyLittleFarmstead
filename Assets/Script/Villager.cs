@@ -119,9 +119,13 @@ public class Villager : MonoBehaviour
         VillagerProgress p = Progress;
         Sprite portrait = body.sprite;
 
+        string seasonLine = def.seasonLines != null && def.seasonLines.Length == 4 ? def.seasonLines[Data.story.season] : null;
+        bool useSeason = seasonLine != null && idleLine % 2 == 1;
+
         if (Restored)
         {
-            HUD.Say(def.name, new[] { def.colorIdle[idleLine++ % def.colorIdle.Length] }, portrait);
+            HUD.Say(def.name, new[] { useSeason ? seasonLine : def.colorIdle[idleLine % def.colorIdle.Length] }, portrait);
+            idleLine++;
             return;
         }
 
@@ -129,6 +133,7 @@ public class Villager : MonoBehaviour
         if (!p.met)
         {
             p.met = true;
+            Album.Report("villager_met", villagerId);
             HUD.Say(def.name, new[] { def.intro, wish.request }, portrait);
             return;
         }
@@ -140,7 +145,8 @@ public class Villager : MonoBehaviour
         }
         else
         {
-            string idle = def.grayIdle[idleLine++ % def.grayIdle.Length];
+            string idle = useSeason ? seasonLine : def.grayIdle[idleLine % def.grayIdle.Length];
+            idleLine++;
             HUD.Say(def.name, new[] { idle, wish.request + $"\n<color=#c8c0b0>(Needs: {VillagerDB.ItemsText(wish.items)})</color>" }, portrait);
         }
     }
@@ -153,6 +159,8 @@ public class Villager : MonoBehaviour
         VillagerProgress p = Progress;
         p.wishIndex++;
         Data.AddKindness(3);
+        Album.Report("wish", villagerId);
+        if (p.wishIndex >= def.wishes.Length) Album.Report("restored", villagerId);
 
         var rewards = new System.Collections.Generic.List<string>();
         if (wish.gold > 0) { Data.AddGold(wish.gold); rewards.Add($"{wish.gold}G"); }

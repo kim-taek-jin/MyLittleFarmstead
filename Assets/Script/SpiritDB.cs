@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 // 정령에게 먹일 수 있는 것과 색 기운, 성장 단계, 모습, 능력 계산 (순수 로직)
 public static class SpiritDB
@@ -25,6 +25,8 @@ public static class SpiritDB
         { "Strawberry Jam", new[] { 0, 0, 0, 3 } },
         { "Carrot Cake", new[] { 0, 1, 0, 2 } },
         { "Star Fragment", new[] { 1, 1, 1, 1 } },
+        { "Pumpkin", new[] { 0, 2, 0, 0 } },
+        { "Pumpkin Pie", new[] { 0, 1, 0, 2 } },
     };
 
     public static bool CanEat(string item) => !string.IsNullOrEmpty(item) && food.ContainsKey(item);

@@ -52,6 +52,7 @@ public class CraftingManager : MonoBehaviour
         yield return Make("Carrot Cake", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Bread", 1)).Locked("recipe_carrot_cake");
         yield return Make("Grilled Fish", 1, "Campfire", new ItemInfo("Minnow", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Minnow)");
         yield return Make("Grilled Fish", 2, "Campfire", new ItemInfo("Carp", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Carp)");
+        yield return Make("Pumpkin Pie", 1, "Campfire", new ItemInfo("Pumpkin", 1), new ItemInfo("Bread", 1)).Locked("season_autumn");
         yield return Make("Roasted Carrot", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Wood", 1));
         yield return Make("Baked Potato", 1, "Campfire", new ItemInfo("Potato", 1), new ItemInfo("Wood", 1));
         yield return Make("Corn Soup", 1, "Campfire", new ItemInfo("Corn", 2));
@@ -169,6 +170,7 @@ public class CraftingManager : MonoBehaviour
 
         DisplayRecipes();
         HUD.Toast($"Crafted {recipe.resultItem.itemName}!");
+        Album.Report("craft", recipe.resultItem.itemName);
     }
 
     static T FindChild<T>(Transform parent, string name) where T : Component

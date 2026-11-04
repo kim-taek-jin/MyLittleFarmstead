@@ -90,6 +90,11 @@ public static class ItemDB
         Register(new ItemDef { name = "Sunflower Seed", category = ItemCategory.Seed, sellPrice = 15, cropId = "sunflower", color = new Color(1f, 0.85f, 0.2f) });
         Register(new ItemDef { name = "Sunflower", category = ItemCategory.Crop, sellPrice = 90, color = new Color(1f, 0.85f, 0.2f) });
 
+        // --- 가을(결실의 계절) ---
+        Register(new ItemDef { name = "Pumpkin Seed", category = ItemCategory.Seed, sellPrice = 20, cropId = "pumpkin", color = new Color(1f, 0.6f, 0.2f) });
+        Register(new ItemDef { name = "Pumpkin", category = ItemCategory.Crop, sellPrice = 160, hunger = 10f, color = new Color(1f, 0.55f, 0.15f) });
+        Register(new ItemDef { name = "Pumpkin Pie", category = ItemCategory.Food, sellPrice = 320, hunger = 45f, heart = 4f, color = new Color(0.9f, 0.55f, 0.25f), description = "A golden autumn pie. Tastes like a good year." });
+
         // --- 별의 언덕 ---
         Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. Your spirit loves it (all four colors)." });
 

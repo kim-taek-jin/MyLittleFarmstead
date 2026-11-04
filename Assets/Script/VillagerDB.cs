@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 // 소원 하나: 가져다줄 아이템과 보상
@@ -25,6 +25,7 @@ public class VillagerDef
     public string[] grayIdle;
     public string[] colorIdle;
     public string restored;    // 색을 모두 되찾았을 때 대사
+    public string[] seasonLines = new string[4];   // 마음의 계절별 한마디 (겨울, 봄, 여름, 가을)
     public WishDef[] wishes;
 }
 
@@ -58,6 +59,13 @@ public static class VillagerDB
             grayIdle = new[] { "The oven feels so cold these days.", "I used to bake every morning. Now I just... sit." },
             colorIdle = new[] { "Come by anytime, dear! The bread's still warm.", "You look tired. Did you eat today? Eat, eat!", "He'd have liked you, you know." },
             restored = "I can see the colors again... Thank you, dear. Truly.",
+            seasonLines = new[]
+            {
+                "Winters are long when you're alone. Come in, warm your hands.",
+                "Smell that? Spring always makes me want to bake something sweet.",
+                "Summer! The bread rises so fast I can barely keep up.",
+                "Autumn was his favorite. Golden, just like a good crust.",
+            },
             wishes = new[]
             {
                 new WishDef
@@ -96,6 +104,13 @@ public static class VillagerDB
             grayIdle = new[] { "Hmph.", "Hammer's heavier than it used to be." },
             colorIdle = new[] { "Fire's roaring today. Feels good.", "Bring me good stone and I'll make you good tools.", "...Thanks. For before. Don't make it weird." },
             restored = "Listen to that. The forge is singing again.",
+            seasonLines = new[]
+            {
+                "Cold hands, cold forge. Same thing every winter.",
+                "Snow's melting off the roof. Guess I'll fix the gutters.",
+                "Too hot to work the forge at noon. I work at dawn now.",
+                "Autumn's for good tools. Fields need them before the frost.",
+            },
             wishes = new[]
             {
                 new WishDef
@@ -134,6 +149,13 @@ public static class VillagerDB
             grayIdle = new[] { "The pond is boring. The fish are boring.", "Grandpa just sleeps all day now." },
             colorIdle = new[] { "Did you catch anything big? Show me!", "Grandpa smiled today! A real smile!", "When I grow up I'm gonna have a farm like yours." },
             restored = "Everything looks so bright now! Is this what you see all the time?",
+            seasonLines = new[]
+            {
+                "The pond froze! ...It's still boring though.",
+                "Look, the frogs are back! Spring is the best!",
+                "Summer means fishing every day! Grandpa says so!",
+                "The leaves are crunchy! Listen! *crunch crunch*",
+            },
             wishes = new[]
             {
                 new WishDef

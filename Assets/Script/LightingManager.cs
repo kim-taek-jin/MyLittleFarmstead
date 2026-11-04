@@ -82,7 +82,7 @@ public class LightingManager : MonoBehaviour
             float daylight = GetDaylight(hourValue);
             float intensity = Mathf.Lerp(nightIntensity, 1f, daylight) * baseIntensity;
             DataManager data = DataManager.instance;
-            if (data != null && data.raining) intensity *= rainMultiplier;
+            if (data != null && (data.raining || data.snowing)) intensity *= rainMultiplier;
             globalLight2D.intensity = intensity;
         }
     }

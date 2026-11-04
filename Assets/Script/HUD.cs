@@ -43,6 +43,18 @@ public class HUD : MonoBehaviour
     private bool isChoice;
     private int dialogueOpenedFrame;
 
+    // album
+    private GameObject albumPanel;
+    private TextMeshProUGUI albumTitle;
+    private TextMeshProUGUI albumFooter;
+    private readonly Image[] albumPhotos = new Image[6];
+    private readonly Image[] albumFrames = new Image[6];
+    private readonly TextMeshProUGUI[] albumCaptions = new TextMeshProUGUI[6];
+    private int albumPage;
+    private int albumOpenedFrame;
+
+    public static bool AlbumOpen => instance != null && instance.albumPanel != null && instance.albumPanel.activeSelf;
+
     public static bool DialogueOpen => instance != null && instance.dialoguePanel != null && instance.dialoguePanel.activeSelf;
     public static int DialogueClosedFrame { get; private set; } = -10;
     public static bool AnnouncementOpen => instance != null && instance.announcePanel != null && instance.announcePanel.activeSelf;
@@ -148,6 +160,105 @@ public class HUD : MonoBehaviour
         Place(dialogueHint.rectTransform, 210f, -162f, 860f, 30f);
         dialoguePanel = box.gameObject;
         dialoguePanel.SetActive(false);
+
+        BuildAlbum();
+    }
+
+    // ---------- season album ----------
+    void BuildAlbum()
+    {
+        RectTransform panel = CreatePanel("Album", root, new Color(0.62f, 0.42f, 0.24f, 0.98f));
+        SetAnchors(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 30f), new Vector2(1120f, 700f));
+        RectTransform inner = CreatePanel("Inner", panel, new Color(0.95f, 0.9f, 0.8f, 1f));
+        Stretch(inner, 0f);
+        inner.offsetMin = new Vector2(10f, 10f); inner.offsetMax = new Vector2(-10f, -10f);
+
+        albumTitle = CreateText("Title", panel, 36f);
+        albumTitle.color = new Color(0.3f, 0.2f, 0.12f);
+        Place(albumTitle.rectTransform, 0f, -20f, 1120f, 50f);
+        albumFooter = CreateText("Footer", panel, 22f);
+        albumFooter.color = new Color(0.4f, 0.3f, 0.22f);
+        Place(albumFooter.rectTransform, 0f, -650f, 1120f, 34f);
+
+        for (int i = 0; i < 6; i++)
+        {
+            float x = 70f + (i % 3) * 340f;
+            float y = -90f - (i / 3) * 275f;
+            RectTransform frame = CreatePanel("Frame" + i, panel, new Color(1f, 1f, 1f, 1f));
+            frame.anchorMin = frame.anchorMax = new Vector2(0f, 1f);
+            frame.pivot = new Vector2(0f, 1f);
+            frame.anchoredPosition = new Vector2(x, y);
+            frame.sizeDelta = new Vector2(300f, 200f);
+            albumFrames[i] = frame.GetComponent<Image>();
+
+            GameObject photoGO = new GameObject("Photo", typeof(RectTransform));
+            photoGO.transform.SetParent(frame, false);
+            Image photo = photoGO.AddComponent<Image>();
+            photo.preserveAspect = true;
+            photo.raycastTarget = false;
+            RectTransform pr = (RectTransform)photoGO.transform;
+            pr.anchorMin = Vector2.zero; pr.anchorMax = Vector2.one;
+            pr.offsetMin = new Vector2(14f, 14f); pr.offsetMax = new Vector2(-14f, -14f);
+            albumPhotos[i] = photo;
+
+            TextMeshProUGUI cap = CreateText("Caption" + i, panel, 22f);
+            cap.color = new Color(0.3f, 0.2f, 0.12f);
+            Place(cap.rectTransform, x - 10f, y - 204f, 320f, 64f);
+            albumCaptions[i] = cap;
+        }
+        albumPanel = panel.gameObject;
+        albumPanel.SetActive(false);
+    }
+
+    public static void ToggleAlbum()
+    {
+        HUD hud = Ensure();
+        if (hud.albumPanel.activeSelf)
+        {
+            hud.albumPanel.SetActive(false);
+            return;
+        }
+        DataManager data = DataManager.instance;
+        hud.albumPage = data != null ? data.story.season : 0;
+        hud.albumPanel.SetActive(true);
+        hud.albumOpenedFrame = Time.frameCount;
+        hud.DrawAlbum();
+    }
+
+    void DrawAlbum()
+    {
+        DataManager data = DataManager.instance;
+        if (data == null) return;
+        StoryState story = data.story;
+        Season page = (Season)albumPage;
+        bool reached = albumPage <= story.season || albumPage <= story.highestSeason;
+        var photos = AlbumDB.ForSeason(page);
+
+        albumTitle.text = $"<color={SeasonSystem.Color(page)}>{SeasonSystem.Name(page)}</color>   <size=26>{Album.Count(story, page)}/{AlbumDB.PerSeason}</size>";
+        albumFooter.text = reached
+            ? $"[<-] [->] Season    [P] Close        Total {story.photos.Count}/{AlbumDB.All.Count}"
+            : "This season hasn't come yet. Keep living well.    [<-] [->]  [P]";
+
+        for (int i = 0; i < 6; i++)
+        {
+            PhotoDef p = i < photos.Count ? photos[i] : null;
+            bool taken = p != null && story.photos.Contains(p.id);
+            albumPhotos[i].sprite = p != null ? PixelArt.Load(p.sprite) : null;
+            albumPhotos[i].enabled = p != null && albumPhotos[i].sprite != null;
+            albumPhotos[i].color = taken ? Color.white : new Color(0.16f, 0.15f, 0.17f, 1f);   // 못 찍은 사진은 실루엣
+            albumFrames[i].color = taken ? Color.white : new Color(0.72f, 0.7f, 0.68f, 1f);
+            if (p == null) albumCaptions[i].text = "";
+            else if (taken) albumCaptions[i].text = $"<b>{p.title}</b>";
+            else albumCaptions[i].text = reached ? $"???\n<size=18><color=#7a6a5a>{p.hint}</color></size>" : "???";
+        }
+    }
+
+    void UpdateAlbum()
+    {
+        if (!AlbumOpen || Time.frameCount == albumOpenedFrame) return;
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P)) { albumPanel.SetActive(false); return; }
+        if (Input.GetKeyDown(KeyCode.LeftArrow)) { albumPage = (albumPage + 3) % 4; DrawAlbum(); }
+        if (Input.GetKeyDown(KeyCode.RightArrow)) { albumPage = (albumPage + 1) % 4; DrawAlbum(); }
     }
 
     static void Place(RectTransform rect, float x, float y, float w, float h)
@@ -297,6 +408,7 @@ public class HUD : MonoBehaviour
     {
         float dt = Time.unscaledDeltaTime;
         UpdateDialogue();
+        UpdateAlbum();
 
         for (int i = toasts.Count - 1; i >= 0; i--)
         {

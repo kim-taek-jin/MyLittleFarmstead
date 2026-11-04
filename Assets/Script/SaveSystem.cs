@@ -23,6 +23,7 @@ public class SaveData
     public int hour = 6;
     public float minute = 0f;
     public bool raining;
+    public bool snowing;
     public int waterCharges;
 }
 

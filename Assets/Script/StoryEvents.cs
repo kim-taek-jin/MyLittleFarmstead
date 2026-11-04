@@ -77,7 +77,12 @@ public static class StoryEvents
         var sb = new StringBuilder();
         int day = Data.TimeManager != null ? Data.TimeManager.day : 1;
         sb.Append($"<size=40>Journal</size>   <size=24>Day {day}</size>\n\n");
-        sb.Append($"<color=#ff8fb1>Heart</color> {Data.heart:0}/{Data.maxHeart:0}    Gold {Data.gold}\n\n");
+        Season season = Data.CurrentSeason;
+        int toNext = SeasonSystem.HeartToNext(Data.heart, season);
+        sb.Append($"<color=#ff8fb1>Heart</color> {Data.heart:0}/{Data.maxHeart:0}    Gold {Data.gold}    " +
+                  $"<color={SeasonSystem.Color(season)}>{SeasonSystem.Name(season)}</color>" +
+                  (toNext > 0 ? $" <size=22>({SeasonSystem.Name(season + 1)} at {toNext} more Heart)</size>" : "") +
+                  $"    Album {story.photos.Count}/{AlbumDB.All.Count} [P]\n\n");
 
         sb.Append("<color=#ffd84a>Villagers</color>\n");
         foreach (VillagerDef def in VillagerDB.All)

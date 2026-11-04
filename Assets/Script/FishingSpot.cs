@@ -90,7 +90,11 @@ public class FishingSpot : MonoBehaviour
 
         bool first = Data.story.FishCount(fish) == 0;
         Data.AddItem(fish, 1);
-        if (fish != "Old Boot") Data.story.RecordFish(fish);
+        if (fish != "Old Boot")
+        {
+            Data.story.RecordFish(fish);
+            Album.Report("fish", fish);
+        }
 
         switch (fish)
         {

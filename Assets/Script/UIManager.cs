@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using TMPro;
 
 public class UIManager : MonoBehaviour
@@ -23,8 +23,10 @@ public class UIManager : MonoBehaviour
 
         if (dayText != null)
         {
-            bool raining = DataManager.instance != null && DataManager.instance.raining;
-            dayText.text = $"Day: {gameTimeManager.day}" + (raining ? "  (Rain)" : "");
+            DataManager data = DataManager.instance;
+            string season = data != null ? SeasonSystem.Name(data.CurrentSeason) : "";
+            string weather = data != null && data.snowing ? "  (Snow)" : (data != null && data.raining ? "  (Rain)" : "");
+            dayText.text = $"{season} {gameTimeManager.day}{weather}";
         }
     }
 }

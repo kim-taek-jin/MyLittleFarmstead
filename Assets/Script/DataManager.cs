@@ -59,7 +59,13 @@ public class DataManager : MonoBehaviour
 
     [Header("날씨 / 물뿌리개")]
     public bool raining = false;
+    public bool snowing = false;   // 겨울(마음의 계절)에는 비 대신 눈 (밭을 적시지 않음)
     public int waterCharges = 10;
+
+    [Header("데모 빌드")]
+    [Tooltip("켜면 '봄'이 오는 순간 데모가 끝납니다 (계절은 겨울에 머묾). DEMO_BUILD 심볼로도 켤 수 있습니다.")]
+    public bool demoMode = false;
+    public string wishlistUrl = "https://store.steampowered.com/";
 
     // --- 이벤트 ---
     public event System.Action OnInventoryChanged;
@@ -67,6 +73,7 @@ public class DataManager : MonoBehaviour
 
     public bool IsGameOver { get; private set; }
     public GameTimeManager TimeManager => timeManager;
+    public Season CurrentSeason => (Season)story.season;
 
     private GameTimeManager timeManager;
     private readonly HashSet<string> clearedResources = new HashSet<string>();
@@ -94,8 +101,12 @@ public class DataManager : MonoBehaviour
         SceneManager.sceneLoaded += OnSceneLoaded;
 
         Time.timeScale = 1f;
+#if DEMO_BUILD
+        demoMode = true;
+#endif
         HUD.Ensure();
         WorldColor.Ensure();
+        WeatherFX.Ensure();
     }
 
     private void OnDestroy()
@@ -189,6 +200,11 @@ public class DataManager : MonoBehaviour
         {
             StartNewGame();
         }
+        if (Input.GetKeyDown(KeyCode.P) && !HUD.DialogueOpen && !HUD.AlbumOpen) HUD.ToggleAlbum();
+        if (demoMode && story.IsUnlocked("demo_end") && HUD.AnnouncementOpen && Input.GetKeyDown(KeyCode.Return))
+        {
+            Application.OpenURL(wishlistUrl);
+        }
         if (Input.GetKeyDown(KeyCode.J) && !HUD.DialogueOpen)
         {
             if (journalOpen && HUD.AnnouncementOpen)
@@ -214,7 +230,8 @@ public class DataManager : MonoBehaviour
 
     string BuildStatusLine()
     {
-        string weather = raining ? "<color=#8fb8ff>Rain</color>" : "<color=#ffe28a>Sunny</color>";
+        string weather = snowing ? "<color=#e4ecf4>Snow</color>" : (raining ? "<color=#8fb8ff>Rain</color>" : "<color=#ffe28a>Sunny</color>");
+        weather = $"<color={SeasonSystem.Color(CurrentSeason)}>{SeasonSystem.Name(CurrentSeason)}</color>  {weather}";
         string held = Hotbar.SelectedItem;
         string heldText = string.IsNullOrEmpty(held) ? "" : $"   Holding: {held}";
         int capacity = WaterCapacity;
@@ -306,6 +323,7 @@ public class DataManager : MonoBehaviour
     {
         gold = Mathf.Max(0, gold + amount);
         UpdateGoldUI();
+        if (gold >= 1000) Album.Report("gold1000");
     }
 
     public void AddItem(string itemName, int count = 1)
@@ -388,6 +406,7 @@ public class DataManager : MonoBehaviour
         thirst = maxThirst;
         today.drankWater = true;
         UpdateStatusUI();
+        Album.Report("drink");
     }
 
     // 먹을 수 있는 아이템을 먹습니다.
@@ -403,6 +422,7 @@ public class DataManager : MonoBehaviour
         today.mealsEaten++;
         if (def.thirst > 0f) today.drankWater = true;
 
+        if (def.category == ItemCategory.Food && def.heart > 0f) Album.Report("eat_cooked", def.name);
         string msg = $"Ate {def.name}.";
         if (def.heart > 0f)
         {
@@ -477,6 +497,8 @@ public class DataManager : MonoBehaviour
     public void OnHarvest(string itemName, int amount, bool blessed)
     {
         today.harvested += amount;
+        Album.Report("harvest", itemName);
+        if (blessed) Album.Report("golden", itemName);
         if (itemName == "Sunflower") ChangeHeart(2f * amount, "The sunflower makes you smile.");
         if (blessed) ChangeHeart(3f, "A golden harvest!");
         else if (today.harvested == amount) ChangeHeart(1f, "Your first harvest of the day.");
@@ -530,6 +552,7 @@ public class DataManager : MonoBehaviour
     {
         market.haggledToday = true;
         market.haggleBonus = Mathf.Max(market.haggleBonus, bonus);
+        if (bonus > 0f) Album.Report("haggle");
         if (bonus > 0f) ChangeHeart(1f, "A friendly chat with the merchant.");
     }
 
@@ -618,6 +641,7 @@ public class DataManager : MonoBehaviour
         {
             delta += 4f;
             lines.Add("Went to bed on time  <color=#9dff9d>+4</color>");
+            Album.Report("sleep_early");
         }
         else
         {
@@ -639,10 +663,23 @@ public class DataManager : MonoBehaviour
         thirst = Mathf.Max(0f, thirst - 20f);
         health = Mathf.Min(maxHealth, health + 30f);
 
+        // ---- 마음의 계절: 아침에만 바뀜 ----
+        Season before = CurrentSeason;
+        Season cap = demoMode ? Season.Winter : Season.Autumn;
+        bool demoEndsNow = demoMode && SeasonSystem.ForHeart(heart) >= Season.Spring && !story.IsUnlocked("demo_end");
+        Season after = SeasonSystem.Evaluate(heart, before, cap);
+        story.season = (int)after;
+        if ((int)after > story.highestSeason) story.highestSeason = (int)after;
+        if (after >= Season.Autumn) story.Unlock("season_autumn");
+
+        // ---- 마음을 따라가는 날씨 (겨울에는 눈: 밭을 적시지 않음) ----
+        bool wet = rng.NextDouble() < SeasonSystem.RainChance(after, delta);
+        snowing = wet && after == Season.Winter;
+        raining = wet && after != Season.Winter;
+
         // 새로운 날
-        raining = rng.NextDouble() < (raining ? 0.15 : 0.25);
         int earthLevel = SpiritDB.PerkLevel(story.spirit, "earth");
-        int matured = farm.AdvanceDay(raining, 0.1f * earthLevel, rng);
+        int matured = farm.AdvanceDay(raining, 0.1f * earthLevel, rng, after);
         int bloomLevel = SpiritDB.PerkLevel(story.spirit, "bloom");
         if (bloomLevel > 0)
         {
@@ -650,7 +687,7 @@ public class DataManager : MonoBehaviour
             lines.Add($"Your spirit hummed you to sleep  <color=#9dff9d>+{bloomLevel}</color>");
             ChangeHeart(bloomLevel, null);
         }
-        market.StartNewDay(rng);
+        market.StartNewDay(rng, after);
         clearedResources.Clear();
         today = new DayLog();
         energy = passedOut ? MaxEnergyNow * 0.5f : MaxEnergyNow;
@@ -659,16 +696,80 @@ public class DataManager : MonoBehaviour
         SaveGame();
 
         int day = timeManager != null ? timeManager.day : 0;
-        string header = $"<size=42>Day {day}</size>\n{(raining ? "It's raining. The fields are watered." : "A clear morning.")}";
+        string weatherLine = snowing ? "Soft snow is falling." : (raining ? "It's raining. The fields are watered." : "A clear morning.");
+        if (delta >= 6f && !raining && !snowing) weatherLine = "A clear morning. Yesterday was a good day.";
+        else if (delta < 0f && (raining || snowing)) weatherLine += " The sky feels as heavy as you do.";
+        string header = $"<size=42>{SeasonSystem.Name(after)}, Day {day}</size>\n{weatherLine}";
         if (matured > 0) header += $"\n{matured} crop(s) are ready to harvest!";
+
+        if (after > before)
+        {
+            header = $"<size=44><color={SeasonSystem.Color(after)}>{SeasonSystem.Name(after)} has come</color></size>\n" +
+                     $"<size=24>{SeasonSystem.Arrival(after)}\n{NewCropsText(after)}</size>\n\n<size=30>Day {day}</size>";
+        }
+        else if (after < before)
+        {
+            header = $"<size=42><color=#c8d8ff>A cold snap...</color></size>\n<size=24>You pushed yourself too hard. It feels like {SeasonSystem.Name(after)} again.\n" +
+                     $"Some crops stopped growing for now. They'll wait for you.</size>\n\n<size=30>Day {day}</size>";
+        }
+        if (raining) Album.Report("rain_morning");
+
         string body = string.Join("\n", lines);
         string sign = delta >= 0 ? "+" : "";
-        HUD.Announce($"{header}\n\n<size=26>{body}</size>\n\n<color=#ff8fb1>Heart {sign}{delta:0}  ({heart:0}/{maxHeart:0})</color>", 7f);
+        string preview = BuildTodayPreview(after);
+        HUD.Announce($"{header}\n\n<size=24>{body}</size>\n\n<color=#ff8fb1>Heart {sign}{delta:0}  ({heart:0}/{maxHeart:0})</color>{preview}", 8f);
+
+        if (demoEndsNow)
+        {
+            story.Unlock("demo_end");
+            HUD.Announce("<size=44><color=#ffb6d0>Spring is coming...</color></size>\n\n" +
+                         "You made it through the winter.\nThe rest of the year is waiting in the full game.\n\n" +
+                         "<size=28>Thank you for playing the demo!</size>\n<size=24>[Enter] Wishlist on Steam</size>", 30f);
+        }
+        else if (demoMode && story.IsUnlocked("demo_end"))
+        {
+            HUD.Toast("Demo: spring is waiting in the full game. [Enter] while this shows: Wishlist", 4f);
+        }
+        if (after != before) PixelArtWorld.RefreshSeasonal();
 
         OnNewDay?.Invoke();
         InventoryChanged();
         StoryEvents.OnNewDay(day);
         StoryEvents.CheckEnding();
+    }
+
+    string NewCropsText(Season s)
+    {
+        var names = new List<string>();
+        foreach (CropDef c in CropDB.All) if (c.minSeason == s) names.Add(c.harvestItem);
+        return names.Count > 0 ? $"<color=#9dff9d>Now growing: {string.Join(", ", names)}</color>" : "";
+    }
+
+    // 내일 예고: 아침 요약 끝에 '오늘 할 만한 일'을 보여줘서 하루 더 하고 싶게 만듭니다.
+    string BuildTodayPreview(Season season)
+    {
+        var tips = new List<string>();
+        int ripe = farm.RipeNow();
+        if (ripe > 0) tips.Add($"{ripe} crop(s) ripe in the field");
+        int tomorrow = farm.RipeningTomorrow(season);
+        if (tomorrow > 0) tips.Add($"{tomorrow} crop(s) ripen tomorrow if you water them today");
+        int toNext = SeasonSystem.HeartToNext(heart, season);
+        if (toNext > 0 && !(demoMode && season == Season.Winter && story.IsUnlocked("demo_end")))
+            tips.Add($"{SeasonSystem.Name(season + 1)} comes at {toNext} more Heart");
+        foreach (VillagerDef v in VillagerDB.All)
+        {
+            VillagerProgress p = story.Get(v.id);
+            if (!p.met || p.wishIndex >= v.wishes.Length) continue;
+            bool ready = true;
+            foreach (var it in v.wishes[p.wishIndex].items) if (!HasItem(it.itemName, it.count)) { ready = false; break; }
+            if (ready) { tips.Add($"You have everything for {v.name}'s wish"); break; }
+        }
+        if (StarHill.IsUnlocked && !raining && !snowing) tips.Add("Clear skies tonight: the star vine will grow");
+        int left = AlbumDB.PerSeason - Album.Count(story, season);
+        if (left > 0) tips.Add($"{left} {SeasonSystem.Name(season)} photo(s) left in your album [P]");
+        if (tips.Count == 0) return "";
+        if (tips.Count > 3) tips.RemoveRange(3, tips.Count - 3);
+        return "\n\n<size=24><color=#ffd84a>Today</color>  " + string.Join("  ·  ", tips) + "</size>";
     }
 
     // ===================================================================
@@ -764,11 +865,12 @@ public class DataManager : MonoBehaviour
 
         farm = new FarmData();
         market = new MarketState();
-        market.StartNewDay(rng);
+        market.StartNewDay(rng, Season.Winter);
         today = new DayLog();
         story = new StoryState();
         clearedResources.Clear();
         raining = false;
+        snowing = false;
         waterCharges = WaterCapacity;
 
         if (timeManager != null) timeManager.SetTime(1, 6, 0f);
@@ -791,6 +893,7 @@ public class DataManager : MonoBehaviour
             today = today,
             story = story,
             raining = raining,
+            snowing = snowing,
             waterCharges = waterCharges,
             clearedResources = clearedResources.ToList(),
             heartMilestonesReached = new List<int>(heartMilestonesReached),
@@ -823,6 +926,7 @@ public class DataManager : MonoBehaviour
         today = data.today ?? new DayLog();
         story = data.story ?? new StoryState();
         raining = data.raining;
+        snowing = data.snowing;
 
         inventory.Clear();
         foreach (var stack in data.inventory) AddToDict(inventory, stack);
@@ -840,6 +944,7 @@ public class DataManager : MonoBehaviour
         WorldColor.SetHeart(heart / maxHeart, true);
         InventoryChanged();
         Spirit.EnsureSpawned();
+        PixelArtWorld.RefreshSeasonal();
         return true;
     }
 

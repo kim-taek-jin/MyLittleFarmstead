@@ -31,13 +31,15 @@ public static class PixelArtWorld
 
                 string key = KeyFor(sr);
                 if (key == null) continue;
-                Sprite sprite = PixelArt.Load("World/" + key);
+                Sprite sprite = SeasonalSprite(key);
+                SpriteRenderer view;
                 if (key.StartsWith("bg_"))
-                    PixelArt.Overlay(sr, sprite, 1f, stretch: true);          // 배경: 원래 영역에 정확히
+                    view = PixelArt.Overlay(sr, sprite, 1f, stretch: true);          // 배경: 원래 영역에 정확히
                 else if (key == "tree")
-                    PixelArt.Overlay(sr, sprite, 1.45f, anchorBottom: true);  // 나무: 플레이어보다 크게, 밑동 고정
+                    view = PixelArt.Overlay(sr, sprite, 1.45f, anchorBottom: true);  // 나무: 플레이어보다 크게, 밑동 고정
                 else
-                    PixelArt.Overlay(sr, sprite);
+                    view = PixelArt.Overlay(sr, sprite);
+                if (view != null && view.GetComponent<SeasonalArt>() == null) view.gameObject.AddComponent<SeasonalArt>().baseKey = key;
             }
         }
 
@@ -46,6 +48,25 @@ public static class PixelArtWorld
         if (player != null && player.GetComponent<PlayerPixelAnimator>() == null)
         {
             player.AddComponent<PlayerPixelAnimator>();
+        }
+    }
+
+    // 마음의 계절에 맞는 그림 (예: bg_farm_winter, tree_autumn). 없으면 기본 그림.
+    public static Sprite SeasonalSprite(string key)
+    {
+        DataManager data = DataManager.instance;
+        string season = data != null ? SeasonSystem.Key(data.CurrentSeason) : "winter";
+        return PixelArt.Load($"World/{key}_{season}") ?? PixelArt.Load("World/" + key);
+    }
+
+    // 계절이 바뀌거나 저장을 불러온 뒤: 이미 그려진 월드 그림을 계절에 맞게 바꿉니다.
+    public static void RefreshSeasonal()
+    {
+        foreach (SeasonalArt art in Object.FindObjectsByType<SeasonalArt>(FindObjectsSortMode.None))
+        {
+            SpriteRenderer sr = art.GetComponent<SpriteRenderer>();
+            Sprite s = SeasonalSprite(art.baseKey);
+            if (sr != null && s != null) sr.sprite = s;
         }
     }
 

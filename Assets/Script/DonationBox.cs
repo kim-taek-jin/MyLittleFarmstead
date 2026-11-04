@@ -66,6 +66,7 @@ public class DonationBox : MonoBehaviour
         HUD.Toast($"You shared {item} x{count}.  <color=#ff9fc4>Kindness +{got}</color>  ({data.story.kindness}/{StarHill.KindnessToUnlock})" +
                   (left <= 0 ? "  <color=#c8c0b0>That's plenty for today.</color>" : ""), 3f);
         data.AddKindness(got, fromShareBox: true);
+        Album.Report("share");
     }
 
     void OnTriggerEnter2D(Collider2D other)

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -51,10 +51,11 @@ public class MarketState
         return Mathf.Max(1, Mathf.RoundToInt(price));
     }
 
-    public void StartNewDay(System.Random rng)
+    public void StartNewDay(System.Random rng, Season season = Season.Autumn)
     {
         List<string> candidates = new List<string>();
-        foreach (var crop in CropDB.All) candidates.Add(crop.harvestItem);
+        foreach (var crop in CropDB.All) if (crop.GrowsIn(season)) candidates.Add(crop.harvestItem);
+        if (candidates.Count == 0) candidates.Add("Carrot");
         demandItem = candidates[rng.Next(candidates.Count)];
         haggleBonus = 0f;
         haggledToday = false;

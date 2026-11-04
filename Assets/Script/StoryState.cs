@@ -27,6 +27,11 @@ public class StoryState
     public List<string> unlocks = new List<string>();   // 레시피/상점/이벤트 플래그
     public List<ItemStack> fishCaught = new List<ItemStack>();
 
+    // 마음의 계절 (0 겨울 ~ 3 가을)
+    public int season = 0;
+    public int highestSeason = 0;
+    public List<string> photos = new List<string>();   // 계절 앨범에서 찍은 사진 id
+
     // 색을 먹는 정령
     public SpiritState spirit = new SpiritState();
 

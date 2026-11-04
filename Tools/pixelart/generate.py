@@ -193,6 +193,15 @@ def main():
     exported['World'].append(export('World', 'donation_box', spirit.donation_box()))
     exported['World'].append(export('World', 'star_ladder', spirit.star_ladder()))
     bgs.append(export_image('World', 'bg_starhill', spirit.bg_starhill()))
+
+    # ---- heart seasons: seasonal backgrounds and world-object variants ----
+    for season in backgrounds.SEASONS:
+        bgs.append(export_image('World', f'bg_farm_{season}', backgrounds.farm(season)))
+        bgs.append(export_image('World', f'bg_market_{season}', backgrounds.market(season)))
+    larch = [(90, 58, 16, 255), (160, 102, 26, 255), (216, 160, 48, 255), (246, 212, 112, 255)]
+    exported['World'].append(export('World', 'tree_autumn', world.tree(larch)))
+    for name in ('tree', 'rock', 'well', 'storage_box', 'exit_sign'):
+        exported['World'].append(export('World', f'{name}_winter', backgrounds.snow_cap(world.WORLD[name]())))
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))
 

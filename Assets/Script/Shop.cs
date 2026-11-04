@@ -99,9 +99,13 @@ public class Shop : MonoBehaviour
                 {
                     if (dataManager.story.IsUnlocked(unlock.Key)) stock.Add(unlock.Value);
                 }
+                if (dataManager.CurrentSeason >= Season.Autumn) stock.Add(new ItemForSale { itemName = "Pumpkin Seed", price = 70 });
             }
             foreach (var item in stock)
             {
+                // 지금 마음의 계절에 자라지 않는 씨앗은 아직 팔지 않습니다.
+                CropDef crop = CropDB.FromSeed(ItemDB.Normalize(item.itemName));
+                if (crop != null && dataManager != null && !crop.GrowsIn(dataManager.CurrentSeason)) continue;
                 GameObject slotGO = Instantiate(shopSlotPrefab, gridParent);
                 ShopSlot slotScript = slotGO.GetComponent<ShopSlot>();
                 if (slotScript != null) slotScript.SetupForBuy(ItemDB.Normalize(item.itemName), item.price, this);

@@ -51,6 +51,31 @@ public class FarmData
     }
 
     // 물 주기: 갈아둔 땅이면 젖게 하고, 작물이 있으면 '오늘 물 받음' 처리
+    public int FrozenCrops(Season season)
+    {
+        int n = 0;
+        foreach (var c in crops) if (!c.Def.GrowsIn(season)) n++;
+        return n;
+    }
+
+    // 내일 아침 다 자랄 작물 수 (오늘 물을 주면)
+    public int RipeningTomorrow(Season season)
+    {
+        int n = 0;
+        foreach (var c in crops)
+        {
+            if (!c.IsMature && c.Def.GrowsIn(season) && c.daysGrown + 1 >= c.Def.daysToMature) n++;
+        }
+        return n;
+    }
+
+    public int RipeNow()
+    {
+        int n = 0;
+        foreach (var c in crops) if (c.IsMature) n++;
+        return n;
+    }
+
     public bool Water(int x, int y)
     {
         FarmTileData tile = GetTile(x, y);
@@ -88,12 +113,13 @@ public class FarmData
     // 하루가 지날 때 호출. 어제 물을 받은 작물만 자라고, 비가 오면 오늘 밭 전체가 젖습니다.
     // 반환값: 오늘 새로 다 자란 작물 수
     // extraGrowthChance: 물 받은 작물이 하루 더 자랄 확률 (대지의 정령 능력)
-    public int AdvanceDay(bool rainToday, float extraGrowthChance = 0f, System.Random rng = null)
+    // season: 지금 마음의 계절. 그보다 높은 계절의 작물은 '얼어서' 자라지 않습니다 (시들지는 않음).
+    public int AdvanceDay(bool rainToday, float extraGrowthChance = 0f, System.Random rng = null, Season season = Season.Autumn)
     {
         int newlyMature = 0;
         foreach (var crop in crops)
         {
-            if (crop.isWatered && !crop.IsMature)
+            if (crop.isWatered && !crop.IsMature && crop.Def.GrowsIn(season))
             {
                 crop.daysGrown++;
                 if (!crop.IsMature && rng != null && rng.NextDouble() < extraGrowthChance) crop.daysGrown++;

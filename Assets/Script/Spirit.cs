@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 색을 먹는 정령. 처음 자연의 정수를 얻으면 나타나 플레이어를 따라다닙니다.
@@ -46,6 +46,7 @@ public class Spirit : MonoBehaviour
         st.found = true;
         Record(SpiritDB.FormKey(st));
         EnsureSpawned();
+        Album.Report("spirit_found");
         HUD.Announce(
             "<size=40>A tiny gray spirit</size>\n\n" +
             "Drawn by the light, a little gray wisp drifts out and starts following you.\n" +
@@ -139,6 +140,7 @@ public class Spirit : MonoBehaviour
             bool isNew = !st.formsSeen.Contains(formAfter);
             Record(formAfter);
             string grew = SpiritDB.Stage(st) > stageBefore ? "Your spirit grew!" : "Your spirit changed its colors!";
+            if (SpiritDB.Stage(st) >= 1) Album.Report("spirit_young");
             HUD.Announce($"<size=40>{grew}</size>\n\n{SpiritDB.FormName(formAfter)}" + (isNew ? "  <color=#9dff9d>(new form!)</color>" : "") +
                          $"\n<size=24>{SpiritDB.PerkText(st)}</size>\n\n<size=22>Forms found: {st.formsSeen.Count} / {SpiritDB.AllForms.Length}</size>", 5f);
             if (isNew) Data.ChangeHeart(2f, "Your spirit is glowing with color.");

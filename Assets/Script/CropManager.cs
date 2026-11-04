@@ -232,6 +232,11 @@ public class CropManager : MonoBehaviour
 
         CropDef def = CropDB.FromSeed(seedName);
         if (def == null || !Data.HasItem(seedName)) return false;
+        if (!def.GrowsIn(Data.CurrentSeason))
+        {
+            HUD.Toast($"It's still {SeasonSystem.Name(Data.CurrentSeason)} in your heart. {def.harvestItem} needs {SeasonSystem.Name(def.minSeason)}.", 3f);
+            return false;
+        }
         if (!Data.UseEnergy(plantEnergy)) return false;
 
         Data.RemoveItem(seedName, 1);

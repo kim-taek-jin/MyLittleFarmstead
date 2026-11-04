@@ -34,7 +34,7 @@ public class StarHill : MonoBehaviour
         get
         {
             if (!IsUnlocked || Data.TimeManager == null) return false;
-            return Data.TimeManager.hour >= 20 && !Data.raining;
+            return Data.TimeManager.hour >= 20 && !Data.raining && !Data.snowing;
         }
     }
 
@@ -120,6 +120,7 @@ public class StarHill : MonoBehaviour
             Data.story.starsTonight = 0;
         }
         HUD.Toast("You climb the glowing vine... the whole sky opens up.", 3f);
+        Album.Report("starhill");
     }
 
     void Leave(PlayerAction player)
@@ -167,6 +168,7 @@ public class StarHill : MonoBehaviour
                 Data.AddItem("Star Fragment", 1);
                 Data.story.starsTonight++;
                 Data.story.starsTotal++;
+                Album.Report("star");
                 int left = StarsPerNight - Data.story.starsTonight;
                 HUD.Toast(left > 0 ? $"You caught a Star Fragment! ({Data.story.starsTonight}/{StarsPerNight} tonight)" : "That was the last falling star tonight.", 2f);
             }
