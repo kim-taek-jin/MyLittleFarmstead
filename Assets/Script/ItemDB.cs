@@ -5,7 +5,7 @@ using UnityEngine;
 public enum ItemCategory { Tool, Seed, Crop, Food, Resource, Special, Station, Fish }
 
 // 도구 종류
-public enum ToolType { None, Hoe, WateringCan, Scythe, FishingRod }
+public enum ToolType { None, Hoe, WateringCan, Scythe, FishingRod, Mattock }
 
 // 아이템 하나의 정의(이름, 가격, 효과 등)를 한 곳에서 관리합니다.
 public class ItemDef
@@ -99,6 +99,15 @@ public static class ItemDB
         Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. Your spirit loves it (all four colors)." });
 
         // --- 설치/작업대 ---
+        // ---- 숲 (맵 3단계) ----
+        Register(new ItemDef { name = "Mattock", category = ItemCategory.Tool, toolType = ToolType.Mattock, color = new Color(0.6f, 0.6f, 0.65f), description = "Digs out stumps, boulders and fallen logs." });
+        Register(new ItemDef { name = "Acorn", category = ItemCategory.Seed, color = new Color(0.7f, 0.5f, 0.3f), description = "Plant it in a forest clearing and water it for a few days." });
+        Register(new ItemDef { name = "Wild Garlic", category = ItemCategory.Food, sellPrice = 20, hunger = 6f, color = new Color(0.9f, 0.95f, 0.85f) });
+        Register(new ItemDef { name = "Fern Sprout", category = ItemCategory.Food, sellPrice = 25, hunger = 8f, color = new Color(0.45f, 0.65f, 0.3f) });
+        Register(new ItemDef { name = "Morel", category = ItemCategory.Food, sellPrice = 60, hunger = 10f, color = new Color(0.7f, 0.55f, 0.35f) });
+        Register(new ItemDef { name = "Spring Greens", category = ItemCategory.Food, sellPrice = 90, hunger = 25f, heart = 2f, color = new Color(0.45f, 0.75f, 0.35f), description = "Fresh from the forest floor." });
+        Register(new ItemDef { name = "Morel Soup", category = ItemCategory.Food, sellPrice = 220, hunger = 35f, thirst = 20f, heart = 4f, color = new Color(0.8f, 0.6f, 0.35f), description = "Earthy and warm. Tastes like a walk in the woods." });
+
         Register(new ItemDef { name = "Campfire", category = ItemCategory.Station, sellPrice = 20, iconFallback = "Wood", color = new Color(1f, 0.45f, 0.1f), description = "Needed for cooking recipes." });
     }
 

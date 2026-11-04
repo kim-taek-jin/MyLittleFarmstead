@@ -112,6 +112,13 @@ public static class StoryEvents
             : $"{story.kindness}/{StarHill.KindnessToUnlock} to open Star Hill  (sharing box today: {StoryState.ShareCapPerDay - story.ShareRoom(day)}/{StoryState.ShareCapPerDay})";
         sb.Append($"\n<color=#ffb6d0>Kindness</color> {story.kindness}   <size=22>{hill}</size>\n");
 
+        ForestState forest = story.forest;
+        if (forest != null && forest.open)
+        {
+            string tree = forest.treeAwake ? "The old tree is awake." : "The old tree is asleep.";
+            sb.Append($"<color=#9dff9d>Forest</color>  clearings restored {forest.Restored}/{ForestState.Clearings}   <size=22>{tree}</size>\n");
+        }
+
         sb.Append("\n<color=#8fb8ff>Fish caught</color>  ");
         var fish = new List<string>();
         foreach (string f in new[] { "Minnow", "Carp", "Golden Koi" })

@@ -31,12 +31,17 @@ public static class FarmMap
         if (scene.name != SceneName) return;
 
         Material mat = FindSpriteMaterial();
+        if (DataManager.instance != null) ForestArea.CheckOpen(DataManager.instance);   // 예전 저장 파일: 이미 봄이면 열어 둠
         LayDirt(map);
         SpawnDebris(map, scene, mat);
         SpawnResources(map, scene);
         SetupExits(map, scene, mat);
         Camera cam = Camera.main;
-        if (cam != null) CameraFollow.Attach(cam, map.Bounds);
+        CameraFollow follow = cam != null ? CameraFollow.Attach(cam, map.Bounds) : null;
+
+        // 숲 (봄이 오면 열림): 같은 씬 안 멀리에 만들고, 카메라가 다닐 수 있는 지역으로 추가
+        ForestArea forest = ForestArea.Build(scene, mat);
+        if (forest != null && follow != null) follow.AddRegion(ForestArea.Map.Bounds);
     }
 
     // ---------------------------------------------------------------- 바닥 그림
@@ -92,7 +97,9 @@ public static class FarmMap
         DataManager data = DataManager.instance;
         if (data == null || Map == null) return;
         int total = Map.CountDebris();
-        int done = data.farm.clearedDebris.Count;
+        int done = 0;
+        foreach (var cell in Map.Cells())
+            if (MapData.IsDebris(cell.Value) && data.farm.IsDebrisCleared(cell.Key.x, cell.Key.y)) done++;
         if (total <= 0) return;
         int before = (done - 1) * 4 / total, after = done * 4 / total;
         if (after == before) return;
@@ -152,6 +159,15 @@ public static class FarmMap
         if (map.exits == null) return;
         foreach (MapExit exit in map.exits)
         {
+            if (exit.to == "Forest" && ForestArea.IsOpen && ForestArea.Map != null)
+            {
+                // 봄이 와서 가시덤불이 꽃 아치가 됨 → 걸어 들어가면 숲 입구로
+                ForestArea.Map.TryArrival("Farm", out Vector2 into);
+                AreaPortal portal = AreaPortal.Create("ForestArch", exit.Area, into, "The air turns cool and green. You step into the forest.");
+                LockedExit.PlaceArt(portal.transform, "flower_arch", exit.Area, map.Bounds, mat);
+                SceneManager.MoveGameObjectToScene(portal.gameObject, scene);
+                continue;
+            }
             if (exit.IsLocked)
             {
                 LockedExit locked = LockedExit.Create(exit, map.Bounds, mat);

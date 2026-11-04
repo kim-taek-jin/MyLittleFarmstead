@@ -20,7 +20,11 @@ with open(os.path.join(HERE, 'game.js'), encoding='utf-8') as f:
     js = f.read()
 with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'farm.json'), encoding='utf-8') as f:
     farm_map = json.load(f)
-js = js.replace('/*__ASSETS__*/{}', json.dumps(assets)).replace('/*__MAP__*/null', json.dumps(farm_map, separators=(',', ':')))
+with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'forest.json'), encoding='utf-8') as f:
+    forest_map = json.load(f)
+js = (js.replace('/*__ASSETS__*/{}', json.dumps(assets))
+        .replace('/*__MAP__*/null', json.dumps(farm_map, separators=(',', ':')))
+        .replace('/*__FOREST__*/null', json.dumps(forest_map, separators=(',', ':'))))
 html = html.replace('/*__GAME__*/', js)
 out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'Docs', 'web_preview.html')
 with open(out, 'w', encoding='utf-8') as f:

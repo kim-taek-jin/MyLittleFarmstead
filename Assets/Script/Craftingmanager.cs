@@ -53,6 +53,9 @@ public class CraftingManager : MonoBehaviour
         yield return Make("Grilled Fish", 1, "Campfire", new ItemInfo("Minnow", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Minnow)");
         yield return Make("Grilled Fish", 2, "Campfire", new ItemInfo("Carp", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Carp)");
         yield return Make("Pumpkin Pie", 1, "Campfire", new ItemInfo("Pumpkin", 1), new ItemInfo("Bread", 1)).Locked("season_autumn");
+        yield return Make("Mattock", 1, "", new ItemInfo("Wood", 5), new ItemInfo("Stone", 5));
+        yield return Make("Spring Greens", 1, "", new ItemInfo("Wild Garlic", 1), new ItemInfo("Fern Sprout", 1)).Locked("forest_open");
+        yield return Make("Morel Soup", 1, "Campfire", new ItemInfo("Morel", 2), new ItemInfo("Wild Garlic", 1)).Locked("forest_open");
         yield return Make("Roasted Carrot", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Wood", 1));
         yield return Make("Baked Potato", 1, "Campfire", new ItemInfo("Potato", 1), new ItemInfo("Wood", 1));
         yield return Make("Corn Soup", 1, "Campfire", new ItemInfo("Corn", 2));

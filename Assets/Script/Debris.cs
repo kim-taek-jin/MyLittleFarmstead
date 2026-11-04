@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 넓어진 농장의 묵은 밭에 있는 잡초 / 그루터기 / 바위. 치우면 그 칸이 갈 수 있는 흙이 됩니다.
+// 치울 수 있는 것들. 농장 묵은 밭의 잡초 / 그루터기 / 바위는 치우면 갈 수 있는 흙이 되고,
+// 숲의 쓰러진 통나무는 치우면 길이 열립니다.
 //  잡초:     낫이나 괭이로 한 번 (에너지 2)
-//  그루터기: 괭이로 3번 (좋은 괭이는 2번), 한 번에 에너지 4 → 나무 2개
-//  바위:     괭이로 4번 (좋은 괭이는 3번), 한 번에 에너지 4 → 돌 2개 (가끔 대지의 숨결)
+//  그루터기: 곡괭이로 2번, 한 번에 에너지 4 → 나무 2개
+//  바위:     곡괭이로 3번, 한 번에 에너지 4 → 돌 2개 (가끔 대지의 숨결)
+//  통나무:   곡괭이로 3번, 한 번에 에너지 4 → 나무 3개
 // 치운 칸은 FarmData.clearedDebris에 저장되어 다시 생기지 않습니다.
 public class Debris : MonoBehaviour
 {
     public const float WeedEnergy = 2f;
     public const float DigEnergy = 4f;
 
-    public char kind;            // 'g' 잡초, 'k' 그루터기, 'o' 바위
+    public char kind;            // 'g' 잡초, 'k' 그루터기, 'o' 바위, 'l' 숲의 통나무
     public Vector3Int cell;
     public int hitsLeft;
 
@@ -31,19 +33,23 @@ public class Debris : MonoBehaviour
         {
             case 'k': return "stump";
             case 'o': return "boulder";
+            case 'l': return "forest_log";
             default: return "weeds_" + (Mathf.Abs(cellX + cellY) % 2);
         }
     }
 
-    public static string NameOf(char kind) => kind == 'k' ? "stump" : kind == 'o' ? "boulder" : "weeds";
+    public static string NameOf(char kind) => kind == 'k' ? "stump" : kind == 'o' ? "boulder" : kind == 'l' ? "log" : "weeds";
 
-    // 도구 등급별로 몇 번 쳐야 하는지 (게임 규칙, 미리보기와 같음)
-    public static int HitsFor(char kind, int hoeTier)
+    // 몇 번 쳐야 치워지는지 (게임 규칙, 미리보기와 같음)
+    public static int HitsFor(char kind)
     {
-        if (kind == 'k') return hoeTier >= 2 ? 2 : 3;
-        if (kind == 'o') return hoeTier >= 2 ? 3 : 4;
+        if (kind == 'k') return 2;
+        if (kind == 'o' || kind == 'l') return 3;
         return 1;
     }
+
+    // 농장 묵은 밭의 것인지 (치우면 흙이 됨)
+    public static bool IsFieldDebris(char kind) => kind == 'g' || kind == 'k' || kind == 'o';
 
     public static Debris Create(char kind, Vector3Int cell, Vector3 center, Material material)
     {
@@ -52,7 +58,7 @@ public class Debris : MonoBehaviour
         Debris d = go.AddComponent<Debris>();
         d.kind = kind;
         d.cell = cell;
-        d.hitsLeft = HitsFor(kind, 1);
+        d.hitsLeft = HitsFor(kind);
 
         string key = SpriteKey(kind, cell.x, cell.y);
         Sprite sprite = PixelArtWorld.SeasonalSprite(key);
@@ -77,7 +83,7 @@ public class Debris : MonoBehaviour
         if (kind != 'g')
         {
             BoxCollider2D box = go.AddComponent<BoxCollider2D>();
-            box.size = new Vector2(0.8f, 0.45f);
+            box.size = new Vector2(kind == 'l' ? 0.95f : 0.8f, 0.45f);
             box.offset = new Vector2(0f, -0.22f);
         }
         all[cell] = d;
@@ -116,19 +122,18 @@ public class Debris : MonoBehaviour
             return true;
         }
 
-        if (type != ToolType.Hoe)
+        if (type != ToolType.Mattock)
         {
-            HUD.Toast(kind == 'k' ? "An old stump. Dig around its roots with a hoe." : "A heavy boulder. Pry it loose with a hoe.", 2.5f);
+            string what = kind == 'k' ? "An old stump." : kind == 'o' ? "A heavy boulder." : "A fallen log blocks the way.";
+            HUD.Toast(data.HasItem("Mattock") ? $"{what} Use the mattock." : $"{what} You need a mattock. (Market, or craft: 5 Wood + 5 Stone)", 3f);
             return true;
         }
-        int needed = HitsFor(kind, tool.toolTier);
-        hitsLeft = Mathf.Min(hitsLeft, needed);
         if (!data.UseEnergy(DigEnergy)) return true;
         hitsLeft--;
         punch = 1f;
         if (hitsLeft > 0)
         {
-            HUD.Toast(kind == 'k' ? $"The roots creak... ({hitsLeft} more)" : $"The boulder shifts... ({hitsLeft} more)", 1.2f);
+            HUD.Toast(kind == 'k' ? $"The roots creak... ({hitsLeft} more)" : kind == 'l' ? $"The log rolls a little... ({hitsLeft} more)" : $"The boulder shifts... ({hitsLeft} more)", 1.2f);
             return true;
         }
 
@@ -136,6 +141,11 @@ public class Debris : MonoBehaviour
         {
             data.AddItem("Wood", 2);
             HUD.Toast("You pulled out the old stump. +2 Wood", 2f);
+        }
+        else if (kind == 'l')
+        {
+            data.AddItem("Wood", 3);
+            HUD.Toast("You cleared the fallen log. The path is open. +3 Wood", 2.5f);
         }
         else
         {
@@ -156,8 +166,11 @@ public class Debris : MonoBehaviour
     {
         DataManager data = DataManager.instance;
         data.farm.ClearDebris(cell.x, cell.y);
-        FarmMap.MakeSoil(cell);
-        FarmMap.ReportCleared();
+        if (IsFieldDebris(kind))
+        {
+            FarmMap.MakeSoil(cell);
+            FarmMap.ReportCleared();
+        }
         Destroy(gameObject);
     }
 }

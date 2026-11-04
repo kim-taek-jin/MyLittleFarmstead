@@ -100,6 +100,7 @@ public class Shop : MonoBehaviour
                     if (dataManager.story.IsUnlocked(unlock.Key)) stock.Add(unlock.Value);
                 }
                 if (dataManager.CurrentSeason >= Season.Autumn) stock.Add(new ItemForSale { itemName = "Pumpkin Seed", price = 70 });
+                if (!dataManager.HasItem("Mattock")) stock.Add(new ItemForSale { itemName = "Mattock", price = 150 });
             }
             foreach (var item in stock)
             {

@@ -116,7 +116,10 @@ public class PlayerAction : MonoBehaviour
         ItemDef def = ItemDB.Get(selected);
         ToolType tool = def != null ? def.toolType : ToolType.None;
 
-        // 넓어진 농장의 묵은 밭: 잡초/그루터기/바위가 있으면 먼저 치움
+        // 숲 빈터의 묘목 자리 (도토리 심기, 물 주기)
+        if (ForestArea.TryUse(cell, def)) return;
+
+        // 치울 것 (묵은 밭의 잡초/그루터기/바위, 숲의 통나무)이 있으면 먼저 치움
         Debris debris = Debris.At(cell);
         if (debris != null)
         {

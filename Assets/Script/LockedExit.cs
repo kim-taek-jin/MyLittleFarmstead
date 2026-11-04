@@ -18,11 +18,18 @@ public class LockedExit : MonoBehaviour
         BoxCollider2D box = go.AddComponent<BoxCollider2D>();
         box.size = new Vector2(Mathf.Max(0.6f, area.width), Mathf.Max(0.6f, area.height));
 
-        Sprite sprite = PixelArtWorld.SeasonalSprite("thorns");
-        if (sprite != null)
+        PlaceArt(go.transform, "thorns", area, mapBounds, material);
+        return locked;
+    }
+
+    // 출구 자리에 덤불/아치 그림을 놓습니다. 맵 밖으로 잘리지 않게 안쪽으로 당깁니다.
+    public static GameObject PlaceArt(Transform parent, string key, Rect area, Rect mapBounds, Material material)
+    {
+        Sprite sprite = PixelArtWorld.SeasonalSprite(key);
+        if (sprite == null) return null;
         {
             var art = new GameObject("PixelArt");
-            art.transform.SetParent(go.transform, false);
+            art.transform.SetParent(parent, false);
             float scale = PixelArt.PixelsPerUnit / sprite.pixelsPerUnit;
             float w = sprite.rect.width / sprite.pixelsPerUnit * scale, h = sprite.rect.height / sprite.pixelsPerUnit * scale;
             // 덤불이 맵 밖으로 잘리지 않게 안쪽으로 당김
@@ -34,9 +41,9 @@ public class LockedExit : MonoBehaviour
             sr.sprite = sprite;
             if (material != null) sr.sharedMaterial = material;
             sr.sortingOrder = 4;
-            art.AddComponent<SeasonalArt>().baseKey = "thorns";
+            art.AddComponent<SeasonalArt>().baseKey = key;
+            return art;
         }
-        return locked;
     }
 
     public bool SeasonReached

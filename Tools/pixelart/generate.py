@@ -19,6 +19,7 @@ import world  # noqa: E402
 import preview  # noqa: E402
 import backgrounds  # noqa: E402
 import farmmap  # noqa: E402
+import forest  # noqa: E402
 import villagers  # noqa: E402
 import spirit  # noqa: E402
 
@@ -210,6 +211,18 @@ def main():
         exported['World'].append(export('World', name, fn()))
     for name, canvas in farmmap.debris_variants().items():
         exported['World'].append(export('World', name, canvas))
+    # ---- the forest (map stage 3): colour + gray per season, its objects and the new items ----
+    for season in backgrounds.SEASONS:
+        color = forest.forest(season)
+        export_image('World', f'bg_forest_{season}', color)
+        export_image('World', f'bg_forest_gray_{season}', forest.gray(color))
+        if season == 'spring':
+            bgs.append(('bg_forest_spring', color))
+            bgs.append(('bg_forest_gray_spring', forest.gray(color)))
+    for name, canvas in forest.world_sprites().items():
+        exported['World'].append(export('World', name, canvas))
+    for name, fn in forest.ITEMS.items():
+        exported['Items'].append(export('Items', name, fn()))
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))
 

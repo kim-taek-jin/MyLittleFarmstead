@@ -9,6 +9,7 @@ public class CameraFollow : MonoBehaviour
     public float smoothing = 10f;
 
     private Camera cam;
+    private readonly System.Collections.Generic.List<Rect> regions = new System.Collections.Generic.List<Rect>();
     private Transform target;
     private Rigidbody2D targetBody;
     private bool placed;
@@ -18,9 +19,32 @@ public class CameraFollow : MonoBehaviour
         CameraFollow follow = camera.GetComponent<CameraFollow>();
         if (follow == null) follow = camera.gameObject.AddComponent<CameraFollow>();
         follow.bounds = mapBounds;
+        follow.regions.Clear();
+        follow.regions.Add(mapBounds);
         follow.cam = camera;
         follow.placed = false;
         return follow;
+    }
+
+    // 같은 씬 안의 다른 지역 (예: 숲). 플레이어가 들어가 있는 지역을 따라 카메라 범위가 바뀝니다.
+    public void AddRegion(Rect region)
+    {
+        if (!regions.Contains(region)) regions.Add(region);
+    }
+
+    void PickRegion()
+    {
+        Vector2 p = target.position;
+        foreach (Rect r in regions)
+        {
+            if (p.x < r.xMin - 1f || p.x > r.xMax + 1f || p.y < r.yMin - 1f || p.y > r.yMax + 1f) continue;
+            if (r != bounds)
+            {
+                bounds = r;
+                placed = false;   // 다른 지역으로 이동: 카메라를 바로 옮김
+            }
+            return;
+        }
     }
 
     void LateUpdate()
@@ -38,6 +62,7 @@ public class CameraFollow : MonoBehaviour
         }
         if (cam == null) cam = GetComponent<Camera>();
 
+        PickRegion();
         KeepInside();
 
         Vector2 goal = ClampView(target.position);
@@ -54,7 +79,8 @@ public class CameraFollow : MonoBehaviour
     void KeepInside()
     {
         Vector2 p = target.position;
-        float top = Mathf.Abs(p.x) < 0.7f ? 0.35f : 0.8f;
+        bool farmGate = regions.Count > 0 && bounds == regions[0] && Mathf.Abs(p.x) < 0.7f;   // 농장 북쪽 흥정 문 앞
+        float top = farmGate ? 0.35f : 0.8f;
         Vector2 clamped = new Vector2(
             Mathf.Clamp(p.x, bounds.xMin + 0.3f, bounds.xMax - 0.3f),
             Mathf.Clamp(p.y, bounds.yMin + 0.5f, bounds.yMax - top));

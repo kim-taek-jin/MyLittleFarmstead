@@ -60,6 +60,9 @@ public class StoryState
     public int starsTotal;
     public int benchDay = -1;        // 벤치에서 별을 본 날
 
+    // 숲 (맵 3단계): 열림, 빈터 되살리기, 채집, 샘가 쉼터
+    public ForestState forest = new ForestState();
+
     public VillagerProgress Get(string id)
     {
         foreach (var v in villagers) if (v.id == id) return v;

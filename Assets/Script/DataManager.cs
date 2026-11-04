@@ -695,6 +695,14 @@ public class DataManager : MonoBehaviour
         energy = passedOut ? MaxEnergyNow * 0.5f : MaxEnergyNow;
         if (timeManager != null) timeManager.AdvanceDay();
 
+        // 숲: 봄이 오면 길이 열리고, 물 받은 묘목이 자라고, 새 채집물이 생김
+        float forestDelta = ForestArea.Morning(this, raining, timeManager != null ? timeManager.day : 0, lines, out string forestHeadline);
+        if (forestDelta != 0f)
+        {
+            delta += forestDelta;
+            ChangeHeart(forestDelta, null);
+        }
+
         SaveGame();
 
         int day = timeManager != null ? timeManager.day : 0;
@@ -714,6 +722,7 @@ public class DataManager : MonoBehaviour
             header = $"<size=42><color=#c8d8ff>A cold snap...</color></size>\n<size=24>You pushed yourself too hard. It feels like {SeasonSystem.Name(after)} again.\n" +
                      $"Some crops stopped growing for now. They'll wait for you.</size>\n\n<size=30>Day {day}</size>";
         }
+        if (forestHeadline != null) header += $"\n<size=24>{forestHeadline}</size>";
         if (raining) Album.Report("rain_morning");
 
         string body = string.Join("\n", lines);
