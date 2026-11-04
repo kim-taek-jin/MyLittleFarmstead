@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // 아이템 정보를 담을 간단한 클래스
 [System.Serializable]
@@ -20,4 +20,7 @@ public class Recipe : ScriptableObject
 
     [Tooltip("비어있지 않으면, 이 아이템을 가지고 있어야 제작 가능 (소모되지 않음). 예: Campfire")]
     public string requiredStation = "";
+
+    [Tooltip("비어있지 않으면, 이 해금 키를 얻어야 제작 목록에 나타납니다. 예: recipe_carrot_cake")]
+    public string requiredUnlock = "";
 }

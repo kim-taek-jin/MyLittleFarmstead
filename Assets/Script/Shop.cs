@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
@@ -91,7 +91,16 @@ public class Shop : MonoBehaviour
 
         if (buyMode)
         {
-            foreach (var item in itemsForSale)
+            // 씬에 정해진 상품 + 주민 덕분에 새로 들어온 상품
+            var stock = new List<ItemForSale>(itemsForSale);
+            if (dataManager != null)
+            {
+                foreach (var unlock in VillagerDB.ShopUnlocks)
+                {
+                    if (dataManager.story.IsUnlocked(unlock.Key)) stock.Add(unlock.Value);
+                }
+            }
+            foreach (var item in stock)
             {
                 GameObject slotGO = Instantiate(shopSlotPrefab, gridParent);
                 ShopSlot slotScript = slotGO.GetComponent<ShopSlot>();

@@ -704,7 +704,7 @@ def market():
     # crates, barrels and planters (kept to the edges so the square stays walkable)
     for (wx, wy, fn) in [(6.2, 1.25, items.apple), (7.0, 1.25, items.corn), (1.6, 1.4, items.carrot)]:
         bg.prop(crate_of(fn), wx=wx, wy=wy)
-    for (wx, wy) in [(-6.4, 2.0), (-5.8, 1.9), (8.4, -4.2)]:
+    for (wx, wy) in [(-8.3, 2.0), (-7.7, 1.9), (8.4, -4.2)]:
         bg.prop(barrel(), wx=wx, wy=wy)
     for wx in (-6.0, -3.0, 0.0, 3.0, 6.0):
         pl = Canvas(30, 20)

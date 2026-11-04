@@ -18,6 +18,7 @@ public class DataManager : MonoBehaviour
     public FarmData farm = new FarmData();
     public MarketState market = new MarketState();
     public DayLog today = new DayLog();
+    public StoryState story = new StoryState();
     public int gold = 0;
 
     [Header("새 게임 설정")]
@@ -71,7 +72,7 @@ public class DataManager : MonoBehaviour
     private readonly HashSet<string> clearedResources = new HashSet<string>();
     private readonly List<int> heartMilestonesReached = new List<int>();
     private readonly System.Random rng = new System.Random();
-    private bool warnedHunger, warnedThirst;
+    private bool warnedHunger, warnedThirst, journalOpen;
     private float statusTimer;
 
     private static readonly string[] normalItems = { "Wood", "Stone" };
@@ -185,6 +186,19 @@ public class DataManager : MonoBehaviour
         if (ctrl && shift && Input.GetKeyDown(KeyCode.N))
         {
             StartNewGame();
+        }
+        if (Input.GetKeyDown(KeyCode.J) && !HUD.DialogueOpen)
+        {
+            if (journalOpen && HUD.AnnouncementOpen)
+            {
+                HUD.HideAnnouncement();
+                journalOpen = false;
+            }
+            else
+            {
+                HUD.Announce(StoryEvents.BuildJournal(), 600f);
+                journalOpen = true;
+            }
         }
     }
 
@@ -459,6 +473,7 @@ public class DataManager : MonoBehaviour
     public void OnHarvest(string itemName, int amount, bool blessed)
     {
         today.harvested += amount;
+        if (itemName == "Sunflower") ChangeHeart(2f * amount, "The sunflower makes you smile.");
         if (blessed) ChangeHeart(3f, "A golden harvest!");
         else if (today.harvested == amount) ChangeHeart(1f, "Your first harvest of the day.");
     }
@@ -614,6 +629,8 @@ public class DataManager : MonoBehaviour
 
         OnNewDay?.Invoke();
         InventoryChanged();
+        StoryEvents.OnNewDay(day);
+        StoryEvents.CheckEnding();
     }
 
     // ===================================================================
@@ -711,6 +728,7 @@ public class DataManager : MonoBehaviour
         market = new MarketState();
         market.StartNewDay(rng);
         today = new DayLog();
+        story = new StoryState();
         clearedResources.Clear();
         raining = false;
         waterCharges = WaterCapacity;
@@ -733,6 +751,7 @@ public class DataManager : MonoBehaviour
             farm = farm,
             market = market,
             today = today,
+            story = story,
             raining = raining,
             waterCharges = waterCharges,
             clearedResources = clearedResources.ToList(),
@@ -764,6 +783,7 @@ public class DataManager : MonoBehaviour
         farm = data.farm ?? new FarmData();
         market = data.market ?? new MarketState();
         today = data.today ?? new DayLog();
+        story = data.story ?? new StoryState();
         raining = data.raining;
 
         inventory.Clear();

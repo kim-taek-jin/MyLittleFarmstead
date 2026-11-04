@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
@@ -40,14 +40,18 @@ public class CraftingManager : MonoBehaviour
 
         foreach (Recipe recipe in CreateBuiltInRecipes())
         {
-            bool exists = recipes.Any(r => r.resultItem.itemName == recipe.resultItem.itemName);
+            bool exists = recipes.Any(r => r.name == recipe.name);
             if (!exists) recipes.Add(recipe);
         }
     }
 
     static IEnumerable<Recipe> CreateBuiltInRecipes()
     {
-        yield return Make("Copper Watering Can", 1, "", new ItemInfo("Watering Can", 1), new ItemInfo("Stone", 10), new ItemInfo("Wood", 5));
+        // 주민에게 배우는 레시피 (해금 전에는 목록에 안 보임)
+        yield return Make("Copper Watering Can", 1, "", new ItemInfo("Watering Can", 1), new ItemInfo("Stone", 10), new ItemInfo("Wood", 5)).Locked("recipe_copper_can");
+        yield return Make("Carrot Cake", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Bread", 1)).Locked("recipe_carrot_cake");
+        yield return Make("Grilled Fish", 1, "Campfire", new ItemInfo("Minnow", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Minnow)");
+        yield return Make("Grilled Fish", 2, "Campfire", new ItemInfo("Carp", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Carp)");
         yield return Make("Roasted Carrot", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Wood", 1));
         yield return Make("Baked Potato", 1, "Campfire", new ItemInfo("Potato", 1), new ItemInfo("Wood", 1));
         yield return Make("Corn Soup", 1, "Campfire", new ItemInfo("Corn", 2));
@@ -70,6 +74,13 @@ public class CraftingManager : MonoBehaviour
         if (craftingPanel == null) return;
         craftingPanel.SetActive(!craftingPanel.activeSelf);
         if (craftingPanel.activeSelf) DisplayRecipes();
+    }
+
+    bool IsAvailable(Recipe recipe)
+    {
+        if (string.IsNullOrEmpty(recipe.requiredUnlock)) return true;
+        DataManager data = DataManager.instance;
+        return data != null && data.story.IsUnlocked(recipe.requiredUnlock);
     }
 
     bool CanCraft(Recipe recipe, out string reason)
@@ -105,6 +116,7 @@ public class CraftingManager : MonoBehaviour
 
         foreach (Recipe recipe in recipes)
         {
+            if (!IsAvailable(recipe)) continue;
             GameObject slotGO = Instantiate(recipeSlotPrefab, recipeContentParent);
 
             Image itemIcon = FindChild<Image>(slotGO.transform, "ItemIcon");
@@ -163,5 +175,15 @@ public class CraftingManager : MonoBehaviour
     {
         Transform child = parent.Find(name);
         return child != null ? child.GetComponent<T>() : null;
+    }
+}
+
+static class RecipeExtensions
+{
+    public static Recipe Locked(this Recipe recipe, string unlockKey, string uniqueName = null)
+    {
+        recipe.requiredUnlock = unlockKey;
+        if (!string.IsNullOrEmpty(uniqueName)) recipe.name = uniqueName;
+        return recipe;
     }
 }

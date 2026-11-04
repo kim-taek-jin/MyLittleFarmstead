@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -29,6 +29,23 @@ public class HUD : MonoBehaviour
     private TextMeshProUGUI announceText;
     private float announceTimeLeft;
     private float announceShownAt;
+
+    // dialogue box
+    private GameObject dialoguePanel;
+    private Image dialoguePortrait;
+    private TextMeshProUGUI dialogueName;
+    private TextMeshProUGUI dialogueText;
+    private TextMeshProUGUI dialogueHint;
+    private string[] dialogueLines;
+    private int dialogueIndex;
+    private System.Action dialogueDone;
+    private System.Action choiceYes, choiceNo;
+    private bool isChoice;
+    private int dialogueOpenedFrame;
+
+    public static bool DialogueOpen => instance != null && instance.dialoguePanel != null && instance.dialoguePanel.activeSelf;
+    public static int DialogueClosedFrame { get; private set; } = -10;
+    public static bool AnnouncementOpen => instance != null && instance.announcePanel != null && instance.announcePanel.activeSelf;
 
     private const int MaxToasts = 4;
     private const float ToastHeight = 46f;
@@ -100,6 +117,134 @@ public class HUD : MonoBehaviour
         announceText = CreateText("AnnouncementText", panel, 30f);
         Stretch(announceText.rectTransform, 30f);
         announcePanel.SetActive(false);
+
+        // 대화 상자 (아래쪽, 핫바 위)
+        RectTransform box = CreatePanel("Dialogue", root, new Color(0.62f, 0.42f, 0.24f, 0.97f));
+        SetAnchors(box, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 270f), new Vector2(1100f, 200f));
+        RectTransform border = CreatePanel("Border", box, new Color(0.78f, 0.56f, 0.32f, 1f));
+        Stretch(border, 0f);
+        border.offsetMin = new Vector2(6f, 6f); border.offsetMax = new Vector2(-6f, -6f);
+        border.GetComponent<Image>().color = new Color(0.16f, 0.11f, 0.09f, 1f);
+        GameObject portraitGO = new GameObject("Portrait", typeof(RectTransform));
+        portraitGO.transform.SetParent(box, false);
+        dialoguePortrait = portraitGO.AddComponent<Image>();
+        dialoguePortrait.preserveAspect = true;
+        dialoguePortrait.raycastTarget = false;
+        RectTransform pr = (RectTransform)portraitGO.transform;
+        pr.anchorMin = pr.anchorMax = new Vector2(0f, 0.5f);
+        pr.pivot = new Vector2(0f, 0.5f);
+        pr.anchoredPosition = new Vector2(20f, 0f);
+        pr.sizeDelta = new Vector2(170f, 170f);
+        dialogueName = CreateText("Name", box, 28f);
+        dialogueName.alignment = TextAlignmentOptions.TopLeft;
+        dialogueName.color = new Color(1f, 0.84f, 0.45f);
+        Place(dialogueName.rectTransform, 210f, -18f, 860f, 40f);
+        dialogueText = CreateText("Text", box, 26f);
+        dialogueText.alignment = TextAlignmentOptions.TopLeft;
+        Place(dialogueText.rectTransform, 210f, -60f, 860f, 100f);
+        dialogueHint = CreateText("Hint", box, 20f);
+        dialogueHint.alignment = TextAlignmentOptions.Right;
+        dialogueHint.color = new Color(0.85f, 0.8f, 0.7f);
+        Place(dialogueHint.rectTransform, 210f, -162f, 860f, 30f);
+        dialoguePanel = box.gameObject;
+        dialoguePanel.SetActive(false);
+    }
+
+    static void Place(RectTransform rect, float x, float y, float w, float h)
+    {
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2(x, y);
+        rect.sizeDelta = new Vector2(w, h);
+    }
+
+    // ---------- dialogue API ----------
+    public static void Say(string speaker, string[] lines, Sprite portrait = null, System.Action onDone = null)
+    {
+        HUD hud = Ensure();
+        hud.isChoice = false;
+        hud.dialogueLines = lines;
+        hud.dialogueIndex = 0;
+        hud.dialogueDone = onDone;
+        hud.OpenDialogue(speaker, portrait);
+    }
+
+    public static void Ask(string speaker, string question, Sprite portrait, System.Action onYes, System.Action onNo = null, string yes = "Yes", string no = "No")
+    {
+        HUD hud = Ensure();
+        hud.isChoice = true;
+        hud.dialogueLines = new[] { question };
+        hud.dialogueIndex = 0;
+        hud.choiceYes = onYes;
+        hud.choiceNo = onNo;
+        hud.OpenDialogue(speaker, portrait);
+        hud.dialogueHint.text = $"[Y] {yes}     [N] {no}";
+    }
+
+    public static void HideAnnouncement()
+    {
+        if (instance != null && instance.announcePanel != null) instance.announcePanel.SetActive(false);
+    }
+
+    void OpenDialogue(string speaker, Sprite portrait)
+    {
+        dialogueName.text = speaker;
+        dialoguePortrait.sprite = portrait;
+        dialoguePortrait.enabled = portrait != null;
+        float x = portrait != null ? 210f : 40f;
+        Place(dialogueName.rectTransform, x, -18f, 1060f - x, 40f);
+        Place(dialogueText.rectTransform, x, -60f, 1060f - x, 100f);
+        dialoguePanel.SetActive(true);
+        dialogueOpenedFrame = Time.frameCount;
+        ShowLine();
+    }
+
+    void ShowLine()
+    {
+        dialogueText.text = dialogueLines[dialogueIndex];
+        if (!isChoice) dialogueHint.text = dialogueIndex < dialogueLines.Length - 1 ? "[E] Next" : "[E] Close";
+    }
+
+    void CloseDialogue()
+    {
+        dialoguePanel.SetActive(false);
+        DialogueClosedFrame = Time.frameCount;
+    }
+
+    void UpdateDialogue()
+    {
+        if (!DialogueOpen || Time.frameCount == dialogueOpenedFrame) return;
+
+        if (isChoice)
+        {
+            if (Input.GetKeyDown(KeyCode.Y))
+            {
+                CloseDialogue();
+                choiceYes?.Invoke();
+            }
+            else if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Escape))
+            {
+                CloseDialogue();
+                choiceNo?.Invoke();
+            }
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
+        {
+            dialogueIndex++;
+            if (dialogueIndex >= dialogueLines.Length)
+            {
+                CloseDialogue();
+                System.Action done = dialogueDone;
+                dialogueDone = null;
+                done?.Invoke();
+            }
+            else
+            {
+                ShowLine();
+            }
+        }
     }
 
     void AddToast(string message, float duration)
@@ -151,6 +296,7 @@ public class HUD : MonoBehaviour
     void Update()
     {
         float dt = Time.unscaledDeltaTime;
+        UpdateDialogue();
 
         for (int i = toasts.Count - 1; i >= 0; i--)
         {

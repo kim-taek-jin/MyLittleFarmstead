@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 // 작물 하나의 정의
@@ -23,6 +23,7 @@ public static class CropDB
         Register(new CropDef { id = "carrot", seedItem = "Carrot Seed", harvestItem = "Carrot", daysToMature = 3, tint = Color.white });
         Register(new CropDef { id = "potato", seedItem = "Potato Seed", harvestItem = "Potato", daysToMature = 4, harvestAmount = 1, tint = new Color(0.85f, 0.75f, 0.55f) });
         Register(new CropDef { id = "corn", seedItem = "Corn Seed", harvestItem = "Corn", daysToMature = 5, regrowDays = 3, tint = new Color(1f, 0.95f, 0.45f) });
+        Register(new CropDef { id = "sunflower", seedItem = "Sunflower Seed", harvestItem = "Sunflower", daysToMature = 5, tint = new Color(1f, 0.95f, 0.4f) });
         Register(new CropDef { id = "strawberry", seedItem = "Strawberry Seed", harvestItem = "Strawberry", daysToMature = 6, regrowDays = 3, tint = new Color(1f, 0.55f, 0.6f) });
     }
 

@@ -18,6 +18,7 @@ import crops  # noqa: E402
 import world  # noqa: E402
 import preview  # noqa: E402
 import backgrounds  # noqa: E402
+import villagers  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 OUT = os.path.join(ROOT, 'Assets', 'Resources', 'PixelArt')
@@ -168,7 +169,7 @@ def export_image(group, name, img):
 
 
 def main():
-    exported = {'Items': [], 'Crops': [], 'Tiles': [], 'World': [], 'Player': []}
+    exported = {'Items': [], 'Crops': [], 'Tiles': [], 'World': [], 'Player': [], 'Villagers': []}
     for name, fn in items.ITEMS.items():
         exported['Items'].append(export('Items', name, fn()))
     for crop_id, stages in crops.CROPS.items():
@@ -180,6 +181,10 @@ def main():
         exported['World'].append(export('World', name, fn()))
     for name, canvas in world.player_frames().items():
         exported['Player'].append(export('Player', name, canvas))
+    for vid, fn in villagers.VILLAGERS.items():
+        for i, canvas in enumerate(villagers.stages(fn())):
+            exported['Villagers'].append(export('Villagers', f'{vid}_{i}', canvas))
+    exported['World'].append(export('World', 'bubble', villagers.bubble()))
     bgs = []
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))

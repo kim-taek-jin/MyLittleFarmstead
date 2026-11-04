@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // 플레이어 픽셀 아트 걷기 애니메이션 (아래/위/옆 × 3프레임).
 // PixelArtWorld가 플레이어에 자동으로 붙여 줍니다. 원래 스프라이트 크기에 맞춰 그립니다.
@@ -37,6 +37,8 @@ public class PlayerPixelAnimator : MonoBehaviour
             return;
         }
         current = down;
+        // 주민도 플레이어와 같은 크기로 그리도록 기록
+        PixelArt.CharacterScale = Mathf.Abs(view.transform.lossyScale.y);
     }
 
     static Sprite[] LoadSet(string direction)

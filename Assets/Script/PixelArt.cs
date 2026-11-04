@@ -12,6 +12,9 @@ public static class PixelArt
 
     public const float PixelsPerUnit = 32f;
 
+    // 32px 캐릭터 한 장이 월드에서 차지하는 크기 (플레이어 오버레이 크기와 동일하게 유지)
+    public static float CharacterScale = 1.84f;
+
     private static readonly Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
     private static readonly Dictionary<string, Sprite[]> cropCache = new Dictionary<string, Sprite[]>();
 

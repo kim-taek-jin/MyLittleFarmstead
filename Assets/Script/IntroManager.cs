@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 // 처음 시작할 때 보여주는 인트로 패널. 저장 파일이 있으면 건너뜁니다.
@@ -36,9 +36,10 @@ public class IntroManager : MonoBehaviour
             "<size=26>The city left your world gray. Live well and the color will come back.\n\n" +
             "WASD: Move    1-5 / Mouse wheel: Select item\n" +
             "Left click: Use tool / seed    Right click or F: Eat\n" +
-            "E: Interact (well, bed, shop, storage)    C: Craft\n" +
+            "E: Interact / talk    C: Craft    J: Journal\n" +
             "F5: Save    F9: Load\n\n" +
-            "Eat, drink, rest, and go to bed on time to heal your <color=#ff8fb1>Heart</color>.</size>",
+            "Eat, drink, rest, and go to bed on time to heal your <color=#ff8fb1>Heart</color>.\n" +
+            "The villagers have lost their color too. Maybe you can help them.</size>",
             12f);
     }
 }

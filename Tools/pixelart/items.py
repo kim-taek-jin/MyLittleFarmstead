@@ -350,3 +350,129 @@ ITEMS = {
     'earths_breath': earths_breath,
     'campfire': campfire,
 }
+
+
+# ---------------- content update: fishing, villagers' rewards, sunflower ----------------
+def fishing_rod():
+    c = Canvas(S, S)
+    c.thick_line(5, 29, 24, 4, P['woodlight'][1], w=2)
+    c.line(5, 28, 23, 4, P['woodlight'][3])
+    c.rect(7, 22, 9, 25, P['wood'][0])                       # grip wrap
+    c.ellipse(11, 22, 2.5, 2.5, P['metal'])                  # reel
+    c.line(24, 4, 27, 16, P['white'][2])                     # line
+    c.ellipse(27, 18, 2, 2, P['red'], flat=True)             # bobber
+    c.set(27, 17, P['white'][3])
+    c.outline()
+    return c
+
+
+def _fish(c, cx, cy, length, height, body, fin, eye=True, belly=None):
+    c.ellipse(cx, cy, length / 2, height / 2, body)
+    tx = cx + length / 2 - 1
+    c.poly([(tx, cy), (tx + 6, cy - 5), (tx + 5, cy), (tx + 6, cy + 5)], fin, light_axis='y')
+    c.poly([(cx - 1, cy - height / 2 + 1), (cx + 4, cy - height / 2 - 3), (cx + 5, cy - height / 2 + 1)], fin, light_axis='y')
+    if belly:
+        for x in range(int(cx - length / 2 + 3), int(cx + length / 2 - 2)):
+            if c.get(x, int(cy + height / 2 - 2)) is not None:
+                c.set(x, int(cy + height / 2 - 2), belly)
+    if eye:
+        ex = int(cx - length / 2 + 3)
+        c.set(ex, int(cy - 1), P['outline']); c.set(ex - 1, int(cy - 2), P['white'][3])
+    c.line(int(cx - length / 2 + 6), int(cy - height / 2 + 2), int(cx - length / 2 + 6), int(cy + height / 2 - 2), darken_c(body[1], 0.9))
+
+
+def minnow():
+    c = Canvas(S, S)
+    _fish(c, 14, 17, 16, 7, P['metal'], P['metal'], belly=P['white'][3])
+    c.outline()
+    return c
+
+
+def carp():
+    c = Canvas(S, S)
+    _fish(c, 13, 17, 20, 11, P['copper'], P['orange'], belly=P['tan'][3])
+    for (x, y) in [(10, 15), (13, 14), (16, 15), (12, 18), (15, 18)]:
+        c.set(x, y, P['copper'][3])
+    c.outline()
+    return c
+
+
+def golden_koi():
+    c = Canvas(S, S)
+    for r, a in [(14, 35), (11, 60)]:
+        for y in range(32):
+            for x in range(32):
+                if (x - 15.5) ** 2 + (y - 16.5) ** 2 <= r * r:
+                    c.set(x, y, (255, 228, 120, a))
+    _fish(c, 13, 17, 20, 11, P['sun'], P['white'], belly=P['white'][3])
+    for (x, y) in [(10, 14), (11, 14), (14, 18), (15, 18), (16, 13)]:
+        c.set(x, y, P['red'][2])
+    c.outline()
+    return c
+
+
+def old_boot():
+    c = Canvas(S, S)
+    c.poly([(9, 6), (18, 6), (18, 19), (27, 21), (27, 27), (7, 27), (8, 18)], P['wood'], light_axis='x')
+    c.rect(7, 25, 27, 27, P['wood'][0])
+    for y in (9, 12, 15):
+        c.set(12, y, P['metal'][2]); c.set(15, y, P['metal'][2])
+    c.line(20, 22, 24, 22, P['wood'][1])
+    c.set(26, 11, P['water'][3]); c.set(26, 12, P['water'][2])  # dripping
+    c.outline()
+    return c
+
+
+def grilled_fish():
+    c = Canvas(S, S)
+    plate(c)
+    roast = [P['copper'][0], P['copper'][1], P['copper'][2], P['tan'][3]]
+    _fish(c, 14, 15, 18, 8, roast, roast)
+    for x in (10, 14, 18):
+        c.line(x, 12, x + 2, 18, P['wood'][0])
+    c.set(24, 11, P['leaf'][2]); c.set(25, 12, P['yellow'][3]); c.set(23, 12, P['leaf'][3])
+    c.outline()
+    return c
+
+
+def carrot_cake():
+    c = Canvas(S, S)
+    plate(c, cy=24)
+    # wedge of cake: side view triangle with layers
+    c.poly([(5, 22), (26, 22), (26, 10), (5, 18)], P['bread'], light_axis='y')
+    c.rect(5, 17, 26, 18, P['white'][3])
+    c.line(5, 20, 26, 20, P['orange'][2])
+    c.poly([(5, 18), (26, 10), (26, 12), (5, 19)], P['white'], solid=P['white'][3])
+    # carrot decoration on top
+    c.line(20, 9, 23, 8, P['orange'][2]); c.set(24, 7, P['leaf'][2]); c.set(24, 6, P['leaf'][3])
+    c.outline()
+    return c
+
+
+def sunflower():
+    c = Canvas(S, S)
+    c.line(16, 20, 16, 30, P['leaf'][1])
+    _leaf(c, 16, 25, -1, -0.3, 6, P['leaf'])
+    import math
+    for i in range(12):
+        a = i * math.pi / 6
+        x, y = 16 + math.cos(a) * 8, 13 + math.sin(a) * 8
+        c.ellipse(x, y, 3, 3, P['yellow'])
+    c.ellipse(16, 13, 5.5, 5.5, P['wood'])
+    for (x, y) in [(14, 11), (17, 12), (15, 14), (18, 15)]:
+        c.set(x, y, P['wood'][0])
+    c.outline()
+    return c
+
+
+ITEMS.update({
+    'fishing_rod': fishing_rod,
+    'minnow': minnow,
+    'carp': carp,
+    'golden_koi': golden_koi,
+    'old_boot': old_boot,
+    'grilled_fish': grilled_fish,
+    'carrot_cake': carrot_cake,
+    'sunflower': sunflower,
+    'sunflower_seed': lambda: seed_packet(sunflower, P['yellow']),
+})

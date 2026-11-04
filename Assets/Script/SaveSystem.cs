@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -15,6 +15,7 @@ public class SaveData
     public FarmData farm = new FarmData();
     public MarketState market = new MarketState();
     public DayLog today = new DayLog();
+    public StoryState story = new StoryState();
     public List<string> clearedResources = new List<string>();
     public List<int> heartMilestonesReached = new List<int>();
 

@@ -1,11 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 // 아이템 분류
-public enum ItemCategory { Tool, Seed, Crop, Food, Resource, Special, Station }
+public enum ItemCategory { Tool, Seed, Crop, Food, Resource, Special, Station, Fish }
 
 // 도구 종류
-public enum ToolType { None, Hoe, WateringCan, Scythe }
+public enum ToolType { None, Hoe, WateringCan, Scythe, FishingRod }
 
 // 아이템 하나의 정의(이름, 가격, 효과 등)를 한 곳에서 관리합니다.
 public class ItemDef
@@ -76,6 +76,19 @@ public static class ItemDB
         // --- 자연의 정수 (특수) ---
         Register(new ItemDef { name = "Sunshine Shard", category = ItemCategory.Special, sellPrice = 100, color = new Color(1f, 0.9f, 0.3f), description = "Use on a crop: it ripens golden and brings extra joy." });
         Register(new ItemDef { name = "Earth's Breath", category = ItemCategory.Special, sellPrice = 100, color = new Color(0.4f, 0.8f, 0.5f), description = "Use on a crop: it grows by one day instantly." });
+
+        // --- 낚시 (미나의 소원으로 낚싯대를 얻음) ---
+        Register(new ItemDef { name = "Fishing Rod", category = ItemCategory.Tool, toolType = ToolType.FishingRod, color = new Color(0.7f, 0.55f, 0.35f), description = "Press E at the farm pond to fish." });
+        Register(new ItemDef { name = "Minnow", category = ItemCategory.Fish, sellPrice = 15, color = new Color(0.6f, 0.65f, 0.75f) });
+        Register(new ItemDef { name = "Carp", category = ItemCategory.Fish, sellPrice = 45, color = new Color(0.8f, 0.45f, 0.25f) });
+        Register(new ItemDef { name = "Golden Koi", category = ItemCategory.Fish, sellPrice = 300, color = new Color(1f, 0.85f, 0.3f) });
+        Register(new ItemDef { name = "Old Boot", category = ItemCategory.Resource, sellPrice = 1, color = new Color(0.45f, 0.3f, 0.2f) });
+        Register(new ItemDef { name = "Grilled Fish", category = ItemCategory.Food, sellPrice = 90, hunger = 40f, heart = 2f, color = new Color(0.7f, 0.4f, 0.2f) });
+
+        // --- 주민 보상 / 새 작물 ---
+        Register(new ItemDef { name = "Carrot Cake", category = ItemCategory.Food, sellPrice = 250, hunger = 30f, heart = 6f, color = new Color(0.9f, 0.6f, 0.3f), description = "Rosa's recipe. Sweet enough to make anyone smile." });
+        Register(new ItemDef { name = "Sunflower Seed", category = ItemCategory.Seed, sellPrice = 15, cropId = "sunflower", color = new Color(1f, 0.85f, 0.2f) });
+        Register(new ItemDef { name = "Sunflower", category = ItemCategory.Crop, sellPrice = 90, color = new Color(1f, 0.85f, 0.2f) });
 
         // --- 설치/작업대 ---
         Register(new ItemDef { name = "Campfire", category = ItemCategory.Station, sellPrice = 20, iconFallback = "Wood", color = new Color(1f, 0.45f, 0.1f), description = "Needed for cooking recipes." });

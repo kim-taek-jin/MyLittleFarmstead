@@ -207,3 +207,34 @@ TILES = {
     'tilled': lambda: tilled_tile(False),
     'tilled_wet': lambda: tilled_tile(True),
 }
+
+
+# ---------- sunflower (content update) ----------
+def sunflower_2():
+    c = Canvas(S, S)
+    mound(c, 6)
+    stem(c, 15, GROUND - 2, 15, 8)
+    for (y, d) in [(22, -1), (17, 1), (12, -1)]:
+        leaf(c, 16, y, d, -0.3, 7, P['leaf'], width=3)
+    c.ellipse(16, 7, 3, 3, P['leaf2'])                  # closed bud
+    c.outline()
+    return c
+
+
+def sunflower_3():
+    import math
+    c = Canvas(S, S)
+    mound(c, 6)
+    stem(c, 15, GROUND - 2, 15, 12)
+    for (y, d) in [(23, -1), (18, 1), (14, -1)]:
+        leaf(c, 16, y, d, -0.3, 7, P['leaf'], width=3)
+    for i in range(10):
+        a = i * math.pi / 5
+        c.ellipse(16 + math.cos(a) * 6, 7 + math.sin(a) * 5.5, 2.5, 2.5, P['yellow'])
+    c.ellipse(16, 7, 4, 3.5, P['wood'])
+    c.set(15, 6, P['wood'][0]); c.set(17, 8, P['wood'][0])
+    c.outline()
+    return c
+
+
+CROPS['sunflower'] = [seedling, sprout, sunflower_2, sunflower_3]
