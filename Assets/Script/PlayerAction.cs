@@ -60,7 +60,7 @@ public class PlayerAction : MonoBehaviour
     void Update()
     {
         if (dataManager == null) dataManager = DataManager.instance;
-        if (dataManager == null || dataManager.IsGameOver || Time.timeScale == 0f) return;
+        if (dataManager == null || dataManager.IsGameOver || Time.timeScale == 0f || PixelHUD.BagOpen) return;
 
         bool use = Input.GetMouseButtonDown(0);
         bool eat = Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.F);

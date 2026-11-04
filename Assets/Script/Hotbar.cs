@@ -76,6 +76,15 @@ public class Hotbar : MonoBehaviour
 
     void CreateSlots()
     {
+        // 픽셀 UI의 핫바 칸을 씁니다. (장면의 예전 핫바 그림은 숨김)
+        PixelHUD pixel = PixelHUD.Ensure();
+        if (pixel != null && pixel.HotbarSlots.Count > 0)
+        {
+            UnityEngine.UI.Image oldBackground = GetComponent<UnityEngine.UI.Image>();
+            if (oldBackground != null) oldBackground.enabled = false;
+            slots.AddRange(pixel.HotbarSlots);
+            return;
+        }
         if (hotbarSlotPrefab == null) return;
         for (int i = 0; i < slotCount; i++)
         {

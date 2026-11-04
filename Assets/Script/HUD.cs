@@ -84,6 +84,13 @@ public class HUD : MonoBehaviour
         Ensure().ShowAnnouncement(message, duration);
     }
 
+    // 위쪽 상태줄 보이기/숨기기 (픽셀 UI의 정보 상자가 대신할 때 숨김)
+    public static void SetStatusVisible(bool visible)
+    {
+        HUD hud = Ensure();
+        if (hud.statusText != null) hud.statusText.transform.parent.gameObject.SetActive(visible);
+    }
+
     public static void SetStatus(string text)
     {
         HUD hud = Ensure();
@@ -458,6 +465,7 @@ public class HUD : MonoBehaviour
         GameObject go = new GameObject(name, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         TextMeshProUGUI text = go.AddComponent<TextMeshProUGUI>();
+        PixelFont.Apply(text);
         text.fontSize = size;
         text.alignment = TextAlignmentOptions.Center;
         text.color = Color.white;

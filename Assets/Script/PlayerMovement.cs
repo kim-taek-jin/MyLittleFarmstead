@@ -17,7 +17,7 @@ public class PlayerMovement : MonoBehaviour
         if (rb == null) return;
 
         // 게임 오버 상태에서는 움직이지 않음
-        if ((DataManager.instance != null && DataManager.instance.IsGameOver) || HUD.AlbumOpen)
+        if ((DataManager.instance != null && DataManager.instance.IsGameOver) || HUD.AlbumOpen || PixelHUD.BagOpen)
         {
             rb.linearVelocity = Vector2.zero;
             return;

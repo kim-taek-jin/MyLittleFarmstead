@@ -18,6 +18,13 @@ public static class UIScale
 
     static void Apply()
     {
+        // 한 화면짜리 장면: 배경 그림 밖이 보이지 않게 카메라 맞춤
+        CameraFit.Attach(Camera.main);
+        // 장면의 글자도 픽셀 글꼴로
+        if (PixelFont.Asset != null)
+            foreach (TMPro.TMP_Text text in Object.FindObjectsByType<TMPro.TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (text.font != PixelFont.Asset) text.font = PixelFont.Asset;
+
         foreach (CanvasScaler scaler in Object.FindObjectsByType<CanvasScaler>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             if (scaler.uiScaleMode != CanvasScaler.ScaleMode.ConstantPixelSize) continue;
