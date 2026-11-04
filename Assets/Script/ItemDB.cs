@@ -90,6 +90,9 @@ public static class ItemDB
         Register(new ItemDef { name = "Sunflower Seed", category = ItemCategory.Seed, sellPrice = 15, cropId = "sunflower", color = new Color(1f, 0.85f, 0.2f) });
         Register(new ItemDef { name = "Sunflower", category = ItemCategory.Crop, sellPrice = 90, color = new Color(1f, 0.85f, 0.2f) });
 
+        // --- 별의 언덕 ---
+        Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. Your spirit loves it (all four colors)." });
+
         // --- 설치/작업대 ---
         Register(new ItemDef { name = "Campfire", category = ItemCategory.Station, sellPrice = 20, iconFallback = "Wood", color = new Color(1f, 0.45f, 0.1f), description = "Needed for cooking recipes." });
     }

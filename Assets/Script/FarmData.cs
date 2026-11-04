@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 // 밭 한 칸의 상태 (갈아둔 땅 / 젖은 땅)
 [System.Serializable]
@@ -87,7 +87,8 @@ public class FarmData
 
     // 하루가 지날 때 호출. 어제 물을 받은 작물만 자라고, 비가 오면 오늘 밭 전체가 젖습니다.
     // 반환값: 오늘 새로 다 자란 작물 수
-    public int AdvanceDay(bool rainToday)
+    // extraGrowthChance: 물 받은 작물이 하루 더 자랄 확률 (대지의 정령 능력)
+    public int AdvanceDay(bool rainToday, float extraGrowthChance = 0f, System.Random rng = null)
     {
         int newlyMature = 0;
         foreach (var crop in crops)
@@ -95,6 +96,7 @@ public class FarmData
             if (crop.isWatered && !crop.IsMature)
             {
                 crop.daysGrown++;
+                if (!crop.IsMature && rng != null && rng.NextDouble() < extraGrowthChance) crop.daysGrown++;
                 if (crop.IsMature) newlyMature++;
             }
             crop.isWatered = rainToday;

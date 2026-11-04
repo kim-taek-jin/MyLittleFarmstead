@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 씬이 열릴 때 코드로 주민과 낚시터를 배치합니다. (씬 파일 수정 없음)
@@ -29,7 +29,17 @@ public static class WorldSpawner
         {
             FishingSpot spot = FishingSpot.Create(FarmPond, 1.4f);
             SceneManager.MoveGameObjectToScene(spot.gameObject, scene);
+            StarHill hill = StarHill.Create(mat, PixelArt.CharacterScale);
+            SceneManager.MoveGameObjectToScene(hill.gameObject, scene);
         }
+
+        if (scene.name == "Market")
+        {
+            DonationBox box = DonationBox.Create(new Vector2(-4.2f, -2.0f), mat, PixelArt.CharacterScale);
+            SceneManager.MoveGameObjectToScene(box.gameObject, scene);
+        }
+
+        Spirit.EnsureSpawned();
     }
 
     // 2D 조명(URP Sprite-Lit)을 받도록 기존 스프라이트의 머티리얼을 빌려 씁니다.

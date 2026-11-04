@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // 농장 연못 낚시. 낚싯대를 가지고 E → 기다렸다가 "!" 가 뜨면 바로 E.
 // 마음(Heart)이 높을수록 황금 잉어가 잘 잡힙니다.
@@ -35,7 +35,7 @@ public class FishingSpot : MonoBehaviour
             if (timer <= 0f)
             {
                 state = State.Bite;
-                timer = biteWindow;
+                timer = biteWindow + 0.2f * SpiritDB.PerkLevel(Data.story.spirit, "water");
                 HUD.Toast("<size=40><color=#ffd84a>!!</color></size>  Something's biting! Press E!", biteWindow);
             }
         }
@@ -81,7 +81,7 @@ public class FishingSpot : MonoBehaviour
         state = State.Idle;
         float heart01 = Data.heart / Data.maxHeart;
         float roll = Random.value;
-        float koi = 0.03f + 0.07f * heart01;
+        float koi = 0.03f + 0.07f * heart01 + 0.02f * SpiritDB.PerkLevel(Data.story.spirit, "water");
         string fish;
         if (roll < koi) fish = "Golden Koi";
         else if (roll < koi + 0.07f) fish = "Old Boot";

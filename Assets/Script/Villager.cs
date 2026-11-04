@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // 회색 주민. E키로 대화하고, 소원(필요한 아이템)을 가져다주면 색이 1/3씩 돌아옵니다.
 // WorldSpawner가 씬이 열릴 때 코드로 생성하므로 씬에 따로 배치할 필요가 없습니다.
@@ -152,6 +152,7 @@ public class Villager : MonoBehaviour
 
         VillagerProgress p = Progress;
         p.wishIndex++;
+        Data.AddKindness(5);
 
         var rewards = new System.Collections.Generic.List<string>();
         if (wish.gold > 0) { Data.AddGold(wish.gold); rewards.Add($"{wish.gold}G"); }

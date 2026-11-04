@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 
 // 이야기 이벤트: 도시에서 온 편지(선택), 엔딩, 생활 일지
@@ -90,6 +90,22 @@ public static class StoryEvents
             else status = "wants " + VillagerDB.ItemsText(def.wishes[p.wishIndex].items);
             sb.Append($"{def.name}  [{dots}]  {status}\n");
         }
+
+        SpiritState sp = story.spirit;
+        if (sp.found)
+        {
+            string key = SpiritDB.FormKey(sp);
+            sb.Append($"\n<color=#ff9fc4>Spirit</color>  {SpiritDB.FormName(key)}   " +
+                      $"<color=#ffd84a>Sun {sp.sun}</color>  <color=#9dff9d>Earth {sp.earth}</color>  <color=#8fd0ff>Water {sp.water}</color>  <color=#ff9fc4>Bloom {sp.bloom}</color>" +
+                      $"   forms {sp.formsSeen.Count}/{SpiritDB.AllForms.Length}\n");
+            string perk = SpiritDB.PerkText(sp);
+            if (!string.IsNullOrEmpty(perk)) sb.Append($"<size=22>{perk}</size>\n");
+        }
+
+        string hill = story.IsUnlocked("starhill")
+            ? $"Star Hill open on clear nights. Stars caught: {story.starsTotal}"
+            : $"{StarHill.KindnessToUnlock - story.kindness} more to open Star Hill";
+        sb.Append($"\n<color=#ffb6d0>Kindness</color> {story.kindness}   <size=22>{hill}</size>\n");
 
         sb.Append("\n<color=#8fb8ff>Fish caught</color>  ");
         var fish = new List<string>();

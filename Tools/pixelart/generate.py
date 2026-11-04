@@ -19,6 +19,7 @@ import world  # noqa: E402
 import preview  # noqa: E402
 import backgrounds  # noqa: E402
 import villagers  # noqa: E402
+import spirit  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 OUT = os.path.join(ROOT, 'Assets', 'Resources', 'PixelArt')
@@ -169,7 +170,8 @@ def export_image(group, name, img):
 
 
 def main():
-    exported = {'Items': [], 'Crops': [], 'Tiles': [], 'World': [], 'Player': [], 'Villagers': []}
+    bgs = []
+    exported = {'Items': [], 'Crops': [], 'Tiles': [], 'World': [], 'Player': [], 'Villagers': [], 'Spirit': []}
     for name, fn in items.ITEMS.items():
         exported['Items'].append(export('Items', name, fn()))
     for crop_id, stages in crops.CROPS.items():
@@ -185,7 +187,12 @@ def main():
         for i, canvas in enumerate(villagers.stages(fn())):
             exported['Villagers'].append(export('Villagers', f'{vid}_{i}', canvas))
     exported['World'].append(export('World', 'bubble', villagers.bubble()))
-    bgs = []
+    for name, canvas in spirit.spirit_sprites().items():
+        exported['Spirit'].append(export('Spirit', name, canvas))
+    exported['Items'].append(export('Items', 'star_fragment', spirit.star_fragment()))
+    exported['World'].append(export('World', 'donation_box', spirit.donation_box()))
+    exported['World'].append(export('World', 'star_ladder', spirit.star_ladder()))
+    bgs.append(export_image('World', 'bg_starhill', spirit.bg_starhill()))
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))
 

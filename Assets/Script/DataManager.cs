@@ -79,7 +79,8 @@ public class DataManager : MonoBehaviour
     private static readonly int[] heartMilestones = { 30, 50, 75, 100 };
 
     // 마음이 낮으면(번아웃) 하루에 쓸 수 있는 에너지 최대치가 줄어듭니다. (60% ~ 100%)
-    public float MaxEnergyNow => maxEnergy * (0.6f + 0.4f * Mathf.Clamp01(heart / maxHeart));
+    public float MaxEnergyNow => maxEnergy * (0.6f + 0.4f * Mathf.Clamp01(heart / maxHeart))
+                                 * (1f + 0.1f * SpiritDB.PerkLevel(story != null ? story.spirit : null, "sun"));
 
     void Awake()
     {
@@ -122,6 +123,7 @@ public class DataManager : MonoBehaviour
         FindUIElements(SceneManager.GetActiveScene());
         ApplyClearedResources(SceneManager.GetActiveScene());
         WorldColor.SetHeart(heart / maxHeart, true);
+        Spirit.EnsureSpawned();
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -314,6 +316,8 @@ public class DataManager : MonoBehaviour
         if (inventory.ContainsKey(itemName)) inventory[itemName] += count;
         else inventory.Add(itemName, count);
         InventoryChanged();
+
+        if ((itemName == "Sunshine Shard" || itemName == "Earth's Breath") && !story.spirit.found) Spirit.Discover();
     }
 
     public void RemoveItem(string itemName, int count)
@@ -496,6 +500,29 @@ public class DataManager : MonoBehaviour
         return price;
     }
 
+    // 나눔 점수: 나눔 상자, 주민 소원. 30이 되면 별의 언덕이 열립니다.
+    public void AddKindness(int amount)
+    {
+        if (amount <= 0) return;
+        story.kindness += amount;
+
+        int day = timeManager != null ? timeManager.day : 0;
+        if (story.donationDay != day)
+        {
+            story.donationDay = day;
+            ChangeHeart(2f, "Sharing warms your heart.");
+        }
+
+        if (story.kindness >= StarHill.KindnessToUnlock && story.Unlock("starhill"))
+        {
+            HUD.Announce(
+                "<size=40>Word of your kindness spreads</size>\n\n" +
+                "Grandma Rosa whispers: \"On clear nights, look for the glowing vine at the edge of your farm.\n" +
+                "It leads up to the hill where stars come down to rest.\"\n\n" +
+                "<size=24>Star Hill unlocked: clear nights after 20:00, top-right of the farm.</size>", 9f);
+        }
+    }
+
     public void ApplyHaggleResult(float bonus)
     {
         market.haggledToday = true;
@@ -611,7 +638,15 @@ public class DataManager : MonoBehaviour
 
         // 새로운 날
         raining = rng.NextDouble() < (raining ? 0.15 : 0.25);
-        int matured = farm.AdvanceDay(raining);
+        int earthLevel = SpiritDB.PerkLevel(story.spirit, "earth");
+        int matured = farm.AdvanceDay(raining, 0.1f * earthLevel, rng);
+        int bloomLevel = SpiritDB.PerkLevel(story.spirit, "bloom");
+        if (bloomLevel > 0)
+        {
+            delta += bloomLevel;
+            lines.Add($"Your spirit hummed you to sleep  <color=#9dff9d>+{bloomLevel}</color>");
+            ChangeHeart(bloomLevel, null);
+        }
         market.StartNewDay(rng);
         clearedResources.Clear();
         today = new DayLog();
@@ -801,6 +836,7 @@ public class DataManager : MonoBehaviour
 
         WorldColor.SetHeart(heart / maxHeart, true);
         InventoryChanged();
+        Spirit.EnsureSpawned();
         return true;
     }
 

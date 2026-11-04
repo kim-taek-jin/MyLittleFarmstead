@@ -96,7 +96,7 @@ public class PlayerAction : MonoBehaviour
     void UseOnWorld(string selected)
     {
         CropManager farm = CropManager.Instance;
-        if (farm == null || !farm.IsReady) return; // 밭이 있는 씬(Farm)에서만
+        if (farm == null || !farm.IsReady || StarHill.Active) return; // 밭이 있는 씬(Farm)에서만, 별의 언덕 위에서는 제외
 
         Camera cam = Camera.main;
         if (cam == null) cam = FindFirstObjectByType<Camera>();
