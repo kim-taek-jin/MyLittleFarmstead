@@ -476,3 +476,35 @@ ITEMS.update({
     'sunflower': sunflower,
     'sunflower_seed': lambda: seed_packet(sunflower, P['yellow']),
 })
+
+
+# ---------------- pumpkin (autumn crop) ----------------
+def pumpkin():
+    c = Canvas(S, S)
+    for cx in (10, 16, 22):
+        c.ellipse(cx, 19, 7, 9, P['orange'])
+    for x in (13, 19):
+        c.line(x, 12, x, 26, P['orange'][1])
+    c.box(14, 6, 17, 11, P['leaf2'])
+    _leaf(c, 18, 8, 1, -0.4, 6, P['leaf'])
+    c.outline()
+    return c
+
+
+def pumpkin_pie():
+    c = Canvas(S, S)
+    plate(c, cy=23)
+    c.poly([(5, 21), (27, 21), (24, 14), (8, 14)], P['bread'], light_axis='y')
+    c.ellipse(16, 14.5, 8.5, 3, P['orange'], flat=True)
+    for x in range(8, 25, 3):
+        c.set(x, 13, P['bread'][3]); c.set(x + 1, 13, P['bread'][2])
+    c.rect(14, 12, 18, 13, P['white'][3])
+    c.outline()
+    return c
+
+
+ITEMS.update({
+    'pumpkin': pumpkin,
+    'pumpkin_seed': lambda: seed_packet(pumpkin, P['orange']),
+    'pumpkin_pie': pumpkin_pie,
+})

@@ -5,13 +5,55 @@ Each background is laid out around the real object positions of its scene
 Ground is drawn from repeated hand-designed tiles; props are small outlined sprites.
 No random noise fields: every detail is placed on purpose.
 """
-from pixel import Canvas, P, darken_c, lighten_c
+from pixel import Canvas, P, darken_c, lighten_c, ramp, hex2rgba
 import items
 import world
 
 
 def mix(a, b, t):
     return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t), 255)
+
+
+# ======================================================================
+# Seasons ("seasons of the heart": winter = burnout ... autumn = fruition)
+# ======================================================================
+SNOW = ramp('#7d8ea6', '#b8c6d8', '#e4ecf4', '#ffffff')
+SNOW_EDGE = hex2rgba('#5c6c84')
+SUMMER = ramp('#163f1f', '#24702c', '#3f9e38', '#86d455')
+AUTUMN_GRASS = ramp('#4a4220', '#7a6a2c', '#a4913e', '#d2bd68')
+AUT_ORANGE = ramp('#5a2a0c', '#a8501a', '#e08a2c', '#ffc46a')
+AUT_RED = ramp('#4e1414', '#922a20', '#cc4a2c', '#f2896a')
+AUT_YELLOW = ramp('#5a4a10', '#a8861c', '#e0c03a', '#fff07a')
+TRAMPLED = ramp('#7e828c', '#a6aab4', '#c8cad0', '#e8eaee')
+ICE = ramp('#6a8cac', '#9cc0dc', '#cfe6f4', '#ffffff')
+
+SEASONS = ('winter', 'spring', 'summer', 'autumn')
+
+
+def season_ground(season):
+    return {'winter': SNOW, 'spring': P['leaf'], 'summer': SUMMER, 'autumn': AUTUMN_GRASS}[season]
+
+
+def snow_cap(c):
+    """Pile a little snow on every upward-facing edge of a sprite (in place)."""
+    tops = []
+    for y in range(c.h):
+        for x in range(c.w):
+            p = c.get(x, y)
+            if p is not None and p[3] == 255 and (y == 0 or c.get(x, y - 1) is None):
+                tops.append((x, y))
+    for (x, y) in tops:
+        c.set(x, y, SNOW[3])
+        for k, tone in ((1, SNOW[3]), (2, SNOW[2])):
+            below = c.get(x, y + k)
+            if below is None or below[3] != 255 or below in (SNOW[2], SNOW[3]):
+                break
+            if k == 2 and (x * 7 + y) % 3 == 0:
+                break
+            c.set(x, y + k, tone)
+        if y > 0:
+            c.px[y - 1][x] = SNOW_EDGE
+    return c
 
 
 class BG:
@@ -21,6 +63,7 @@ class BG:
         self.sx, self.sy = w / world_w, h / world_h
         self.cx, self.cy = center
         self.props = []
+        self.season = 'spring'
 
     def px(self, wx, wy):
         return (int(round((wx - self.cx) * self.sx + self.w / 2)), int(round(self.h / 2 - (wy - self.cy) * self.sy)))
@@ -34,6 +77,8 @@ class BG:
     def image(self):
         img = self.c.image()
         for _, canvas, x, y in sorted(self.props, key=lambda p: p[0]):
+            if self.season == 'winter' and not getattr(canvas, 'nosnow', False):
+                snow_cap(canvas)
             pi = canvas.image()
             img.alpha_composite(pi, (int(x - canvas.w // 2), int(y - canvas.h)))
         return img
@@ -72,17 +117,18 @@ def grass(bg, x0=0, y0=0, x1=None, y1=None, base=None):
                     tuft(bg, x, y, g)
 
 
-def patch(bg, cx, cy, rx, ry, color):
+def patch(bg, cx, cy, rx, ry, color, ground=None, tufts=None):
     """Crisp blob of a second grass colour (three overlapping ellipses) to break up tiling."""
     blobs = [(cx, cy, rx, ry), (cx - rx * 0.55, cy + ry * 0.25, rx * 0.6, ry * 0.7), (cx + rx * 0.5, cy - ry * 0.2, rx * 0.55, ry * 0.75)]
     cells = []
     for y in range(int(cy - ry * 1.6), int(cy + ry * 1.6) + 1):
         for x in range(int(cx - rx * 1.6), int(cx + rx * 1.6) + 1):
             if any(((x - bx) / brx) ** 2 + ((y - by) / bry) ** 2 <= 1 for bx, by, brx, bry in blobs):
-                if bg.c.get(x, y) == P['leaf'][2] or bg.c.get(x, y) in (P['leaf'][1], P['leaf'][3]):
+                g = ground or P['leaf']
+                if bg.c.get(x, y) in (g[1], g[2], g[3]):
                     bg.c.set(x, y, color)
                     cells.append((x, y))
-    olive = P['leaf2']
+    olive = tufts or P['leaf2']
     for i, (x, y) in enumerate(cells):
         if (x * 13 + y * 7) % 97 == 0:
             tuft(bg, x, y, olive)
@@ -149,12 +195,50 @@ def flower_cluster(bg, x, y, color, n=4):
         bg.prop(flower(color), x=x + dx, y=y + dy)
 
 
-def bush(w=30, h=22, r=P['leaf']):
+def bush(w=30, h=22, r=P['leaf'], blossom=None):
     c = Canvas(w, h)
     c.shadow(w / 2, h - 2, w / 2 - 2, 2.5)
     c.ellipse(w * 0.32, h * 0.6, w * 0.3, h * 0.36, r)
     c.ellipse(w * 0.68, h * 0.6, w * 0.3, h * 0.36, r)
     c.ellipse(w * 0.5, h * 0.42, w * 0.34, h * 0.38, r)
+    if blossom:
+        for (fx, fy) in [(0.3, 0.45), (0.55, 0.3), (0.72, 0.55), (0.45, 0.62), (0.2, 0.7), (0.82, 0.38)]:
+            x, y = int(w * fx), int(h * fy)
+            if c.get(x, y) is not None:
+                c.set(x, y, blossom[3]); c.set(x + 1, y, blossom[2]); c.set(x, y + 1, blossom[2])
+    c.outline()
+    return c
+
+
+def snowman():
+    c = Canvas(16, 24)
+    c.shadow(8, 23, 7, 1.5)
+    c.ellipse(8, 17, 6, 6, SNOW)
+    c.ellipse(8, 8, 4.5, 4.5, SNOW)
+    c.set(6, 7, P['outline']); c.set(9, 7, P['outline'])
+    c.rect(8, 9, 10, 9, P['orange'][2])
+    c.rect(4, 3, 11, 4, P['shirt'][2]); c.rect(5, 0, 10, 3, P['outline'])
+    c.set(8, 15, P['outline']); c.set(8, 18, P['outline'])
+    c.outline()
+    c.nosnow = True
+    return c
+
+
+def leaf_pile(bg, x, y, n=6):
+    """A few fallen autumn leaves, placed in a loose cluster."""
+    cols = [AUT_ORANGE, AUT_RED, AUT_YELLOW]
+    offs = [(0, 0), (3, 1), (-2, 2), (5, -1), (1, 3), (-4, 0), (6, 2), (2, -2)][:n]
+    for i, (dx, dy) in enumerate(offs):
+        col = cols[(i + x) % 3]
+        bg.c.set(x + dx, y + dy, col[2]); bg.c.set(x + dx + 1, y + dy, col[1]); bg.c.set(x + dx, y + dy - 1, col[3])
+
+
+def pumpkin_deco():
+    c = Canvas(14, 11)
+    c.shadow(7, 10, 6, 1)
+    for cx in (4.5, 7, 9.5):
+        c.ellipse(cx, 6.5, 3.2, 3.5, P['orange'])
+    c.rect(6, 1, 7, 3, P['leaf2'][1])
     c.outline()
     return c
 
@@ -179,7 +263,8 @@ def fence_v(length):
     return c
 
 
-def cottage():
+def cottage(roof=None):
+    roof = roof or P['shirt']
     c = Canvas(80, 72)
     c.shadow(40, 70, 38, 3)
     # wall
@@ -187,15 +272,15 @@ def cottage():
     for y in range(34, 68, 5):
         c.line(7, y, 72, y, P['woodlight'][1])
     # roof (red tiles, rows)
-    c.poly([(0, 32), (12, 6), (68, 6), (79, 32)], P['shirt'], light_axis='y')
+    c.poly([(0, 32), (12, 6), (68, 6), (79, 32)], roof, light_axis='y')
     for y in range(10, 32, 5):
         for x in range(0, 80):
             if c.get(x, y) is not None:
-                c.set(x, y, P['shirt'][1])
+                c.set(x, y, roof[1])
         for x in range(4 + (y // 5 % 2) * 4, 77, 8):
             if c.get(x, y - 1) is not None:
-                c.set(x, y - 1, P['shirt'][3])
-    c.rect(0, 31, 79, 32, P['shirt'][0])
+                c.set(x, y - 1, roof[3])
+    c.rect(0, 31, 79, 32, roof[0])
     # chimney
     c.box(54, 0, 61, 10, P['stone'])
     # door
@@ -277,7 +362,18 @@ def gate_arch(width=48):
     return c
 
 
-def pond(bg, cx, cy, rx, ry):
+def pond(bg, cx, cy, rx, ry, frozen=False):
+    if frozen:
+        bg.c.ellipse(cx, cy, rx + 3, ry + 3, [SNOW[1], SNOW[2], SNOW[2], SNOW[3]], flat=False, dither=False)
+        for y in range(int(cy - ry), int(cy + ry) + 1):
+            for x in range(int(cx - rx), int(cx + rx) + 1):
+                d = ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2
+                if d <= 1:
+                    bg.c.set(x, y, ICE[1] if d > 0.82 else ICE[2])
+        for (x0, y0, x1, y1) in [(-0.5, -0.3, 0.1, 0.2), (0.1, 0.2, 0.5, 0.1), (0.1, 0.2, 0.0, 0.6), (-0.3, -0.5, -0.5, -0.3)]:
+            bg.c.line(cx + rx * x0, cy + ry * y0, cx + rx * x1, cy + ry * y1, ICE[0])
+        bg.c.line(cx - rx * 0.6, cy - ry * 0.55, cx - rx * 0.2, cy - ry * 0.55, ICE[3])
+        return
     # shore
     bg.c.ellipse(cx, cy, rx + 3, ry + 3, [P['tan'][1], P['tan'][2], P['tan'][2], P['tan'][3]], flat=False, dither=False)
     # water bands (top darker = depth reflects sky at bottom)
@@ -313,13 +409,17 @@ def pond(bg, cx, cy, rx, ry):
 # ======================================================================
 # Farm
 # ======================================================================
-def farm():
+def farm(season='spring'):
     # World bounds of the old background: 17.92 x 10.24 around (-0.03, -0.03)
     bg = BG(574, 328, 17.92, 10.24, (-0.03, -0.03))
-    grass(bg)
+    bg.season = season
+    ground = season_ground(season)
+    grass(bg, base=ground)
+    patch_col = {'winter': SNOW[1], 'spring': P['leaf2'][2], 'summer': SUMMER[1], 'autumn': AUT_ORANGE[1]}[season]
+    patch_tuft = {'winter': SNOW, 'spring': P['leaf2'], 'summer': SUMMER, 'autumn': AUT_YELLOW}[season]
     for (wx, wy, rx, ry) in [(-4.5, 3.6, 70, 18), (5.6, -2.4, 60, 22), (6.8, 3.0, 40, 14), (-7.6, -0.6, 30, 30)]:
         x, y = bg.px(wx, wy)
-        patch(bg, x, y, rx, ry, P['leaf2'][2])
+        patch(bg, x, y, rx, ry, patch_col, ground, patch_tuft)
 
     # --- paths (pixel rects from world coordinates) ---
     def wr(x0, y0, x1, y1):
@@ -327,12 +427,12 @@ def farm():
         b = bg.px(x1, y0)
         return (a[0], a[1], b[0], b[1])
     path(bg, [
-        wr(-9.2, -5.3, 9.2, -3.95),     # main road along the bottom (home ↔ market)
+        wr(-9.2, -5.3, 9.2, -3.95),     # main road along the bottom (home <-> market)
         wr(0.35, -4.0, 1.55, 3.4),      # up past the field
         wr(-0.7, 3.0, 1.55, 3.9),       # jog
         wr(-0.7, 3.0, 0.55, 5.4),       # north exit (haggle)
         wr(1.5, -0.55, 2.7, 0.45),      # to the well
-    ])
+    ], TRAMPLED if season == 'winter' else P['tan'])
 
     # field soil underlay (the Dirt tiles render on top of this exact area)
     for (x0, y0, x1, y1) in [(-8, 0, -1, 3), (-6, -3, 0, 0)]:
@@ -342,12 +442,22 @@ def farm():
                 bg.c.set(x, y, P['dirt'][2])
 
     # --- tree line along the top (gap for the north path) ---
+    def hedge_ramp(i):
+        if season == 'winter':
+            return P['leaf2']
+        if season == 'summer':
+            return SUMMER
+        if season == 'autumn':
+            return [AUT_ORANGE, AUT_RED, AUT_YELLOW, P['leaf2']][i % 4]
+        return P['leaf2'] if i % 4 == 1 else P['leaf']
+    blossom = P['jam'] if season == 'spring' else None
     back = [-9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.2, 1.1, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
     for i, wx in enumerate(back):
-        bg.prop(bush(36, 24, P['leaf2'] if i % 4 == 1 else P['leaf']), wx=wx, wy=4.85)
+        bg.prop(bush(36, 24, hedge_ramp(i)), wx=wx, wy=4.85)
     front = [-8.5, -7.4, -6.3, -5.3, -4.2, -3.1, -2.1, 2.3, 3.4, 4.5, 5.6, 6.6, 7.7, 8.7]
     for i, wx in enumerate(front):
-        bg.prop(bush(32, 22), wx=wx + (0.15 if i % 2 else -0.1), wy=4.35 + (0.08 if i % 3 == 0 else 0))
+        bg.prop(bush(32, 22, hedge_ramp(i + 2), blossom if i % 2 == 0 else None),
+                wx=wx + (0.15 if i % 2 else -0.1), wy=4.35 + (0.08 if i % 3 == 0 else 0))
     bg.prop(gate_arch(52), wx=-0.07, wy=3.95)
 
     # --- farm plot fence (top and left of the field) ---
@@ -358,25 +468,38 @@ def farm():
     bg.prop(fence_v(bot[1] - top[1]), x=top[0], y=bot[1])
 
     # --- home ---
-    bg.prop(cottage(), wx=-7.75, wy=-3.85)
+    bg.prop(cottage(SNOW if season == 'winter' else None), wx=-7.75, wy=-3.85)
     bg.prop(mailbox(), wx=-6.25, wy=-3.85)
     bg.prop(log_pile(), wx=-9.0, wy=-2.05)
 
     # --- market signpost and pond ---
     bg.prop(signpost(coin_bag), wx=7.3, wy=-3.85)
     x, y = bg.px(7.05, -0.6)
-    pond(bg, x, y, 30, 20)
+    pond(bg, x, y, 30, 20, frozen=(season == 'winter'))
 
-    # --- flowers, placed by hand ---
-    for (wx, wy, col) in [(-5.6, -3.7, P['red']), (-4.2, -3.6, P['sun']), (2.2, -3.65, P['white']),
-                          (5.0, -3.6, P['cloth']), (1.9, 3.5, P['red']), (-2.0, 3.75, P['sun']),
-                          (6.1, 1.4, P['white']), (2.9, -1.4, P['jam']), (8.5, 0.9, P['sun']),
-                          (-8.7, 0.6, P['cloth']), (-3.0, -3.65, P['white'])]:
-        x, y = bg.px(wx, wy)
-        flower_cluster(bg, x, y, col, 4)
-    for (wx, wy) in [(-2.6, -3.6), (6.2, 2.5), (8.6, -1.9), (-0.2, -1.5)]:
-        x, y = bg.px(wx, wy)
-        bg.c.set(x, y, P['leaf'][3]); bg.c.set(x + 3, y + 1, P['leaf'][3]); bg.c.set(x + 1, y + 2, P['leaf'][1])
+    # --- seasonal details, placed by hand ---
+    spots = [(-5.6, -3.7), (-4.2, -3.6), (2.2, -3.65), (5.0, -3.6), (1.9, 3.5), (-2.0, 3.75),
+             (6.1, 1.4), (2.9, -1.4), (8.5, 0.9), (-8.7, 0.6), (-3.0, -3.65)]
+    if season == 'winter':
+        bg.prop(snowman(), wx=-5.2, wy=-3.7)
+        for (wx, wy) in spots[::3]:                      # red winter berries poking out of the snow
+            x, y = bg.px(wx, wy)
+            for dx, dy in ((0, 0), (2, 1), (-1, 2)):
+                bg.c.set(x + dx, y + dy, P['red'][2]); bg.c.set(x + dx, y + dy + 1, P['leaf2'][1])
+    elif season == 'autumn':
+        for (wx, wy) in spots:
+            x, y = bg.px(wx, wy)
+            leaf_pile(bg, x, y, 7)
+        bg.prop(pumpkin_deco(), wx=-6.75, wy=-3.85)
+        bg.prop(pumpkin_deco(), wx=-8.9, wy=-3.9)
+    else:
+        if season == 'spring':
+            cols = [P['jam'], P['white'], P['cloth'], P['sun'], P['jam'], P['white'], P['red'], P['cloth'], P['white'], P['jam'], P['sun']]
+        else:
+            cols = [P['red'], P['sun'], P['white'], P['cloth'], P['red'], P['sun'], P['white'], P['jam'], P['sun'], P['cloth'], P['white']]
+        for (wx, wy), col in zip(spots, cols):
+            x, y = bg.px(wx, wy)
+            flower_cluster(bg, x, y, col, 5 if season == 'summer' else 4)
     return bg.image()
 
 
@@ -675,9 +798,27 @@ def bunting(bg, x0, x1, y, sag=10):
                     bg.c.set(x + j, yy + 1 + k, col if j > -3 + k // 2 else darken_c(col, 0.75))
 
 
-def market():
+def market(season='summer'):
     bg = BG(585, 328, 18.28, 10.24, (0.09, -0.08))
+    bg.season = season
     cobble(bg, 0)
+    if season == 'winter':
+        # snow drifts along the walls and the bottom edge, packed snow where people walk
+        for y in range(bg.h):
+            for x in range(bg.w):
+                edge = min(y - 88, bg.h - 1 - y) if y >= 88 else 0
+                wob = (_h(x // 6, 3, 11) % 5)
+                if (y >= 88 and edge < 12 + wob * 2) or (_h(x, y, 21) % 17 == 0 and y >= 88):
+                    bg.c.set(x, y, SNOW[2] if edge < 8 + wob else SNOW[1])
+        for k in range(30):   # a few snow patches out in the square
+            cx, cy = 30 + (k * 151) % 525, 120 + (k * 89) % 190
+            for y in range(cy - 4, cy + 5):
+                for x in range(cx - 9, cx + 10):
+                    if ((x - cx) / 9) ** 2 + ((y - cy) / 4) ** 2 <= 1 and (x + y) % 5:
+                        bg.c.set(x, y, SNOW[2])
+    elif season == 'autumn':
+        for k in range(46):
+            leaf_pile(bg, 20 + (k * 131) % 545, 110 + (k * 67) % 200, 3)
 
     # building row along the top
     bg.prop(shopfront(150, P['woodlight'], items.bread, P['shirt']), x=95, y=88)
@@ -710,9 +851,14 @@ def market():
         pl = Canvas(30, 20)
         pl.shadow(15, 19, 14, 1.5)
         pl.box(1, 10, 28, 19, P['wood'])
-        pl.ellipse(8, 8, 6, 5, P['leaf']); pl.ellipse(21, 8, 6, 5, P['leaf']); pl.ellipse(14.5, 5, 6, 5, P['leaf'])
-        for (x, y) in [(6, 5), (14, 2), (22, 6), (11, 8), (18, 9)]:
-            pl.set(x, y, [P['red'][2], P['sun'][2], P['white'][3]][(x + y) % 3])
+        foliage = {'winter': P['leaf2'], 'autumn': AUT_ORANGE, 'summer': SUMMER}.get(season, P['leaf'])
+        pl.ellipse(8, 8, 6, 5, foliage); pl.ellipse(21, 8, 6, 5, foliage); pl.ellipse(14.5, 5, 6, 5, foliage)
+        if season != 'winter':
+            petals = [P['jam'][2], P['white'][3], P['cloth'][3]] if season == 'spring' else [P['red'][2], P['sun'][2], P['white'][3]]
+            if season == 'autumn':
+                petals = [AUT_RED[2], AUT_YELLOW[2], AUT_ORANGE[3]]
+            for (x, y) in [(6, 5), (14, 2), (22, 6), (11, 8), (18, 9)]:
+                pl.set(x, y, petals[(x + y) % 3])
         pl.outline()
         bg.prop(pl, wx=wx, wy=-4.6)
 

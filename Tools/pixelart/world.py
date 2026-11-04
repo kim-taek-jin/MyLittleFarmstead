@@ -3,7 +3,8 @@ from pixel import Canvas, P, darken_c, lighten_c, seeded
 import items
 
 
-def tree():
+def tree(r=None):
+    r = r or P['leaf']
     c = Canvas(32, 48)
     c.shadow(16, 44, 11, 3)
     c.box(13, 32, 18, 44, P['wood'])
@@ -12,13 +13,13 @@ def tree():
     tiers = [(36, 14, 9), (27, 11, 9), (19, 8, 9)]
     for (base, half, h) in tiers:
         pts = [(16 - half - 1, base), (16, base - h - 6), (16 + half + 1, base)]
-        c.poly(pts, P['leaf'], light_axis='x')
+        c.poly(pts, r, light_axis='x')
         # scalloped bottom edge
         for x in range(16 - half, 16 + half + 1, 3):
-            c.set(x, base, P['leaf'][0]); c.set(x + 1, base + 1, P['leaf'][1])
-    c.set(16, 3, P['leaf'][3]); c.set(15, 5, P['leaf'][3])
+            c.set(x, base, r[0]); c.set(x + 1, base + 1, r[1])
+    c.set(16, 3, r[3]); c.set(15, 5, r[3])
     for (x, y) in [(12, 17), (10, 26), (13, 31), (9, 34)]:
-        c.set(x, y, P['leaf'][3])
+        c.set(x, y, r[3])
     c.outline()
     return c
 

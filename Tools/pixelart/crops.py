@@ -238,3 +238,35 @@ def sunflower_3():
 
 
 CROPS['sunflower'] = [seedling, sprout, sunflower_2, sunflower_3]
+
+
+# ---------- pumpkin (autumn, content update) ----------
+def _vine(c, n):
+    for i in range(n):
+        x = 6 + i * 5
+        c.ellipse(x, GROUND - 4 - (i % 2) * 2, 3.5, 3, P['leaf'])
+    c.line(5, GROUND - 2, 6 + n * 5, GROUND - 3, P['leaf'][1])
+
+
+def pumpkin_2():
+    c = Canvas(S, S)
+    mound(c, 10)
+    _vine(c, 4)
+    c.set(20, GROUND - 9, P['yellow'][3]); c.set(21, GROUND - 9, P['yellow'][2])   # flower
+    c.outline()
+    return c
+
+
+def pumpkin_3():
+    c = Canvas(S, S)
+    mound(c, 11)
+    _vine(c, 5)
+    for cx in (12, 16, 20):
+        c.ellipse(cx, GROUND - 6, 4, 5, P['orange'])
+    c.line(14, GROUND - 10, 14, GROUND - 2, P['orange'][1]); c.line(18, GROUND - 10, 18, GROUND - 2, P['orange'][1])
+    c.rect(15, GROUND - 13, 16, GROUND - 11, P['leaf2'][1])
+    c.outline()
+    return c
+
+
+CROPS['pumpkin'] = [seedling, sprout, pumpkin_2, pumpkin_3]
