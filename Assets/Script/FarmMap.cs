@@ -6,7 +6,7 @@ using UnityEngine.Tilemaps;
 //  - 큰 농장 그림(bg_farmmap_<계절>)을 원래 배경 자리에 깔기   (PixelArtWorld가 PlaceGround를 부름)
 //  - 빈 흙 칸과 치운 칸에 '흙' 타일 깔기 → 괭이로 갈 수 있음
 //  - 묵은 밭의 잡초/그루터기/바위(Debris), 새 나무/돌/사과(씬의 자원을 복제) 배치
-//  - 출구: 시장 포털을 길 끝으로 옮기고, 잠긴 길(숲, 옛 기차역)에는 회색 가시덤불
+//  - 출구: 시장 포털을 길 끝으로 옮기고, 잠긴 길(숲, 언덕)에는 회색 가시덤불, 호수 길에는 회색 갈대
 //  - 카메라가 플레이어를 따라가고, 플레이어는 맵 밖으로 나가지 못함
 //  - 다른 씬에서 농장으로 오는 포털의 도착 위치를 맵에 맞춤
 public static class FarmMap
@@ -31,7 +31,12 @@ public static class FarmMap
         if (scene.name != SceneName) return;
 
         Material mat = FindSpriteMaterial();
-        if (DataManager.instance != null) ForestArea.CheckOpen(DataManager.instance);   // 예전 저장 파일: 이미 봄이면 열어 둠
+        if (DataManager.instance != null)
+        {
+            // 예전 저장 파일: 이미 그 계절이면 열어 둠
+            ForestArea.CheckOpen(DataManager.instance);
+            LakeArea.CheckOpen(DataManager.instance);
+        }
         LayDirt(map);
         SpawnDebris(map, scene, mat);
         SpawnResources(map, scene);
@@ -39,9 +44,11 @@ public static class FarmMap
         Camera cam = Camera.main;
         CameraFollow follow = cam != null ? CameraFollow.Attach(cam, map.Bounds) : null;
 
-        // 숲 (봄이 오면 열림): 같은 씬 안 멀리에 만들고, 카메라가 다닐 수 있는 지역으로 추가
+        // 숲(봄), 호수(여름): 같은 씬 안 멀리에 만들고, 카메라가 다닐 수 있는 지역으로 추가
         ForestArea forest = ForestArea.Build(scene, mat);
         if (forest != null && follow != null) follow.AddRegion(ForestArea.Map.Bounds);
+        LakeArea lake = LakeArea.Build(scene, mat);
+        if (lake != null && follow != null) follow.AddRegion(LakeArea.Map.Bounds);
     }
 
     // ---------------------------------------------------------------- 바닥 그림
@@ -159,12 +166,13 @@ public static class FarmMap
         if (map.exits == null) return;
         foreach (MapExit exit in map.exits)
         {
-            if (exit.to == "Forest" && ForestArea.IsOpen && ForestArea.Map != null)
+            MapData region = RegionMap(exit.to);
+            if (region != null && RegionOpen(exit.to))
             {
-                // 봄이 와서 가시덤불이 꽃 아치가 됨 → 걸어 들어가면 숲 입구로
-                ForestArea.Map.TryArrival("Farm", out Vector2 into);
-                AreaPortal portal = AreaPortal.Create("ForestArch", exit.Area, into, "The air turns cool and green. You step into the forest.");
-                LockedExit.PlaceArt(portal.transform, "flower_arch", exit.Area, map.Bounds, mat);
+                // 계절이 와서 열린 길 (가시덤불 → 꽃 아치, 회색 갈대 → 초록 갈대) → 걸어 들어가면 그 지역 입구로
+                region.TryArrival("Farm", out Vector2 into);
+                AreaPortal portal = AreaPortal.Create(exit.to + "Gate", exit.Area, into, ArriveLine(exit.to));
+                LockedExit.PlaceArt(portal.transform, exit.OpenArt, exit.Area, map.Bounds, mat);
                 SceneManager.MoveGameObjectToScene(portal.gameObject, scene);
                 continue;
             }
@@ -192,6 +200,13 @@ public static class FarmMap
             }
         }
     }
+
+    // 같은 씬 안에 만드는 지역들 (출구 이름 → 맵, 열렸는지)
+    static MapData RegionMap(string to) => to == "Forest" ? ForestArea.Map : to == "Lake" ? LakeArea.Map : null;
+    static bool RegionOpen(string to) => to == "Forest" ? ForestArea.IsOpen : to == "Lake" && LakeArea.IsOpen;
+    static string ArriveLine(string to) => to == "Lake"
+        ? "The reeds rustle as you pass. The air smells of water."
+        : "The air turns cool and green. You step into the forest.";
 
     // 다른 씬에서 농장으로 오는 포털의 도착 위치
     static void PatchArrivals(Scene scene, MapData map)

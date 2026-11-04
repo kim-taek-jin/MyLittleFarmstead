@@ -63,6 +63,9 @@ public class StoryState
     // 숲 (맵 3단계): 열림, 빈터 되살리기, 채집, 샘가 쉼터
     public ForestState forest = new ForestState();
 
+    // 호수 (맵 4-1단계): 열림, 놓아주기로 맑히기, 채집, 벤치
+    public LakeState lake = new LakeState();
+
     public VillagerProgress Get(string id)
     {
         foreach (var v in villagers) if (v.id == id) return v;

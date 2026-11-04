@@ -98,52 +98,13 @@ public class ForestState
     {
         Ensure();
         forageDay = day;
-        forage.Clear();
-        if (spots == null || spots.Count == 0) return;
-        var pool = new List<(int x, int y)>(spots);
-        int count = System.Math.Min(pool.Count, ForageCount(season, heart));
-        for (int k = 0; k < count; k++)
-        {
-            int pick = rng.Next(pool.Count);
-            var spot = pool[pick];
-            pool.RemoveAt(pick);
-            string item = wantAcorn && k == 0 ? "Acorn" : PickItem(rng);
-            forage.Add($"{spot.x},{spot.y},{item}");
-        }
-    }
-
-    static string PickItem(System.Random rng)
-    {
-        int roll = rng.Next(100);
-        for (int i = 0; i < ForageItems.Length; i++)
-        {
-            if (roll < ForageWeights[i]) return ForageItems[i];
-            roll -= ForageWeights[i];
-        }
-        return ForageItems[0];
+        Forage.Roll(forage, spots, ForageCount(season, heart), rng, ForageItems, ForageWeights, wantAcorn ? "Acorn" : null);
     }
 
     // 그 칸의 채집물을 주움 (없으면 null)
-    public string TakeForage(int x, int y)
-    {
-        Ensure();
-        string prefix = $"{x},{y},";
-        for (int i = 0; i < forage.Count; i++)
-        {
-            if (!forage[i].StartsWith(prefix)) continue;
-            string item = forage[i].Substring(prefix.Length);
-            forage.RemoveAt(i);
-            return item;
-        }
-        return null;
-    }
+    public string TakeForage(int x, int y) { Ensure(); return Forage.Take(forage, x, y); }
 
-    public bool HasForage(string item)
-    {
-        Ensure();
-        foreach (string f in forage) if (f.EndsWith("," + item)) return true;
-        return false;
-    }
+    public bool HasForage(string item) { Ensure(); return Forage.Has(forage, item); }
 
     // 쉼터: 하루 한 번
     public bool Rest(int day)

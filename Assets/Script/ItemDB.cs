@@ -108,6 +108,13 @@ public static class ItemDB
         Register(new ItemDef { name = "Spring Greens", category = ItemCategory.Food, sellPrice = 90, hunger = 25f, heart = 2f, color = new Color(0.45f, 0.75f, 0.35f), description = "Fresh from the forest floor." });
         Register(new ItemDef { name = "Morel Soup", category = ItemCategory.Food, sellPrice = 220, hunger = 35f, thirst = 20f, heart = 4f, color = new Color(0.8f, 0.6f, 0.35f), description = "Earthy and warm. Tastes like a walk in the woods." });
 
+        // ---- 호수 (맵 4-1단계) ----
+        Register(new ItemDef { name = "Bluegill", category = ItemCategory.Fish, sellPrice = 35, color = new Color(0.35f, 0.5f, 0.85f) });
+        Register(new ItemDef { name = "Moonfin", category = ItemCategory.Fish, sellPrice = 110, color = new Color(0.55f, 0.55f, 0.85f), description = "Only bites at night." });
+        Register(new ItemDef { name = "Glassfish", category = ItemCategory.Fish, sellPrice = 240, color = new Color(0.85f, 0.95f, 1f), description = "You can see right through it. It only lives in clear water." });
+        Register(new ItemDef { name = "Wild Raspberry", category = ItemCategory.Food, sellPrice = 30, hunger = 5f, thirst = 3f, heart = 1f, color = new Color(0.85f, 0.15f, 0.3f) });
+        Register(new ItemDef { name = "Watercress", category = ItemCategory.Food, sellPrice = 25, hunger = 6f, thirst = 4f, color = new Color(0.4f, 0.7f, 0.35f) });
+
         Register(new ItemDef { name = "Campfire", category = ItemCategory.Station, sellPrice = 20, iconFallback = "Wood", color = new Color(1f, 0.45f, 0.1f), description = "Needed for cooking recipes." });
     }
 

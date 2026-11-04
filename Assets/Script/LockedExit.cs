@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// 아직 열리지 않은 길 (숲길, 옛 기차역). 회색 가시덤불이 막고 있고, 부딪히면 표지판 말을 보여 줍니다.
+// 아직 열리지 않은 길 (숲길, 호수 길, 언덕길). 회색 가시덤불이나 갈대가 막고 있고, 부딪히면 표지판 말을 보여 줍니다.
 // 맵 데이터의 'locked'는 이 길을 열 마음의 계절입니다. 길 너머 지역은 다음 단계에서 만듭니다.
 public class LockedExit : MonoBehaviour
 {
@@ -18,7 +18,7 @@ public class LockedExit : MonoBehaviour
         BoxCollider2D box = go.AddComponent<BoxCollider2D>();
         box.size = new Vector2(Mathf.Max(0.6f, area.width), Mathf.Max(0.6f, area.height));
 
-        PlaceArt(go.transform, "thorns", area, mapBounds, material);
+        PlaceArt(go.transform, exit.LockedArt, area, mapBounds, material);
         return locked;
     }
 

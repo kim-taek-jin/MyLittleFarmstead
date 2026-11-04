@@ -697,6 +697,8 @@ public class DataManager : MonoBehaviour
 
         // 숲: 봄이 오면 길이 열리고, 물 받은 묘목이 자라고, 새 채집물이 생김
         float forestDelta = ForestArea.Morning(this, raining, timeManager != null ? timeManager.day : 0, lines, out string forestHeadline);
+        LakeArea.Morning(this, timeManager != null ? timeManager.day : 0, out string lakeHeadline);
+        if (lakeHeadline != null) forestHeadline = forestHeadline == null ? lakeHeadline : forestHeadline + "\n" + lakeHeadline;
         if (forestDelta != 0f)
         {
             delta += forestDelta;

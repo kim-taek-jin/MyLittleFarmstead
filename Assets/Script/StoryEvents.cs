@@ -118,10 +118,16 @@ public static class StoryEvents
             string tree = forest.treeAwake ? "The old tree is awake." : "The old tree is asleep.";
             sb.Append($"<color=#9dff9d>Forest</color>  clearings restored {forest.Restored}/{ForestState.Clearings}   <size=22>{tree}</size>\n");
         }
+        LakeState lake = story.lake;
+        if (lake != null && lake.open)
+        {
+            string next = lake.IsClear ? "The lake is clear. Fireflies come out at night." : $"{lake.ToNextZone()} more to clear the next part";
+            sb.Append($"<color=#8fd0ff>Lake</color>  clear parts {lake.ZonesClear}/{LakeState.Thresholds.Length}   <size=22>fish released {lake.released}, {next}</size>\n");
+        }
 
         sb.Append("\n<color=#8fb8ff>Fish caught</color>  ");
         var fish = new List<string>();
-        foreach (string f in new[] { "Minnow", "Carp", "Golden Koi" })
+        foreach (string f in new[] { "Minnow", "Carp", "Golden Koi", "Bluegill", "Moonfin", "Glassfish" })
         {
             int n = story.FishCount(f);
             fish.Add(n > 0 ? $"{f} x{n}" : "???");

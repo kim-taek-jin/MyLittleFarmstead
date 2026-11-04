@@ -7,6 +7,7 @@ public class FishingSpot : MonoBehaviour
     enum State { Idle, Waiting, Bite }
 
     public float castEnergy = 3f;
+    public bool lake;   // 호수 낚시터면 호수 물고기 표 (LakeState.LakeCatch)
     public float biteWindow = 0.9f;
 
     private State state = State.Idle;
@@ -81,12 +82,20 @@ public class FishingSpot : MonoBehaviour
         state = State.Idle;
         float heart01 = Data.heart / Data.maxHeart;
         float roll = Random.value;
-        float koi = 0.03f + 0.07f * heart01 + 0.02f * SpiritDB.PerkLevel(Data.story.spirit, "water");
         string fish;
-        if (roll < koi) fish = "Golden Koi";
-        else if (roll < koi + 0.07f) fish = "Old Boot";
-        else if (roll < koi + 0.07f + 0.35f) fish = "Carp";
-        else fish = "Minnow";
+        if (lake)
+        {
+            int hour = GameTimeManager.instance != null ? GameTimeManager.instance.hour : 12;
+            fish = LakeState.LakeCatch(roll, Data.story.lake.ZonesClear, hour, heart01);
+        }
+        else
+        {
+            float koi = 0.03f + 0.07f * heart01 + 0.02f * SpiritDB.PerkLevel(Data.story.spirit, "water");
+            if (roll < koi) fish = "Golden Koi";
+            else if (roll < koi + 0.07f) fish = "Old Boot";
+            else if (roll < koi + 0.07f + 0.35f) fish = "Carp";
+            else fish = "Minnow";
+        }
 
         bool first = Data.story.FishCount(fish) == 0;
         Data.AddItem(fish, 1);

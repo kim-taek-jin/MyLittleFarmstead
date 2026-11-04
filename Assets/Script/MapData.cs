@@ -14,6 +14,11 @@ public class MapExit
     public float spawnX, spawnY;
     public string locked;   // 이 출구를 여는 마음의 계절 (비어 있으면 열림)
     public string sign;     // 잠겨 있을 때 보여줄 말
+    public string art;      // 잠겨 있을 때 그림 (기본: 가시덤불)
+    public string openArt;  // 열린 뒤 그림 (기본: 꽃 아치)
+
+    public string LockedArt => string.IsNullOrEmpty(art) ? "thorns" : art;
+    public string OpenArt => string.IsNullOrEmpty(openArt) ? "flower_arch" : openArt;
 
     public Rect Area => Rect.MinMaxRect(Mathf.Min(x0, x1), Mathf.Min(y0, y1), Mathf.Max(x0, x1), Mathf.Max(y0, y1));
     public bool IsLocked => !string.IsNullOrEmpty(locked);

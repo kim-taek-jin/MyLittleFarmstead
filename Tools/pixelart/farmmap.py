@@ -130,11 +130,20 @@ def icon_tree():
     return c
 
 
-def icon_rail():
+def icon_sun():
+    """A sun setting behind a hill (the sunset hill path)."""
     c = Canvas(32, 32)
-    for y in range(4, 30, 7):
-        c.rect(3, y, 28, y + 2, P['wood'][2])
-    c.rect(8, 0, 10, 31, P['metal'][2]); c.rect(21, 0, 23, 31, P['metal'][2])
+    c.ellipse(16, 18, 9, 9, P['sun'])
+    c.poly([(0, 31), (6, 20), (16, 16), (26, 21), (31, 31)], P['leaf'], light_axis='y')
+    return c
+
+
+def icon_water():
+    """A water drop over ripples (the lake path)."""
+    c = Canvas(32, 32)
+    c.poly([(16, 2), (24, 16), (8, 16)], P['water'], light_axis='x')
+    c.ellipse(16, 18, 8, 8, P['water'])
+    c.line(4, 29, 12, 29, P['water'][2]); c.line(20, 29, 28, 29, P['water'][2])
     return c
 
 
@@ -216,7 +225,7 @@ def farmmap(season='spring'):
     y = OY - 0.9
     i = 0
     while y > OY - H + 0.2:
-        if not (-5.6 < y < -3.6):                                  # the road to the market
+        if not (-5.6 < y < -3.6) and not (-12.5 < y < -9.6):       # the road to the market, the lane to the lake
             bg.prop(B.bush(30, 22, ramp_for(i)), wx=east_x + (0.12 if i % 2 else 0), wy=y)
         y -= 0.62; i += 1
     south_y = OY - H + 0.3
@@ -233,7 +242,7 @@ def farmmap(season='spring'):
         y -= 0.62; i += 1
 
     # signposts
-    icons = {'Market': B.coin_bag, 'Forest': icon_tree, 'Old Station': icon_rail}
+    icons = {'Market': B.coin_bag, 'Forest': icon_tree, 'Sunset Hill': icon_sun, 'Lake': icon_water}
     for s in m['signs']:
         bg.prop(B.signpost(icons[s['text']]), wx=s['x'], wy=s['y'])
     bg.prop(B.log_pile(), wx=13.2, wy=-4.0 + 0.95)

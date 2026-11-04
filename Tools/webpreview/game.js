@@ -73,6 +73,12 @@ reg('Fern Sprout', 'Food', { sell: 25, hunger: 8 });
 reg('Morel', 'Food', { sell: 60, hunger: 10 });
 reg('Spring Greens', 'Food', { sell: 90, hunger: 25, heart: 2 });
 reg('Morel Soup', 'Food', { sell: 220, hunger: 35, thirst: 20, heart: 4 });
+// the lake (map stage 4-1)
+reg('Bluegill', 'Fish', { sell: 35 });
+reg('Moonfin', 'Fish', { sell: 110 });
+reg('Glassfish', 'Fish', { sell: 240 });
+reg('Wild Raspberry', 'Food', { sell: 30, hunger: 5, thirst: 3, heart: 1 });
+reg('Watercress', 'Food', { sell: 25, hunger: 6, thirst: 4 });
 const iconKey = n => 'Items/' + n.toLowerCase().replace(/'/g, '').replace(/ /g, '_');
 const edible = n => { const d = ITEMS[n]; return d && d.cat !== 'Tool' && d.cat !== 'Seed' && (d.hunger > 0 || d.thirst > 0 || d.heart > 0); };
 const canSell = n => { const d = ITEMS[n]; return d && d.cat !== 'Tool' && d.sell > 0; };
@@ -149,6 +155,7 @@ const SPIRIT_FOOD = {
   'Golden Koi': [0, 0, 5, 0], 'Grilled Fish': [0, 0, 2, 0], Apple: [0, 0, 0, 1], Strawberry: [0, 0, 0, 1],
   'Strawberry Jam': [0, 0, 0, 3], 'Carrot Cake': [0, 1, 0, 2], 'Pumpkin Pie': [0, 1, 0, 2], 'Star Fragment': [1, 1, 1, 1],
   'Wild Garlic': [0, 0, 0, 1], 'Fern Sprout': [0, 1, 0, 0], Morel: [0, 2, 0, 0], 'Spring Greens': [0, 1, 0, 1], 'Morel Soup': [0, 2, 1, 0],
+  Bluegill: [0, 0, 2, 0], Moonfin: [0, 0, 3, 0], Glassfish: [0, 0, 4, 0], 'Wild Raspberry': [0, 0, 0, 1], Watercress: [0, 0, 1, 0],
 };
 const COLORS = ['sun', 'earth', 'water', 'bloom'];
 const FORM_NAMES = { spirit_gray: 'Gray Wisp', spirit_prism: 'Prism Spirit', spirit_sun_young: 'Sunny Sprite', spirit_sun_grown: 'Sun Spirit', spirit_earth_young: 'Sprout Sprite', spirit_earth_grown: 'Grove Spirit', spirit_water_young: 'Droplet Sprite', spirit_water_grown: 'River Spirit', spirit_bloom_young: 'Petal Sprite', spirit_bloom_grown: 'Blossom Spirit' };
@@ -196,6 +203,19 @@ const FSEAT = FCELLS.filter(([, , ch]) => ch === 's').map(([x, y]) => [x + 0.5, 
 const FTREE = (() => { const o = FCELLS.filter(([, , ch]) => ch === 'O'); const xs = o.map(c => c[0]), ys = o.map(c => c[1]); return [(Math.min(...xs) + Math.max(...xs) + 1) / 2, Math.min(...ys)]; })();
 const FORAGE_SPOTS = FCELLS.filter(([, , ch]) => ch === 'f').map(([x, y]) => [x, y]);
 const CLEARING_NAMES = ['north', 'west', 'south'];
+// the lake (Assets/Resources/Maps/lake.json): opens in summer; release fish to clear it, zone by zone
+const LAKE = /*__LAKE__*/null;
+const LAKB = boundsOf(LAKE);
+const lakeAt = (cx, cy) => { const c = cx - LAKE.originX, r = LAKE.originY - 1 - cy; return r >= 0 && r < LAKE.height && c >= 0 && c < LAKE.width ? LAKE.rows[r][c] : '#'; };
+const LCELLS = [];
+LAKE.rows.forEach((row, r) => [...row].forEach((ch, c) => LCELLS.push([LAKE.originX + c, LAKE.originY - 1 - r, ch])));
+const LMID = ch => LCELLS.filter(([, , c]) => c === ch).map(([x, y]) => [x + 0.5, y + 0.5]);
+const LSTEPS = LMID('X')[0], LBENCH = LMID('h')[0], LFISH = LMID('F');
+const LFORAGE_SPOTS = LCELLS.filter(([, , ch]) => ch === 'f').map(([x, y]) => [x, y]);
+const LAKE_THRESH = [10, 25, 45], LAKE_ZONES = ['west cove', 'middle of the lake', 'east cove'];
+const FISH_POINTS = { Minnow: 1, Carp: 2, Bluegill: 2, Moonfin: 3, Glassfish: 4, 'Golden Koi': 5 };
+const RELEASABLE = ['Minnow', 'Carp', 'Bluegill', 'Moonfin', 'Glassfish'];   // the Golden Koi stays with you
+const lakeBlocked = (cx, cy) => '#~RWB'.includes(lakeAt(cx, cy));
 const forestBlocked = (cx, cy) => { const ch = forestAt(cx, cy); return '#~wOB'.includes(ch) || (ch === 'L' && !debrisCleared(cx, cy)); };
 const mapAt = (cx, cy) => { const c = cx - MAP.originX, r = MAP.originY - 1 - cy; return r >= 0 && r < MAP.height && c >= 0 && c < MAP.width ? MAP.rows[r][c] : ' '; };
 const MAPCELLS = [];  // [cellX, cellY, glyph]
@@ -209,6 +229,7 @@ const SCENES = {
   // the farm is bigger than the screen: the camera (cx, cy) follows the player inside the map
   farm: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_farmmap_' + seasonKey(), outdoor: true, map: true, bounds: () => MAPB },
   forest: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_forest_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => FORB },
+  lake: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_lake_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => LAKB },
   home: { ww: 18.43, wh: 10.24, cx: 0, cy: -0.027, bg: () => 'World/bg_home' },
   market: { ww: 18.28, wh: 10.24, cx: 0.09, cy: -0.08, bg: () => 'World/bg_market_' + seasonKey(), outdoor: true },
   haggle: { ww: 17.95, wh: 10.04, cx: -0.035, cy: -0.079, bg: () => 'World/bg_minigame' },
@@ -226,6 +247,7 @@ const LADDER = [8.25, 2.9];
 
 // ------------------------------------------------------------------ state
 let G;  // game state
+function newLake() { return { open: false, clarity: 0, released: 0, restDay: -1, forageDay: -1, forage: [] }; }
 function newForest() { return { open: false, sapling: [-1, -1, -1], watered: [false, false, false], treeAwake: false, forageDay: -1, forage: [], restDay: -1 }; }
 function newGame() {
   G = {
@@ -239,7 +261,7 @@ function newGame() {
     story: { season: 0, highest: 0, unlocks: [], photos: [], villagers: {}, kindness: 0, shareDay: -1, sharedToday: 0, donationDay: -1,
       fish: {}, starsDay: -1, starsTonight: 0, starsTotal: 0, benchDay: -1,
       spirit: { found: false, xp: 0, pts: [0, 0, 0, 0], forms: [] },
-      forest: newForest() },
+      forest: newForest(), lake: newLake() },
     selected: 'Hoe', warnedH: false, warnedT: false, milestones: [],
   };
   G.energy = maxEnergy();
@@ -483,6 +505,9 @@ function worldClick(wx, wy) {
 
 // ------------------------------------------------------------------ forest (map stage 3)
 const F = () => S().forest;
+// regions built next to the farm (the exit name on the farm map -> its map and whether it's open)
+const REGIONS = { Forest: { map: FOREST, open: () => F().open }, Lake: { map: LAKE, open: () => Lk().open } };
+const areaOpen = to => !!REGIONS[to] && REGIONS[to].open();
 const forestRestored = () => F().sapling.filter(s => s >= 3).length;
 function forestCheckOpen() { if (F().open || S().season < 1) return false; F().open = true; unlock('forest_open'); return true; }
 function forageCount() { return S().season === 0 ? 2 : Math.min(7, 3 + Math.floor(G.heart / 25)); }
@@ -521,6 +546,37 @@ function useSpot(i, item, d) {
     if (!useEnergy(2)) return; G.water--; f.watered[i] = true; toast(stage === 0 ? 'The soil soaks up the water.' : 'The sapling drinks the water.', 2); return;
   }
   toast(`${['An acorn is sleeping in the soil.', 'A tiny sprout is peeking out.', 'The sapling is getting taller.'][stage]} (${stage}/3) Water it every day.`);
+}
+
+// ------------------------------------------------------------------ lake (map stage 4-1)
+const Lk = () => S().lake;
+const lakeZones = () => LAKE_THRESH.filter(t => Lk().clarity >= t).length;
+const lakeClear = () => Lk().clarity >= LAKE_THRESH[2];
+function lakeCheckOpen() { if (Lk().open || S().season < 2) return false; Lk().open = true; unlock('lake_open'); return true; }
+function rollLakeForage() {
+  const l = Lk(); l.forageDay = G.day; l.forage = [];
+  const pool = LFORAGE_SPOTS.slice(); const n = S().season === 0 ? 2 : Math.min(6, 2 + Math.floor(G.heart / 25));
+  for (let k = 0; k < Math.min(pool.length, n); k++) { const [x, y] = pool.splice(Math.floor(Math.random() * pool.length), 1)[0]; l.forage.push([x, y, Math.random() < 0.55 ? 'Wild Raspberry' : 'Watercress']); }
+}
+function lakeCatch(roll) {
+  const koi = 0.02 + 0.05 * G.heart / 100; if (roll < koi) return 'Golden Koi'; roll -= koi;
+  if (roll < 0.06) return 'Old Boot'; roll -= 0.06;
+  if (lakeZones() >= 2) { if (roll < 0.10) return 'Glassfish'; roll -= 0.10; }
+  if (G.hour >= 19 || G.hour < 5) { if (roll < 0.25) return 'Moonfin'; roll -= 0.25; }
+  return roll < 0.40 ? 'Bluegill' : 'Carp';
+}
+function releaseFish() {
+  const parts = [], l = Lk(); let count = 0, points = 0;
+  for (const f of RELEASABLE) { const n = G.inv[f] || 0; if (!n) continue; parts.push(`${f} x${n}`); count += n; points += n * FISH_POINTS[f]; }
+  if (!count) { const next = LAKE_THRESH.find(t => l.clarity < t); toast(lakeClear() ? 'The lake is clear and calm. You can still let fish go here anytime.' : `Stone steps down to the gray water. Catch some fish and let them go here. (${next - l.clarity} to the next part)`, 3.5); return; }
+  ask('The lake', `Let these fish go?\n${parts.join(', ')}\n[#c8c0b0](Golden Koi stays with you)[/]`, null, () => {
+    const before = lakeZones(), wasClear = lakeClear();
+    for (const f of RELEASABLE) delete G.inv[f];
+    l.released += count; l.clarity += points;
+    toast(`The fish slip back into the water. The lake feels a little lighter. (+${points})`);
+    for (let z = before; z < lakeZones(); z++) changeHeart(3, `The ${LAKE_ZONES[z]} runs clear and blue again.`);
+    if (!wasClear && lakeClear()) { changeHeart(5, 'The whole lake is clear.'); showAnnounce('[#8fd0ff]The lake is clear[/]\n\nYou can see the pebbles on the bottom.\nWhen night falls, fireflies come out over the water.', 6); }
+  }, null, 'Let them go', 'Keep them');
 }
 
 // ------------------------------------------------------------------ spirit
@@ -620,7 +676,10 @@ function endDay(passedOut) {
   if (matured) header += `\n${matured} crop(s) are ready to harvest!`;
   if (after > before) header = `[${SEASON_COLOR[after]}]${SEASONS[after]} has come[/]\n${ARRIVAL[after]}\n[#9dff9d]Now growing: ${Object.values(CROPS).filter(c => c.season === after).map(c => c.harvest).join(', ')}[/]`;
   else if (after < before) header = `[#c8d8ff]A cold snap...[/]\nYou pushed yourself too hard. It feels like ${SEASONS[after]} again. Some crops stopped growing for now.`;
-  const [fDelta, fHead] = forestMorning(lines);
+  const [fDelta, fHead0] = forestMorning(lines);
+  let fHead = fHead0;
+  if (lakeCheckOpen()) fHead = (fHead ? fHead + '\n' : '') + '[#8fd0ff]The gray reeds south-east of the farm turned green and parted.[/]\nA path leads down to the lake.';
+  if (Lk().open) rollLakeForage();
   if (fDelta) { delta += fDelta; changeHeart(fDelta); }
   if (fHead) header += '\n' + fHead;
   if (G.raining) report('rain_morning');
@@ -656,6 +715,7 @@ function go(scene, x, y) {
   G.scene = scene; G.px = x; G.py = y; panel = null; fishing = null;
   if (G.spirit) { G.spirit.x = x - 0.8; G.spirit.y = y + 0.8; }
   if (scene === 'forest' && F().forageDay !== G.day) rollForage();
+  if (scene === 'lake' && Lk().forageDay !== G.day) rollLakeForage();
   if (scene === 'market') toast(`Today's demand: ${G.market.demand} (+50%)` + (G.market.haggle ? `  |  Haggle bonus +${Math.round(G.market.haggle * 100)}%` : ''), 4);
   if (scene === 'haggle') {
     if (G.market.haggled) { haggle = { done: true, text: 'The merchant is busy today.\nCome back tomorrow!', t: 2.5 }; }
@@ -689,6 +749,12 @@ function gather(ob) {
 // ------------------------------------------------------------------ interaction (E)
 function near(x, y, r) { return Math.hypot(G.px - x, G.py - y) <= r; }
 function interact() {
+  if (G.scene === 'lake') {
+    const spot = LFISH.find(([x, y]) => near(x, y, 1.3)); if (spot || (fishing && fishing.lake)) { fish(spot || fishing.at, true); return; }
+    if (near(LSTEPS[0], LSTEPS[1], 1.3)) { releaseFish(); return; }
+    if (near(LBENCH[0], LBENCH[1], 1.3)) { if (Lk().restDay !== G.day) { Lk().restDay = G.day; changeHeart(2, 'You sat under the willow and watched the water.'); } else toast("The willow sways. You've already rested here today."); return; }
+    return;
+  }
   if (G.scene === 'forest') {
     if (near(FSEAT[0], FSEAT[1], 1.3)) {
       G.thirst = 100; G.log.drank = true; const cap = waterCap(); if (cap) G.water = cap;
@@ -726,15 +792,15 @@ function share() {
   toast(`You shared ${item} x${count}.  [#ff9fc4]Kindness +${got}[/]  (${S().kindness}/60)`);
   addKindness(got, true); report('share');
 }
-function fish() {
+function fish(at = POND, lake = false) {
   if (!fishing) {
     if (!has('Fishing Rod')) { toast('You need a fishing rod. Maybe someone nearby has an old one?'); return; }
-    if (!useEnergy(3)) return; fishing = { state: 'wait', t: 1.5 + Math.random() * 3 }; toast('You cast your line... wait for it.', 2); return;
+    if (!useEnergy(3)) return; fishing = { state: 'wait', t: 1.5 + Math.random() * 3, at, lake }; toast('You cast your line... wait for it.', 2); return;
   }
   if (fishing.state === 'wait') { fishing = null; toast('Too early! The fish swam away.'); return; }
-  fishing = null;
+  const onLake = fishing.lake; fishing = null;
   const koi = 0.03 + 0.07 * G.heart / 100 + 0.02 * perk('water'); const r = Math.random();
-  const f = r < koi ? 'Golden Koi' : r < koi + 0.07 ? 'Old Boot' : r < koi + 0.42 ? 'Carp' : 'Minnow';
+  const f = onLake ? lakeCatch(r) : r < koi ? 'Golden Koi' : r < koi + 0.07 ? 'Old Boot' : r < koi + 0.42 ? 'Carp' : 'Minnow';
   const first = !S().fish[f]; add(f);
   if (f !== 'Old Boot') { S().fish[f] = (S().fish[f] || 0) + 1; report('fish', f); }
   if (f === 'Golden Koi') { showAnnounce('[#ffd84a]Golden Koi![/]\n\nIt shimmers like sunlight on water.', 4); if (first) changeHeart(5, 'A once-in-a-lifetime catch!'); }
@@ -805,7 +871,9 @@ function drawPanel() {
     VILLAGERS.forEach(v => { const p = villagerProgress(v.id); L.push(`${v.name}  [${'#'.repeat(p.wish)}${'-'.repeat(3 - p.wish)}]  ` + (!p.met ? '[#a0a0a0]not met yet[/]' : p.wish >= 3 ? '[#9dff9d]colors restored[/]' : 'wants ' + itemsText(v.wishes[p.wish].items))); });
     if (sp.found) L.push(`\n[#ff9fc4]Spirit[/]  ${FORM_NAMES[spiritForm(sp)]}   [#ffd84a]Sun ${sp.pts[0]}[/]  [#9dff9d]Earth ${sp.pts[1]}[/]  [#8fd0ff]Water ${sp.pts[2]}[/]  [#ff9fc4]Bloom ${sp.pts[3]}[/]   forms ${sp.forms.length}/10`);
     L.push(`\n[#ffb6d0]Kindness[/] ${s.kindness}/60  ` + (unlocked('starhill') ? `Star Hill open on clear nights. Stars caught: ${s.starsTotal}` : `(sharing box today ${S().shareDay === G.day ? S().sharedToday : 0}/5)`));
-    L.push(`\n[#8fb8ff]Fish caught[/]  ` + ['Minnow', 'Carp', 'Golden Koi'].map(f => s.fish[f] ? `${f} x${s.fish[f]}` : '???').join('   '));
+    if (s.forest.open) L.push(`[#9dff9d]Forest[/]  clearings restored ${forestRestored()}/3   ${s.forest.treeAwake ? 'The old tree is awake.' : 'The old tree is asleep.'}`);
+    if (s.lake.open) L.push(`[#8fd0ff]Lake[/]  clear parts ${lakeZones()}/3   fish released ${s.lake.released}` + (lakeClear() ? '   Fireflies come out at night.' : `   ${LAKE_THRESH.find(t => s.lake.clarity < t) - s.lake.clarity} more to clear the next part`));
+    L.push(`\n[#8fb8ff]Fish caught[/]  ` + ['Minnow', 'Carp', 'Golden Koi', 'Bluegill', 'Moonfin', 'Glassfish'].map(f => s.fish[f] ? `${f} x${s.fish[f]}` : '???').join('   '));
     drawRich(L.join('\n'), x + 30, y + 24, 20, 840);
     drawRich('[J] or [Esc] Close', x + w - 24, y + h - 40, 18, 400, 'right', '#c8c0b0');
   } else if (panel.kind === 'album') {
@@ -883,8 +951,9 @@ function update(dt) {
   if (moving) {
     const l = Math.hypot(mx, my); let sp = 5 * (G.hunger <= 0 || G.thirst <= 0 ? 0.6 : 1);
     const ox = G.px, oy = G.py;
-    G.px += mx / l * sp * dt; if (G.scene === 'forest' && feetBlocked()) G.px = ox;   // trees, water, the old tree, logs
-    G.py += my / l * sp * dt; if (G.scene === 'forest' && feetBlocked()) G.py = oy;
+    const tiles = G.scene === 'forest' || G.scene === 'lake';
+    G.px += mx / l * sp * dt; if (tiles && feetBlocked()) G.px = ox;   // trees, water, the old tree, logs, reeds
+    G.py += my / l * sp * dt; if (tiles && feetBlocked()) G.py = oy;
     if (Math.abs(mx) > Math.abs(my)) { G.dir = 'side'; G.facingLeft = mx < 0; } else G.dir = my > 0 ? 'up' : 'down';
     G.stepT += dt; if (G.stepT > 0.125) { G.stepT = 0; G.step = (G.step + 1) % 4; }
   } else G.step = 0;
@@ -896,12 +965,26 @@ function update(dt) {
     if (near(-8.38, -4.54, 0.7)) go('home', 0, -3.5);
     else if (open) go(open.to.toLowerCase(), open.spawnX, open.spawnY);          // the end of the road is the way to the market
     else if (G.py > 4.35 && Math.abs(G.px) < 0.7) go('haggle', 0, 0);
-    const arch = MAP.exits.find(e => e.to === 'Forest' && F().open && inRect(exitRect(e), G.px, G.py));
-    if (arch && G.scene === 'farm') { const a = FOREST.arrivals.find(a => a.from === 'Farm'); go('forest', a.x, a.y); toast('The air turns cool and green. You step into the forest.'); }
-    const thorn = MAP.exits.find(e => e.locked && !(e.to === 'Forest' && F().open) && inRect(exitRect(e), G.px, G.py - 0.4, 0.5));
+    const gate = MAP.exits.find(e => areaOpen(e.to) && inRect(exitRect(e), G.px, G.py));
+    if (gate && G.scene === 'farm') {
+      const a = REGIONS[gate.to].map.arrivals.find(a => a.from === 'Farm'); go(gate.to.toLowerCase(), a.x, a.y);
+      toast(gate.to === 'Lake' ? 'The reeds rustle as you pass. The air smells of water.' : 'The air turns cool and green. You step into the forest.');
+    }
+    const thorn = MAP.exits.find(e => e.locked && !areaOpen(e.to) && inRect(exitRect(e), G.px, G.py - 0.4, 0.5));
     if (thorn && performance.now() > (G.signT || 0)) {
       G.signT = performance.now() + 4000;
       toast(S().season >= SEASONS.indexOf(thorn.locked) ? 'The gray thorns have started to loosen... Not yet, but soon.' : thorn.sign, 3.5);
+    }
+  }
+  if (G.scene === 'lake') {
+    const back = LAKE.exits.find(e => inRect(exitRect(e), G.px, G.py)); if (back) go('farm', back.spawnX, back.spawnY);
+    const l = Lk(); const i = l.forage.findIndex(([x, y]) => near(x + 0.5, y + 0.4, 0.45));
+    if (i >= 0) { const [, , item] = l.forage.splice(i, 1)[0]; add(item); toast(`You found ${item}.`, 2.5); }
+    if (fishing) {
+      fishing.t -= dt;
+      if (fishing.state === 'wait' && fishing.t <= 0) { fishing.state = 'bite'; fishing.t = 0.9 + 0.2 * perk('water'); toast('[#ffd84a]!![/]  Something\'s biting! Press E!', 1); }
+      else if (fishing.state === 'bite' && fishing.t <= 0) { fishing = null; toast('It got away...'); }
+      if (fishing && !near(fishing.at[0], fishing.at[1], 2.2)) { fishing = null; toast('You reeled in your line.'); }
     }
   }
   if (G.scene === 'forest') {
@@ -915,7 +998,7 @@ function update(dt) {
       fishing.t -= dt;
       if (fishing.state === 'wait' && fishing.t <= 0) { fishing.state = 'bite'; fishing.t = 0.9 + 0.2 * perk('water'); toast('[#ffd84a]!![/]  Something\'s biting! Press E!', 1); }
       else if (fishing.state === 'bite' && fishing.t <= 0) { fishing = null; toast('It got away...'); }
-      if (fishing && !near(POND[0], POND[1], 2.2)) { fishing = null; toast('You reeled in your line.'); }
+      if (fishing && !near(fishing.at[0], fishing.at[1], 2.2)) { fishing = null; toast('You reeled in your line.'); }
     }
   } else if (G.scene === 'home') { if (G.px > 8.4 && Math.abs(G.py) < 1.2) go('farm', ...arrival('Home')); }
   else if (G.scene === 'market') { if (G.px < -8.5 && Math.abs(G.py) < 1.3) go('farm', ...arrival('Market')); }
@@ -941,13 +1024,15 @@ function update(dt) {
   clearPressed();
 }
 function feetBlocked() {
-  for (const [dx, dy] of [[-0.2, -0.5], [0.2, -0.5], [-0.2, -0.28], [0.2, -0.28]]) if (forestBlocked(Math.floor(G.px + dx), Math.floor(G.py + dy))) return true;
+  const blocked = G.scene === 'lake' ? lakeBlocked : forestBlocked;
+  for (const [dx, dy] of [[-0.2, -0.5], [0.2, -0.5], [-0.2, -0.28], [0.2, -0.28]]) if (blocked(Math.floor(G.px + dx), Math.floor(G.py + dy))) return true;
   return false;
 }
 function clampPlayer() {
   const s = sc(); let minX = s.cx - s.ww / 2 + 0.4, maxX = s.cx + s.ww / 2 - 0.4, minY = s.cy - s.wh / 2 + 0.6, maxY = s.cy + s.wh / 2 - 0.9;
   if (G.scene === 'farm') { minX = MAPB.x0 + 0.3; maxX = MAPB.x1 - 0.3; minY = MAPB.y0 + 0.5; maxY = Math.abs(G.px) > 0.7 ? MAPB.y1 - 0.8 : MAPB.y1 - 0.35; }
   if (G.scene === 'forest') { minX = FORB.x0 + 0.3; maxX = FORB.x1 - 0.3; minY = FORB.y0 + 0.5; maxY = FORB.y1 - 0.8; }
+  if (G.scene === 'lake') { minX = LAKB.x0 + 0.3; maxX = LAKB.x1 - 0.3; minY = LAKB.y0 + 0.5; maxY = LAKB.y1 - 0.8; }
   if (G.scene === 'market') maxY = 2.4;
   if (G.scene === 'home') maxY = 3.0;
   if (G.scene === 'hill') { minX = -8.4; maxX = 8.4; minY = -4.6; maxY = -1.2; }
@@ -958,9 +1043,10 @@ function clampPlayer() {
     // stumps and boulders near the player block the way (weeds don't)
     const pcx = Math.floor(G.px), pcy = Math.floor(G.py - 0.4);
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const ch = debrisAt(pcx + dx, pcy + dy); if (ch === 'k' || ch === 'o') solids.push([pcx + dx + 0.5, pcy + dy + 0.3, 0.45]); }
-    // gray thorns close the lanes that are not open yet (west edge: forest, south edge: old station)
-    for (const e of MAP.exits) if (e.locked && !(e.to === 'Forest' && F().open)) {
+    // gray thorns / reeds close the lanes that are not open yet (west: forest, east: lake, south: sunset hill)
+    for (const e of MAP.exits) if (e.locked && !areaOpen(e.to)) {
       const [x0, y0, x1, y1] = exitRect(e), feet = G.py - 0.4;
+      if (x1 >= MAPB.x1 - 0.1 && feet > y0 - 0.3 && feet < y1 + 0.3) G.px = Math.min(G.px, x0 - 0.35);
       if (x0 <= MAPB.x0 + 0.1 && feet > y0 - 0.3 && feet < y1 + 0.3) G.px = Math.max(G.px, x1 + 0.35);
       if (y0 <= MAPB.y0 + 0.1 && G.px > x0 - 0.2 && G.px < x1 + 0.2) G.py = Math.max(G.py, y1 + 0.75);
     }
@@ -989,8 +1075,32 @@ function updateCamera() {
   s.cx = Math.round(clamp(G.px, b.x0 + hw, b.x1 - hw) * 32) / 32;
   s.cy = Math.round(clamp(G.py, b.y0 + hh, b.y1 - hh) * 32) / 32;
 }
+// fireflies over a clear lake on summer nights (drawn above the night shade, they glow)
+function drawFireflies(c) {
+  const h = G.hour + G.minute / 60;
+  if (!(lakeClear() && (h >= 20 || h < 4) && S().season !== 0)) return;
+  const t = performance.now() / 1000, mid = [(LAKB.x0 + LAKB.x1) / 2, (LAKB.y0 + LAKB.y1) / 2];
+  for (let i = 0; i < 16; i++) {
+    const fx = mid[0] - 9 + (i * 37 % 18) + Math.sin(t * 0.35 + i * 1.7) * 1.2, fy = mid[1] - 5 + (i * 23 % 10) + Math.sin(t * 0.45 + i) * 0.8;
+    sprite(c, 'World/firefly', fx, fy, 1, 'center', false, 0.6 + 0.4 * Math.sin(t * 3 + i));
+  }
+}
 // the gray forest, with colour shown only through the round masks of restored clearings (all of it once the tree wakes)
 const maskCanvas = document.createElement('canvas'); maskCanvas.width = CW; maskCanvas.height = CH; const mctx = maskCanvas.getContext('2d');
+function drawMaskedGround(c, b, grayKey, colorKey, masks, full) {
+  const mid = [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2];
+  sprite(c, grayKey, mid[0], mid[1]);
+  if (full) { sprite(c, colorKey, mid[0], mid[1]); return; }
+  if (!masks.length) return;
+  mctx.globalCompositeOperation = 'source-over'; mctx.clearRect(0, 0, CW, CH);
+  for (const [key, x, y] of masks) sprite(mctx, key, x, y);
+  mctx.globalCompositeOperation = 'source-in'; sprite(mctx, colorKey, mid[0], mid[1]); mctx.globalCompositeOperation = 'source-over';
+  c.drawImage(maskCanvas, 0, 0);
+}
+function drawLakeGround(c) {
+  const z = lakeZones();
+  drawMaskedGround(c, LAKB, sc().bg(), 'World/bg_lake_' + seasonKey(), LAKE.zones.slice(0, z).map(m => ['World/lake_mask_' + m.size, m.x, m.y]), lakeClear());
+}
 function drawForestGround(c) {
   const mid = [(FORB.x0 + FORB.x1) / 2, (FORB.y0 + FORB.y1) / 2], color = 'World/bg_forest_' + seasonKey();
   sprite(c, sc().bg(), mid[0], mid[1]);
@@ -1008,6 +1118,7 @@ function renderWorld() {
   if (sc().map) {
     updateCamera();
     if (G.scene === 'forest') drawForestGround(c);
+    else if (G.scene === 'lake') drawLakeGround(c);
     else sprite(c, sc().bg(), (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2);
   } else { const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH); }
   const draws = [];  // [sortY, fn]
@@ -1024,7 +1135,7 @@ function renderWorld() {
     for (const e of MAP.exits) if (e.locked) {
       const [x0, y0, x1, y1] = exitRect(e), w = 56 / 32, h = 52 / 32;
       const tx = Math.max(MAPB.x0 + w / 2 - 0.3, Math.min(MAPB.x1 - w / 2 + 0.3, (x0 + x1) / 2)), ty = Math.max(MAPB.y0 + h / 2, Math.min(MAPB.y1 - h / 2, (y0 + y1) / 2));
-      const art = e.to === 'Forest' && F().open ? 'flower_arch' : 'thorns';   // spring turns the thorns into an arch
+      const art = areaOpen(e.to) ? (e.openArt || 'flower_arch') : (e.art || 'thorns');   // the season turns thorns into an arch, gray reeds green
       draws.push([ty - h / 2, () => sprite(c, seasonal(art), tx, ty)]);
     }
     for (const k in G.crops) {
@@ -1041,6 +1152,9 @@ function renderWorld() {
     }
     draws.push([-0.03 - 0.6, () => sprite(c, G.story.season === 0 ? 'World/well_winter' : 'World/well', 3.68, -0.03)]);
     if (starVineOpen()) draws.push([LADDER[1] - 1.1, () => sprite(c, 'World/star_ladder', LADDER[0], LADDER[1])]);
+  }
+  if (G.scene === 'lake') {
+    for (const [x, y, item] of Lk().forage) draws.push([y + 0.3, () => sprite(c, 'World/' + item.toLowerCase().replace(/ /g, '_') + '_ground', x + 0.5, y + 0.4)]);
   }
   if (G.scene === 'forest') {
     const f = F();
@@ -1079,6 +1193,8 @@ function renderWorld() {
     const dl = daylight(G.hour + G.minute / 60) * ((G.raining || G.snowing) ? 0.8 : 1);
     const a = (1 - Math.max(0.45, dl)) * 0.95; if (a > 0.01) { c.fillStyle = `rgba(16, 22, 60, ${a})`; c.fillRect(0, 0, CW, CH); }
   }
+  if (G.scene === 'lake') drawFireflies(c);
+
   // seasons of the heart: the world's saturation follows Heart (UI layer is not affected)
   const sat = 1 + (-80 + 95 * G.heart / 100) / 100;
   worldCanvas.style.filter = `saturate(${sat.toFixed(2)})`;
@@ -1171,6 +1287,7 @@ function promptText() {
     if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The pond is full of fish');
     if (near(-8.38, -4.54, 1.6)) return 'Home';
     if (G.px < MAPB.x0 + 2.2 && Math.abs(G.py + 9.1) < 1.4) return F().open ? '← To the forest' : 'Gray thorns block the forest path';
+    if (G.px > MAPB.x1 - 2.4 && Math.abs(G.py + 10.6) < 1.4) return Lk().open ? 'To the lake →' : 'Tall gray reeds block the path to the lake';
     if (G.px > MAPB.x1 - 2.2 && Math.abs(G.py + 4.5) < 1.3) return 'To the market →';
     if (debrisAt(Math.floor(G.px), Math.floor(G.py - 0.4)) === 'g' || ['k', 'o'].some(ch => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => debrisAt(Math.floor(G.px) + dx, Math.floor(G.py - 0.4) + dy) === ch))) {
       const it = ITEMS[selectedItem()] || {}; return it.tool === 'hoe' || it.tool === 'scythe' ? 'Click to clear the old field' : 'The old field: clear it with a hoe or scythe';
@@ -1181,6 +1298,11 @@ function promptText() {
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade with the merchant';
     if (G.px < -7) return 'Back to the farm';
+  } else if (G.scene === 'lake') {
+    if (LFISH.some(([x, y]) => near(x, y, 1.3))) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'You need a fishing rod to fish here');
+    if (near(LSTEPS[0], LSTEPS[1], 1.3)) return '[E] Let your fish go into the lake';
+    if (near(LBENCH[0], LBENCH[1], 1.3)) return Lk().restDay === G.day ? 'The willow sways' : '[E] Rest under the willow';
+    if (G.px < LAKB.x0 + 2) return '← Back to the farm';
   } else if (G.scene === 'forest') {
     if (near(FSEAT[0], FSEAT[1], 1.3)) return F().restDay === G.day ? '[E] Drink from the spring' : '[E] Rest by the spring';
     if (near(FTREE[0], FTREE[1] + 0.6, 2.2)) return '[E] Look at the old tree';
@@ -1230,6 +1352,12 @@ $('t-forest').onclick = () => {
   forestCheckOpen(); add('Acorn', 3); if (!has('Mattock')) add('Mattock');
   toast('Preview: spring, the forest is open. +3 Acorn, Mattock. The flower arch is at the west end of the farm lane.', 5); uiCanvas.focus();
 };
+$('t-lake').onclick = () => {
+  if (G.heart < 60) changeHeart(60 - G.heart, 'Preview tool');
+  if (S().season < 2) { S().season = 2; S().highest = Math.max(S().highest, 2); }
+  forestCheckOpen(); lakeCheckOpen(); if (!has('Fishing Rod')) add('Fishing Rod'); add('Minnow', 4); add('Carp', 3);
+  toast('Preview: summer, the lake is open. +Fishing Rod, 4 Minnow, 3 Carp. The lake path is at the south-east of the farm.', 5); uiCanvas.focus();
+};
 $('t-night').onclick = () => { G.hour = Math.max(G.hour, 20); G.minute = 30; toast('Preview: it is night now.'); uiCanvas.focus(); };
 $('t-speed').onclick = e => { speed = speed === 1 ? 4 : 1; e.currentTarget.classList.toggle('on', speed === 4); e.currentTarget.textContent = speed === 4 ? '시간 1배속' : '시간 4배속'; uiCanvas.focus(); };
 $('t-new').onclick = () => { newGame(); toasts = []; dialogue = null; panel = null; announce = null; G.spirit = null; save(); introAnnounce(); uiCanvas.focus(); };
@@ -1249,6 +1377,8 @@ const resumed = load();
 if (G.scene === 'haggle' || G.scene === 'hill') { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
 G.clearedDebris = G.clearedDebris || []; G.debrisHits = G.debrisHits || {};   // saves from before the bigger farm
 G.story.forest = Object.assign(newForest(), G.story.forest || {});             // saves from before the forest
+G.story.lake = Object.assign(newLake(), G.story.lake || {});                   // saves from before the lake
+if (G.scene === 'lake' && !G.story.lake.open) { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
 if (G.scene === 'forest' && !G.story.forest.open) { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
 if (G.story.spirit.found && !G.spirit) G.spirit = { x: G.px, y: G.py, vx: 0, pulse: 0 };
 Promise.all([loadAll(), document.fonts ? document.fonts.ready : Promise.resolve()]).then(() => {

@@ -15,15 +15,15 @@
   "~~~~~~~~~~~~~~~~~~..................",
   "~~~~~~~~~~~~~~~~~~==================",
   "~~~~~~~~~~~~~~~~~~==================",
-  ".........==.........................",
-  "..T....T.==..xxxgogkooxgoxkgxxg.....",
-  "......r..==..xxxkggxxgggoxgggkg..T..",
-  "===========..goxgxggogggxgkxgkx.....",
-  "===========..kgxkgogxggxgxggkxg.....",
-  "...a.....==..ggggxgggggokgxgxgk.....",
-  "..*..T..*==..gkgxggxgxgggxggxkx...T.",
+  ".........==.....................==T.",
+  "..T....T.==..xxxgogkooxgoxkgxxg.==..",
+  "......r..==..xxxkggxxgggoxgggkg.==..",
+  "===========..goxgxggogggxgkxgkx.==..",
+  "===========..kgxkgogxggxgxggkxg.==..",
+  "...a.....==..ggggxgggggokgxgxgk.====",
+  "..*..T..*==..gkgxggxgxgggxggxkx.====",
   "....r.*..==..xxgkgkoggggggggxgx.....",
-  ".T.......==.....*.....a.....*...r...",
+  ".T.......==.....*.....a.....*...r.T.",
   ".........==........................."
  ],
  "exits": [
@@ -46,10 +46,25 @@
    "spawnX": 0,
    "spawnY": 0,
    "locked": "Spring",
+   "art": "thorns",
+   "openArt": "flower_arch",
    "sign": "The forest path is overgrown with gray thorns. Maybe when spring comes in your heart..."
   },
   {
-   "to": "Station",
+   "to": "Lake",
+   "x0": 26.4,
+   "y0": -12.0,
+   "x1": 27.0,
+   "y1": -10.0,
+   "spawnX": 0,
+   "spawnY": 0,
+   "locked": "Summer",
+   "art": "reeds_gray",
+   "openArt": "reeds_open",
+   "sign": "Tall gray reeds have closed over the path to the lake. They'll wake when summer comes to your heart."
+  },
+  {
+   "to": "Hill",
    "x0": 0.2,
    "y0": -15.0,
    "x1": 1.8,
@@ -57,7 +72,9 @@
    "spawnX": 0,
    "spawnY": 0,
    "locked": "Autumn",
-   "sign": "The old railway is buried in fog. You're not ready to see it yet."
+   "art": "thorns",
+   "openArt": "flower_arch",
+   "sign": "The hill path is buried in gray thorns. Maybe when autumn comes to your heart..."
   }
  ],
  "signs": [
@@ -69,12 +86,17 @@
   {
    "x": 2.6,
    "y": -13.6,
-   "text": "Old Station"
+   "text": "Sunset Hill"
   },
   {
    "x": 24.8,
    "y": -3.2,
    "text": "Market"
+  },
+  {
+   "x": 25.6,
+   "y": -9.4,
+   "text": "Lake"
   }
  ],
  "arrivals": [
@@ -92,6 +114,16 @@
    "from": "MiniGame",
    "x": 0.0,
    "y": 3.8
+  },
+  {
+   "from": "Forest",
+   "x": -7.6,
+   "y": -9.1
+  },
+  {
+   "from": "Lake",
+   "x": 25.0,
+   "y": -10.9
   }
  ]
 }

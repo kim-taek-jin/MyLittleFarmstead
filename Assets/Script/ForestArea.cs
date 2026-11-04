@@ -118,24 +118,8 @@ public class ForestArea : MonoBehaviour
         Ground("bg_forest_gray", center, -50, SpriteMaskInteraction.None);
         colorGround = Ground("bg_forest", center, -49, state.treeAwake ? SpriteMaskInteraction.None : SpriteMaskInteraction.VisibleInsideMask);
 
-        var walls = new GameObject("ForestWalls");
-        walls.transform.SetParent(transform, false);
+        AreaKit.Walls(transform, map, Blocks);
         var treeCells = new List<Vector2Int>();
-        for (int r = 0; r < map.rows.Length; r++)
-        {
-            string row = map.rows[r];
-            int c = 0;
-            while (c < row.Length)
-            {
-                if (!Blocks(row[c])) { c++; continue; }
-                int start = c;
-                while (c < row.Length && Blocks(row[c])) c++;
-                Vector2Int left = map.CellOf(start, r);
-                BoxCollider2D box = walls.AddComponent<BoxCollider2D>();
-                box.size = new Vector2(c - start, 1f);
-                box.offset = new Vector2(left.x + (c - start) * 0.5f, left.y + 0.5f);
-            }
-        }
 
         foreach (var cell in map.Cells())
         {
@@ -164,26 +148,16 @@ public class ForestArea : MonoBehaviour
         }
 
         // 빈터마다: 묘목과 색 마스크
-        Sprite maskSprite = PixelArt.Load("World/forest_mask");
         for (int i = 0; i < spots.Count; i++)
         {
             Vector2 at = new Vector2(spots[i].x + 0.5f, spots[i].y + 0.05f);
             saplings.Add(Sprite("Sapling", null, at, 4));
-            var m = new GameObject("ClearingColor");
-            m.transform.SetParent(transform, false);
-            m.transform.position = new Vector3(spots[i].x + 0.5f, spots[i].y + 0.5f, 0f);
-            SpriteMask mask = m.AddComponent<SpriteMask>();
-            mask.sprite = maskSprite;
-            if (maskSprite != null)
-            {
-                float s = PixelArt.PixelsPerUnit / maskSprite.pixelsPerUnit;
-                m.transform.localScale = new Vector3(s, s, 1f);
-            }
+            GameObject m = AreaKit.Mask(transform, "forest_mask", new Vector2(spots[i].x + 0.5f, spots[i].y + 0.5f));
             masks.Add(m);
         }
         RefreshSaplings();
 
-        foreach (string f in state.forage) SpawnForage(f, scene);
+        foreach (string f in state.forage) AreaKit.SpawnForage(transform, f, material, "forest");
 
         // 숲 입구 → 농장
         if (map.exits != null)
@@ -196,48 +170,13 @@ public class ForestArea : MonoBehaviour
 
     static bool Blocks(char ch) => ch == '#' || ch == '~' || ch == 'w' || ch == 'O' || ch == 'B';
 
-    SpriteRenderer Ground(string key, Vector2 center, int order, SpriteMaskInteraction maskMode)
-    {
-        Sprite sprite = PixelArtWorld.SeasonalSprite(key);
-        var go = new GameObject(key);
-        go.transform.SetParent(transform, false);
-        go.transform.position = new Vector3(center.x, center.y, 1f);
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = sprite;
-        if (material != null) sr.sharedMaterial = material;
-        sr.sortingOrder = order;
-        sr.maskInteraction = maskMode;
-        if (sprite != null)
-        {
-            float s = PixelArt.PixelsPerUnit / sprite.pixelsPerUnit;
-            go.transform.localScale = new Vector3(s, s, 1f);
-        }
-        go.AddComponent<SeasonalArt>().baseKey = key;
-        return sr;
-    }
+    SpriteRenderer Ground(string key, Vector2 center, int order, SpriteMaskInteraction maskMode) =>
+        AreaKit.Ground(transform, key, center, order, maskMode, material);
 
-    // 밑동(bottom)을 at에 맞춘 스프라이트
-    SpriteRenderer Sprite(string name, string key, Vector2 bottom, int order)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(transform, false);
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-        if (material != null) sr.sharedMaterial = material;
-        sr.sortingOrder = order;
-        go.transform.position = new Vector3(bottom.x, bottom.y, 0f);
-        if (key != null) SetSprite(sr, key, bottom);
-        return sr;
-    }
+    SpriteRenderer Sprite(string name, string key, Vector2 bottom, int order) =>
+        AreaKit.SpriteAt(transform, name, key, bottom, order, material);
 
-    static void SetSprite(SpriteRenderer sr, string key, Vector2 bottom)
-    {
-        Sprite sprite = PixelArt.Load("World/" + key);
-        sr.sprite = sprite;
-        if (sprite == null) return;
-        float s = PixelArt.PixelsPerUnit / sprite.pixelsPerUnit;
-        sr.transform.localScale = new Vector3(s, s, 1f);
-        sr.transform.position = new Vector3(bottom.x, bottom.y + sprite.rect.height / sprite.pixelsPerUnit * s * 0.5f, 0f);
-    }
+    static void SetSprite(SpriteRenderer sr, string key, Vector2 bottom) => AreaKit.SetSprite(sr, key, bottom);
 
     void RefreshSaplings()
     {
@@ -251,31 +190,6 @@ public class ForestArea : MonoBehaviour
             if (i < masks.Count) masks[i].SetActive(state.IsRestored(i));
         }
         if (colorGround != null) colorGround.maskInteraction = state.treeAwake ? SpriteMaskInteraction.None : SpriteMaskInteraction.VisibleInsideMask;
-    }
-
-    void SpawnForage(string entry, Scene scene)
-    {
-        string[] parts = entry.Split(',');
-        if (parts.Length < 3 || !int.TryParse(parts[0], out int x) || !int.TryParse(parts[1], out int y)) return;
-        string item = parts[2];
-        var go = new GameObject("Forage_" + item);
-        go.transform.SetParent(transform, false);
-        go.transform.position = new Vector3(x + 0.5f, y + 0.4f, 0f);
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-        Sprite sprite = PixelArt.Load("World/" + PixelArt.Key(item) + "_ground");
-        sr.sprite = sprite;
-        if (material != null) sr.sharedMaterial = material;
-        sr.sortingOrder = 3;
-        if (sprite != null)
-        {
-            float s = PixelArt.PixelsPerUnit / sprite.pixelsPerUnit;
-            go.transform.localScale = new Vector3(s, s, 1f);
-        }
-        CircleCollider2D trigger = go.AddComponent<CircleCollider2D>();
-        trigger.isTrigger = true;
-        trigger.radius = 0.35f / Mathf.Max(0.01f, go.transform.localScale.x);
-        ForagePickup pickup = go.AddComponent<ForagePickup>();
-        pickup.cell = new Vector2Int(x, y);
     }
 
     // ---------------------------------------------------------------- 빈터 (PlayerAction이 부름)
@@ -368,25 +282,5 @@ public class ForestArea : MonoBehaviour
             else
                 HUD.Toast($"The old tree is asleep, gray to its roots. Maybe if the clearings around it came back to life... ({state.Restored}/3)", 4f);
         }
-    }
-}
-
-// 숲 바닥의 채집물. 걸어서 닿으면 줍습니다.
-public class ForagePickup : MonoBehaviour
-{
-    public Vector2Int cell;
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!other.CompareTag("Player")) return;
-        DataManager data = DataManager.instance;
-        if (data == null) return;
-        string item = data.story.forest.TakeForage(cell.x, cell.y);
-        if (item != null)
-        {
-            data.AddItem(item);
-            HUD.Toast(item == "Acorn" ? "You found an Acorn! Plant it in a clearing." : $"You found {item}.", 2.5f);
-        }
-        Destroy(gameObject);
     }
 }

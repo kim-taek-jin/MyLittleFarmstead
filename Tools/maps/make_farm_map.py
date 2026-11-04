@@ -4,7 +4,7 @@ One character per tile (1 tile = 1 world unit = 32 px). Column c -> world x = or
 row r -> world cell y = originY - 1 - r (row 0 is the top). The old one-screen farm stays in the
 north-west quarter (x -9..9, y -5..5) and is drawn by the art code; this file adds everything new.
 
-  .  grass                 =  path
+  .  grass                 =  path   (lanes: west -> forest, south -> sunset hill, south-east -> lake)
   x  open soil (tillable)  g  weeds on soil      k  stump on soil      o  boulder on soil
   T  tree (resource)       r  rock (resource)    a  apple (resource)   *  flowers
   ~  keep (old farm area, drawn by the art code)
@@ -30,6 +30,11 @@ for c in range(18, 36):
 # south lane from the road at x 0.35..1.55 (cols 9..10) down to the southern edge (railway, autumn)
 for r in range(10, 20):
     put(9, r, '='); put(10, r, '=')
+# east lane to the lake (summer): down from the road at cols 32..33, then east along rows 15..16 to the edge
+for r in range(10, 17):
+    put(32, r, '='); put(33, r, '=')
+for c in range(32, 36):
+    put(c, 15, '='); put(c, 16, '=')
 # west lane to the forest (spring): row 13..14 from the south lane to the west edge
 for c in range(0, 9):
     put(c, 13, '='); put(c, 14, '=')
@@ -66,7 +71,7 @@ for (c, r, ch) in [(2, 11, 'T'), (5, 16, 'T'), (1, 18, 'T'), (7, 11, 'T'),
                    (4, 17, 'r'), (6, 12, 'r'), (3, 15, 'a'), (2, 16, '*'), (6, 17, '*'), (8, 16, '*')]:
     put(c, r, ch)
 # south-east corner below the plot
-for (c, r, ch) in [(33, 12, 'T'), (34, 16, 'T'), (32, 18, 'r'), (28, 18, '*'), (16, 18, '*'), (22, 18, 'a')]:
+for (c, r, ch) in [(34, 10, 'T'), (34, 18, 'T'), (32, 18, 'r'), (28, 18, '*'), (16, 18, '*'), (22, 18, 'a')]:
     put(c, r, ch)
 
 data = {
@@ -74,23 +79,32 @@ data = {
     'originX': OX, 'originY': OY, 'width': W, 'height': H,
     'rows': [''.join(row) for row in grid],
     # exits: rectangles in world units; 'to' is a scene, 'locked' is the season of the heart that opens it
+    # 'art' is drawn while locked, 'openArt' once the season has opened it
     'exits': [
         {'to': 'Market', 'x0': 26.3, 'y0': -5.2, 'x1': 27.0, 'y1': -3.8, 'spawnX': -7.6, 'spawnY': -3.6, 'locked': ''},
         {'to': 'Forest', 'x0': -9.0, 'y0': -10.2, 'x1': -8.4, 'y1': -8.8, 'spawnX': 0, 'spawnY': 0, 'locked': 'Spring',
+         'art': 'thorns', 'openArt': 'flower_arch',
          'sign': "The forest path is overgrown with gray thorns. Maybe when spring comes in your heart..."},
-        {'to': 'Station', 'x0': 0.2, 'y0': -15.0, 'x1': 1.8, 'y1': -14.4, 'spawnX': 0, 'spawnY': 0, 'locked': 'Autumn',
-         'sign': "The old railway is buried in fog. You're not ready to see it yet."},
+        {'to': 'Lake', 'x0': 26.4, 'y0': -12.0, 'x1': 27.0, 'y1': -10.0, 'spawnX': 0, 'spawnY': 0, 'locked': 'Summer',
+         'art': 'reeds_gray', 'openArt': 'reeds_open',
+         'sign': "Tall gray reeds have closed over the path to the lake. They'll wake when summer comes to your heart."},
+        {'to': 'Hill', 'x0': 0.2, 'y0': -15.0, 'x1': 1.8, 'y1': -14.4, 'spawnX': 0, 'spawnY': 0, 'locked': 'Autumn',
+         'art': 'thorns', 'openArt': 'flower_arch',
+         'sign': "The hill path is buried in gray thorns. Maybe when autumn comes to your heart..."},
     ],
     'signs': [
         {'x': -7.6, 'y': -8.0, 'text': 'Forest'},
-        {'x': 2.6, 'y': -13.6, 'text': 'Old Station'},
+        {'x': 2.6, 'y': -13.6, 'text': 'Sunset Hill'},
         {'x': 24.8, 'y': -3.2, 'text': 'Market'},
+        {'x': 25.6, 'y': -9.4, 'text': 'Lake'},
     ],
     # where players arrive from other scenes
     'arrivals': [
         {'from': 'Home', 'x': -7.2, 'y': -4.9},
         {'from': 'Market', 'x': 25.6, 'y': -4.6},
         {'from': 'MiniGame', 'x': 0.0, 'y': 3.8},
+        {'from': 'Forest', 'x': -7.6, 'y': -9.1},
+        {'from': 'Lake', 'x': 25.0, 'y': -10.9},
     ],
 }
 out = os.path.join(os.path.dirname(__file__), '..', '..', 'Assets', 'Resources', 'Maps', 'farm.json')

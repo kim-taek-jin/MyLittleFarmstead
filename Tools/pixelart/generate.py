@@ -20,6 +20,7 @@ import preview  # noqa: E402
 import backgrounds  # noqa: E402
 import farmmap  # noqa: E402
 import forest  # noqa: E402
+import lake  # noqa: E402
 import villagers  # noqa: E402
 import spirit  # noqa: E402
 
@@ -222,6 +223,18 @@ def main():
     for name, canvas in forest.world_sprites().items():
         exported['World'].append(export('World', name, canvas))
     for name, fn in forest.ITEMS.items():
+        exported['Items'].append(export('Items', name, fn()))
+    # ---- the lake (map stage 4-1): colour + gray per season, its objects and the new items ----
+    for season in backgrounds.SEASONS:
+        color = lake.lake(season)
+        export_image('World', f'bg_lake_{season}', color)
+        export_image('World', f'bg_lake_gray_{season}', forest.gray(color))
+        if season == 'summer':
+            bgs.append(('bg_lake_summer', color))
+            bgs.append(('bg_lake_gray_summer', forest.gray(color)))
+    for name, canvas in lake.world_sprites().items():
+        exported['World'].append(export('World', name, canvas))
+    for name, fn in lake.ITEMS.items():
         exported['Items'].append(export('Items', name, fn()))
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))
