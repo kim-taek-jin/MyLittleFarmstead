@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 // Tools/pixelart/generate.py로 만든 픽셀 아트(Assets/Resources/PixelArt)를 불러옵니다.
@@ -53,7 +53,10 @@ public static class PixelArt
 
     // 원래 스프라이트를 숨기고, 같은 자리/비슷한 크기로 픽셀 아트를 자식 오브젝트에 그립니다.
     // (콜라이더와 스크립트는 원래 오브젝트에 그대로 남습니다)
-    public static SpriteRenderer Overlay(SpriteRenderer original, Sprite sprite, float fill = 0.9f)
+    //  fill:         원래 영역 대비 크기 배율 (1 = 꽉 맞춤)
+    //  stretch:      true면 비율 무시하고 원래 영역에 정확히 맞춤 (배경용)
+    //  anchorBottom: true면 원래 영역의 바닥에 맞춰 위로 자람 (나무처럼 키를 키울 때)
+    public static SpriteRenderer Overlay(SpriteRenderer original, Sprite sprite, float fill = 0.9f, bool stretch = false, bool anchorBottom = false)
     {
         if (original == null || sprite == null) return null;
 
@@ -74,16 +77,30 @@ public static class PixelArt
 
         float spriteW = sprite.rect.width / sprite.pixelsPerUnit;
         float spriteH = sprite.rect.height / sprite.pixelsPerUnit;
-        // 원래 영역 안에 비율을 유지하며 맞춤
-        float scale = Mathf.Min(targetSize.x / spriteW, targetSize.y / spriteH) * fill;
-        if (scale <= 0f || float.IsNaN(scale)) scale = 1f;
+
+        float scaleX, scaleY;
+        if (stretch)
+        {
+            scaleX = targetSize.x / spriteW * fill;
+            scaleY = targetSize.y / spriteH * fill;
+        }
+        else
+        {
+            // 원래 영역 안에 비율을 유지하며 맞춤
+            scaleX = scaleY = Mathf.Min(targetSize.x / spriteW, targetSize.y / spriteH) * fill;
+        }
+        if (scaleX <= 0f || float.IsNaN(scaleX)) scaleX = 1f;
+        if (scaleY <= 0f || float.IsNaN(scaleY)) scaleY = 1f;
+
+        float worldH = spriteH * scaleY;
+        float y = anchorBottom ? center.y - targetSize.y * 0.5f + worldH * 0.5f : center.y;
 
         GameObject child = new GameObject("PixelArt");
         child.transform.SetParent(t, false);
-        child.transform.position = new Vector3(center.x, center.y, t.position.z);
+        child.transform.position = new Vector3(center.x, y, t.position.z);
         child.transform.localScale = new Vector3(
-            SafeDiv(scale, lossy.x),
-            SafeDiv(scale, lossy.y),
+            SafeDiv(scaleX, lossy.x),
+            SafeDiv(scaleY, lossy.y),
             1f);
 
         SpriteRenderer sr = child.AddComponent<SpriteRenderer>();

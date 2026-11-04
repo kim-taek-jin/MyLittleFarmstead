@@ -1,7 +1,7 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 씬이 열릴 때마다 월드 오브젝트(나무, 돌, 사과, 우물, 상자, 침대, 출구, 상인)를 픽셀 아트로 바꿔 그립니다.
+// 씬이 열릴 때마다 배경(농장, 집, 시장, 흥정, 도시)과 월드 오브젝트(나무, 돌, 사과, 우물, 상자, 침대, 출구, 상인)를 픽셀 아트로 바꿔 그립니다.
 // 씬 파일은 건드리지 않고 실행 중에만 교체하므로, 언제든 예전 그림으로 되돌릴 수 있습니다.
 public static class PixelArtWorld
 {
@@ -31,7 +31,13 @@ public static class PixelArtWorld
 
                 string key = KeyFor(sr);
                 if (key == null) continue;
-                PixelArt.Overlay(sr, PixelArt.Load("World/" + key));
+                Sprite sprite = PixelArt.Load("World/" + key);
+                if (key.StartsWith("bg_"))
+                    PixelArt.Overlay(sr, sprite, 1f, stretch: true);          // 배경: 원래 영역에 정확히
+                else if (key == "tree")
+                    PixelArt.Overlay(sr, sprite, 1.45f, anchorBottom: true);  // 나무: 플레이어보다 크게, 밑동 고정
+                else
+                    PixelArt.Overlay(sr, sprite);
             }
         }
 
@@ -51,6 +57,14 @@ public static class PixelArtWorld
         if (sr.sprite == null || sr.sprite.texture == null) return null;
 
         string tex = sr.sprite.texture.name;
+        switch (tex)
+        {
+            case "BackGroundFarm": return "bg_farm";
+            case "BackGroundHome": return "bg_home";
+            case "BackGroundMarket": return "bg_market";
+            case "BGMG": return "bg_minigame";
+            case "City": return "bg_city";
+        }
         if (tex == "well") return "well";
         if (tex == "Box") return "storage_box";
         if (tex == "bed_sprite_preview") return "bed";

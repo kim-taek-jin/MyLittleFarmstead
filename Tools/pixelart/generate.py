@@ -17,6 +17,7 @@ import items  # noqa: E402
 import crops  # noqa: E402
 import world  # noqa: E402
 import preview  # noqa: E402
+import backgrounds  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 OUT = os.path.join(ROOT, 'Assets', 'Resources', 'PixelArt')
@@ -151,10 +152,13 @@ def write_folder_meta(path):
 
 
 def export(group, name, canvas):
+    return export_image(group, name, canvas.image())
+
+
+def export_image(group, name, img):
     folder = os.path.join(OUT, group)
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, name + '.png')
-    img = canvas.image()
     img.save(path)
     rel = os.path.relpath(path, ROOT).replace(os.sep, '/')
     g = guid_for(rel)
@@ -176,6 +180,9 @@ def main():
         exported['World'].append(export('World', name, fn()))
     for name, canvas in world.player_frames().items():
         exported['Player'].append(export('Player', name, canvas))
+    bgs = []
+    for name, fn in backgrounds.BACKGROUNDS.items():
+        bgs.append(export_image('World', name, fn()))
 
     # folder metas (Resources/, Resources/PixelArt/, groups)
     for p in [os.path.join(ROOT, 'Assets', 'Resources'), OUT] + [os.path.join(OUT, g) for g in exported]:
@@ -185,6 +192,9 @@ def main():
     os.makedirs(docs, exist_ok=True)
     every = [img for group in exported.values() for img in group]
     preview.sheet(every, os.path.join(docs, 'pixelart_preview.png'), zoom=3, cols=12)
+    # backgrounds: one 2x image per scene
+    for name, img in bgs:
+        img.resize((img.width * 2, img.height * 2), 0).save(os.path.join(docs, f'pixelart_{name}.png'))
     print('exported', sum(len(v) for v in exported.values()), 'sprites to', OUT)
 
 
