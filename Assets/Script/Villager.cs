@@ -23,10 +23,10 @@ public class Villager : MonoBehaviour
 
         CircleCollider2D talkRange = go.AddComponent<CircleCollider2D>();
         talkRange.isTrigger = true;
-        talkRange.radius = 1.15f;
+        talkRange.radius = 1.0f;
         BoxCollider2D feet = go.AddComponent<BoxCollider2D>();   // 발밑만 막아서 자연스럽게 비켜 지나가도록
-        feet.size = new Vector2(0.55f, 0.25f);
-        feet.offset = new Vector2(0f, -0.75f);
+        feet.size = new Vector2(0.3f * characterScale, 0.14f * characterScale);
+        feet.offset = new Vector2(0f, -0.41f * characterScale);
 
         GameObject bodyGO = new GameObject("Body");
         bodyGO.transform.SetParent(go.transform, false);
@@ -37,7 +37,7 @@ public class Villager : MonoBehaviour
 
         GameObject bubbleGO = new GameObject("Bubble");
         bubbleGO.transform.SetParent(go.transform, false);
-        bubbleGO.transform.localPosition = new Vector3(0.35f, 1.05f, 0f);
+        bubbleGO.transform.localPosition = new Vector3(0.19f * characterScale, 0.57f * characterScale, 0f);
         bubbleGO.transform.localScale = Vector3.one * characterScale;
         SpriteRenderer bsr = bubbleGO.AddComponent<SpriteRenderer>();
         if (material != null) bsr.sharedMaterial = material;
@@ -99,7 +99,7 @@ public class Villager : MonoBehaviour
         {
             bool show = HasSomethingToSay() && !HUD.DialogueOpen;
             bubble.enabled = show;
-            if (show) bubble.transform.localPosition = new Vector3(0.35f, 1.05f + Mathf.Sin(Time.time * 4f) * 0.04f, 0f);
+            if (show) bubble.transform.localPosition = new Vector3(0.19f * baseScale, (0.57f + Mathf.Sin(Time.time * 4f) * 0.02f) * baseScale, 0f);
         }
 
         // 색이 돌아올 때 톡 튀는 연출

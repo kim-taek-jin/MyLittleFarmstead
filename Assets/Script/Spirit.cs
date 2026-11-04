@@ -30,9 +30,9 @@ public class Spirit : MonoBehaviour
         {
             SpriteRenderer psr = PlayerAction.instance.GetComponent<SpriteRenderer>();
             if (psr != null) s.sr.sharedMaterial = psr.sharedMaterial;
-            go.transform.position = PlayerAction.instance.transform.position + new Vector3(-0.8f, 0.8f, 0f);
+            go.transform.position = PlayerAction.instance.transform.position + new Vector3(-0.46f, 0.41f, 0f) * PixelArt.CharacterScale;
         }
-        s.scale = PixelArt.CharacterScale * 0.85f;
+        s.scale = PixelArt.CharacterScale;
         go.transform.localScale = Vector3.one * s.scale;
         Instance = s;
         s.RefreshSprite(true);
@@ -80,7 +80,8 @@ public class Spirit : MonoBehaviour
         if (hidden) return;
 
         // 플레이어의 왼쪽 위에서 둥실둥실 따라다님
-        Vector3 target = player.transform.position + new Vector3(-0.85f, 0.75f + Mathf.Sin(Time.time * 2.5f) * 0.12f, 0f);
+        float follow = PixelArt.CharacterScale;
+        Vector3 target = player.transform.position + new Vector3(-0.46f * follow, (0.41f + Mathf.Sin(Time.time * 2.5f) * 0.06f) * follow, 0f);
         target.z = player.transform.position.z;
         if ((transform.position - target).sqrMagnitude > 100f) transform.position = target;   // 씬 이동 직후 순간이동
         transform.position = Vector3.SmoothDamp(transform.position, target, ref velocity, 0.25f);

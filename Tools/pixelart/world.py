@@ -39,7 +39,15 @@ def rock():
 
 
 def apple_ground():
-    c = items.apple()
+    """A small apple lying in the grass (16px, the same pixel size as the world)."""
+    c = Canvas(16, 16)
+    c.shadow(8, 14, 5, 1.2)
+    c.ellipse(6, 9, 4, 4.5, P['red'])
+    c.ellipse(10, 9, 4, 4.5, P['red'])
+    c.set(5, 7, P['red'][3]); c.set(4, 8, P['white'][3])
+    c.line(8, 5, 9, 2, P['wood'][1])
+    c.set(10, 3, P['leaf'][2]); c.set(11, 3, P['leaf'][3]); c.set(11, 2, P['leaf'][2])
+    c.outline()
     return c
 
 

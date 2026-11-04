@@ -12,8 +12,8 @@ public static class PixelArt
 
     public const float PixelsPerUnit = 32f;
 
-    // 32px 캐릭터 한 장이 월드에서 차지하는 크기 (플레이어 오버레이 크기와 동일하게 유지)
-    public static float CharacterScale = 1.84f;
+    // 32px 캐릭터 한 장이 월드에서 차지하는 크기. 1 = 배경과 같은 픽셀 크기(32px = 1유닛)
+    public static float CharacterScale = 1f;
 
     private static readonly Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
     private static readonly Dictionary<string, Sprite[]> cropCache = new Dictionary<string, Sprite[]>();
@@ -59,7 +59,8 @@ public static class PixelArt
     //  fill:         원래 영역 대비 크기 배율 (1 = 꽉 맞춤)
     //  stretch:      true면 비율 무시하고 원래 영역에 정확히 맞춤 (배경용)
     //  anchorBottom: true면 원래 영역의 바닥에 맞춰 위로 자람 (나무처럼 키를 키울 때)
-    public static SpriteRenderer Overlay(SpriteRenderer original, Sprite sprite, float fill = 0.9f, bool stretch = false, bool anchorBottom = false)
+    //  native:       true면 원래 크기와 상관없이 배경과 같은 픽셀 크기(32px = 1유닛)로 그림
+    public static SpriteRenderer Overlay(SpriteRenderer original, Sprite sprite, float fill = 0.9f, bool stretch = false, bool anchorBottom = false, bool native = false)
     {
         if (original == null || sprite == null) return null;
 
@@ -82,7 +83,11 @@ public static class PixelArt
         float spriteH = sprite.rect.height / sprite.pixelsPerUnit;
 
         float scaleX, scaleY;
-        if (stretch)
+        if (native)
+        {
+            scaleX = scaleY = PixelsPerUnit / sprite.pixelsPerUnit;   // 스프라이트의 원래 픽셀 크기 그대로
+        }
+        else if (stretch)
         {
             scaleX = targetSize.x / spriteW * fill;
             scaleY = targetSize.y / spriteH * fill;

@@ -434,12 +434,34 @@ def farm(season='spring'):
         wr(1.5, -0.55, 2.7, 0.45),      # to the well
     ], TRAMPLED if season == 'winter' else P['tan'])
 
-    # field soil underlay (the Dirt tiles render on top of this exact area)
+    # field soil underlay (the Dirt tiles render on top of this exact area) + a raised soil rim around it
+    field = set()
     for (x0, y0, x1, y1) in [(-8, 0, -1, 3), (-6, -3, 0, 0)]:
         a, b = bg.px(x0, y1), bg.px(x1, y0)
         for y in range(a[1], b[1]):
             for x in range(a[0], b[0]):
                 bg.c.set(x, y, P['dirt'][2])
+                field.add((x, y))
+    rim = {}
+    for (x, y) in field:
+        for dx in range(-3, 4):
+            for dy in range(-3, 4):
+                q = (x + dx, y + dy)
+                if q in field or abs(dx) + abs(dy) > 4:
+                    continue
+                dist = max(abs(dx), abs(dy))
+                if q not in rim or dist < rim[q]:
+                    rim[q] = dist
+    snow = season == 'winter'
+    for (x, y), dist in rim.items():
+        above_field = (x, y + 1) in field or (x, y + 2) in field or (x, y + 3) in field   # rim north of the field
+        if dist == 1:
+            col = P['dirt'][0]                                   # the trench right at the field edge
+        elif dist == 2:
+            col = (SNOW[2] if snow and above_field else P['dirt'][3] if above_field else P['dirt'][1])
+        else:
+            col = (SNOW[3] if snow else darken_c(season_ground(season)[1], 0.95))   # grass shadow / snow lip
+        bg.c.set(x, y, col)
 
     # --- tree line along the top (gap for the north path) ---
     def hedge_ramp(i):

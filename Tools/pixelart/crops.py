@@ -157,48 +157,52 @@ CROPS = {
 
 # ---------- ground tiles (seamless 32x32) ----------
 def dirt_tile(seed=1):
+    """Untilled field soil: calm, a few hand-placed clods and pebbles (tiles seamlessly)."""
     c = Canvas(S, S)
-    rnd = seeded(seed)
     r = P['dirt']
     for y in range(S):
         for x in range(S):
             c.set(x, y, r[2])
-    for _ in range(70):
-        x, y = rnd.randrange(S), rnd.randrange(S)
-        c.set(x, y, r[1] if rnd.random() < 0.7 else r[3])
-    for _ in range(6):  # pebbles (warm, low contrast)
-        x, y = rnd.randrange(S), rnd.randrange(S)
-        c.set(x, y, P['tan'][2]); c.set((x + 1) % S, y, P['dirt'][1])
-    for _ in range(3):  # tiny grass tufts
-        x, y = rnd.randrange(S), rnd.randrange(2, S)
-        c.set(x, y, P['leaf'][1]); c.set(x, y - 1, P['leaf'][2])
+    for (x, y) in [(4, 5), (19, 3), (27, 12), (10, 16), (22, 22), (5, 26), (15, 29), (29, 27)]:   # clods
+        c.set(x, y, r[3]); c.set(x + 1, y, r[3]); c.set(x, y + 1, r[1]); c.set(x + 1, y + 1, r[1])
+    for (x, y) in [(13, 8), (25, 18), (7, 21)]:                                                    # pebbles
+        c.set(x, y, P['tan'][3]); c.set(x + 1, y + 1, P['dirt'][0])
+    for (x, y) in [(2, 12), (17, 24), (30, 6), (12, 2)]:                                            # specks
+        c.set(x, y, r[1])
     return c
 
 
 def tilled_tile(wet=False, seed=2):
+    """One dug garden bed per cell: a soft, rounded mound of loose soil in a darker trench,
+    so every tilled cell reads as its own plot (no straight plank-like lines)."""
     c = Canvas(S, S)
-    rnd = seeded(seed)
-    base = P['dirt'] if not wet else [darken_c(P['dirt'][0], 0.7), darken_c(P['dirt'][1], 0.72), darken_c(P['dirt'][2], 0.7), darken_c(P['dirt'][3], 0.72)]
+    d = P['dirt']
+    if wet:
+        d = [darken_c(d[0], 0.62), darken_c(d[1], 0.66), darken_c(d[2], 0.68), darken_c(d[3], 0.72)]
+    trench, low, mid, high = d[0], d[1], d[2], d[3]
     for y in range(S):
         for x in range(S):
-            c.set(x, y, base[1])
-    # furrows: 4 raised ridges per tile
-    for row in range(4):
-        y0 = row * 8
+            c.set(x, y, low)
+    cx, cy, rx, ry = 15.5, 15.5, 13.5, 13.0
+    for y in range(S):
         for x in range(S):
-            c.set(x, y0 + 1, base[3])
-            c.set(x, y0 + 2, base[2])
-            c.set(x, y0 + 3, base[2])
-            c.set(x, y0 + 4, base[1])
-            c.set(x, y0 + 6, base[0])
-    for _ in range(40):
-        x, y = rnd.randrange(S), rnd.randrange(S)
-        p = c.get(x, y)
-        c.set(x, y, lighten_c(p, 0.12) if rnd.random() < 0.5 else darken_c(p, 0.85))
+            nx, ny = (x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry
+            v = nx ** 4 + ny ** 4                    # superellipse: a rounded-square mound
+            if v <= 1:
+                col = mid
+                if ny < -0.78 or (nx < -0.86 and ny < 0.3):
+                    col = high                       # lit top / upper-left rim
+                elif ny > 0.82 or nx > 0.88:
+                    col = trench                     # shaded bottom / right rim
+                c.set(x, y, col)
+    # loose clods in staggered rows (broken, not straight furrows)
+    for row, y in enumerate((9, 16, 23)):
+        for x in range(6 + (row % 2) * 3, 26, 6):
+            c.set(x, y, trench); c.set(x + 1, y, trench)
+            c.set(x, y - 1, high)
     if wet:
-        for _ in range(7):  # glints of water on the ridges
-            x, y = rnd.randrange(S), rnd.randrange(4) * 8 + 2
-            c.set(x, y, (104, 128, 150, 255)); c.set((x + 1) % S, y, (80, 100, 122, 255))
+        for (x, y) in [(8, 6), (9, 6), (19, 12), (20, 12), (12, 20), (13, 20), (23, 25)]:
+            c.set(x, y, (112, 136, 160, 255))
     return c
 
 

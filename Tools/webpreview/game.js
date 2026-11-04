@@ -235,10 +235,10 @@ function ux() { return CW / sc().ww; }
 function uy() { return CH / sc().wh; }
 function toScreen(wx, wy) { const s = sc(); return [(wx - s.cx) * ux() + CW / 2, CH / 2 - (wy - s.cy) * uy()]; }
 function toWorld(x, y) { const s = sc(); return [(x - CW / 2) / ux() + s.cx, (CH / 2 - y) / uy() + s.cy]; }
-// draw a sprite whose height in world units is ~h, at an integer multiple of its native pixels (keeps pixel art crisp)
-function sprite(c, key, wx, wy, h, anchor = 'center', flip = false, alpha = 1) {
+// draw a sprite at the world's own pixel size (32 px = 1 unit, same as the backgrounds); scale only for small pulses
+function sprite(c, key, wx, wy, scale = 1, anchor = 'center', flip = false, alpha = 1) {
   const im = IMG[key]; if (!im) return;
-  const k = Math.max(1, Math.round(h * uy() / im.height));
+  const k = Math.max(1, Math.round(uy() / 32)) * scale;
   const w = im.width * k, hh = im.height * k;
   let [x, y] = toScreen(wx, wy);
   x = Math.round(x - w / 2); y = Math.round(anchor === 'bottom' ? y - hh : y - hh / 2);
@@ -558,14 +558,14 @@ function gather(ob) {
 function near(x, y, r) { return Math.hypot(G.px - x, G.py - y) <= r; }
 function interact() {
   if (G.scene === 'farm') {
-    const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.2)) { talk(mina); return; }
-    if (near(3.68, -0.4, 1.6)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
-    if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.2, 1.4)) { go('hill', 0, -3.1); return; }
+    const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.0)) { talk(mina); return; }
+    if (near(3.68, -0.4, 1.2)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
+    if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) { go('hill', 0, -3.1); return; }
     if (near(POND[0], POND[1], 1.9)) { fish(); return; }
   } else if (G.scene === 'home') {
-    if (Math.abs(G.px + 0.07) < 1.9 && Math.abs(G.py - 1.26) < 3.0) { trySleep(); return; }
+    if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) { trySleep(); return; }
   } else if (G.scene === 'market') {
-    for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.2)) { talk(v); return; }
+    for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) { talk(v); return; }
     if (near(-4.2, -2.0, 1.1)) { share(); return; }
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) { panel = { kind: 'shop', tab: 'buy' }; return; }
   } else if (G.scene === 'hill') {
@@ -750,7 +750,7 @@ function update(dt) {
     if (near(-8.38, -4.54, 0.7)) go('home', 0, -3.5);
     else if (near(8.4, -4.5, 0.7)) go('market', -7.6, -3.6);
     else if (G.py > 4.35 && Math.abs(G.px) < 0.7) go('haggle', 0, 0);
-    for (const ob of objectsFor('farm')) if (near(ob.x, ob.y, ob.kind === 'apple' ? 0.55 : 0.6)) gather(ob);
+    for (const ob of objectsFor('farm')) if (near(ob.x, ob.y, ob.kind === 'apple' ? 0.45 : 0.55)) gather(ob);
     if (fishing) {
       fishing.t -= dt;
       if (fishing.state === 'wait' && fishing.t <= 0) { fishing.state = 'bite'; fishing.t = 0.9 + 0.2 * perk('water'); toast('[#ffd84a]!![/]  Something\'s biting! Press E!', 1); }
@@ -763,7 +763,7 @@ function update(dt) {
 
   // spirit follows
   if (G.spirit) {
-    const tx = G.px - 0.85, ty = G.py + 0.75 + Math.sin(performance.now() / 400) * 0.12;
+    const tx = G.px - 0.46, ty = G.py + 0.41 + Math.sin(performance.now() / 400) * 0.06;
     G.spirit.vx = (tx - G.spirit.x); G.spirit.x += (tx - G.spirit.x) * Math.min(1, dt * 5); G.spirit.y += (ty - G.spirit.y) * Math.min(1, dt * 5);
     G.spirit.pulse = Math.max(0, G.spirit.pulse - dt * 2.5);
   }
@@ -787,9 +787,9 @@ function clampPlayer() {
   if (G.scene === 'hill') { minX = -8.4; maxX = 8.4; minY = -4.6; maxY = -1.2; }
   G.px = Math.max(minX, Math.min(maxX, G.px)); G.py = Math.max(minY, Math.min(maxY, G.py));
   const solids = [];
-  if (G.scene === 'farm') { solids.push([3.68, -0.45, 0.9]); solids.push([VILLAGERS[2].x, VILLAGERS[2].y - 0.6, 0.35]); }
-  if (G.scene === 'market') { solids.push([-4.2, -2.3, 0.45]); VILLAGERS.slice(0, 2).forEach(v => solids.push([v.x, v.y - 0.6, 0.35])); }
-  const fx = G.px, fy = G.py - 0.75;
+  if (G.scene === 'farm') { solids.push([3.68, -0.45, 0.55]); solids.push([VILLAGERS[2].x, VILLAGERS[2].y - 0.4, 0.25]); }
+  if (G.scene === 'market') { solids.push([-4.2, -2.35, 0.35]); VILLAGERS.slice(0, 2).forEach(v => solids.push([v.x, v.y - 0.4, 0.25])); }
+  const fx = G.px, fy = G.py - 0.4;
   for (const [x, y, r] of solids) { const d = Math.hypot(fx - x, fy - y); if (d < r && d > 0) { G.px += (fx - x) / d * (r - d); G.py += (fy - y) / d * (r - d); } }
 }
 function updateStars(dt) {
@@ -811,39 +811,39 @@ function renderWorld() {
   const draws = [];  // [sortY, fn]
   if (G.scene === 'farm') {
     for (const k of FIELD) { const [x, y] = k.split(',').map(Number); const t = G.tiles[k]; const key = t ? (t.wet ? 'Tiles/tilled_wet' : 'Tiles/tilled') : 'Tiles/dirt';
-      const [sx, sy] = toScreen(x, y + 1); c.drawImage(IMG[key], Math.round(sx), Math.round(sy), Math.ceil(ux()) + 1, Math.ceil(uy()) + 1); }
+      const [sx, sy] = toScreen(x, y + 1); c.drawImage(IMG[key], Math.round(sx), Math.round(sy), 64, 64); }
     for (const k in G.crops) {
       const cr = G.crops[k]; const [x, y] = k.split(',').map(Number); const def = CROPS[cr.id];
       const stage = mature(cr) ? 3 : Math.min(2, Math.floor(cr.days * 3 / def.days));
       draws.push([y + 0.5, () => { c.save(); if (!cr.watered && !mature(cr)) c.filter = 'brightness(0.8)'; if (cr.blessed) c.filter = 'sepia(0.6) saturate(2) brightness(1.15)';
-        sprite(c, `Crops/${cr.id}_${stage}`, x + 0.5, y + 0.5, 1); c.restore(); }]);
+        sprite(c, `Crops/${cr.id}_${stage}`, x + 0.5, y + 0.5); c.restore(); }]);
     }
     const seasonalTree = G.story.season === 0 ? 'World/tree_winter' : G.story.season === 3 ? 'World/tree_autumn' : 'World/tree';
     for (const ob of objectsFor('farm')) {
-      if (ob.kind === 'tree') draws.push([ob.y - 0.9, () => sprite(c, seasonalTree, ob.x, ob.y - 0.92, 2.67, 'bottom')]);
-      if (ob.kind === 'rock') draws.push([ob.y, () => sprite(c, G.story.season === 0 ? 'World/rock_winter' : 'World/rock', ob.x, ob.y, 0.66)]);
-      if (ob.kind === 'apple') draws.push([ob.y, () => sprite(c, 'World/apple_ground', ob.x, ob.y, 0.45)]);
+      if (ob.kind === 'tree') draws.push([ob.y - 0.35, () => sprite(c, seasonalTree, ob.x, ob.y - 0.35, 1, 'bottom')]);
+      if (ob.kind === 'rock') draws.push([ob.y, () => sprite(c, G.story.season === 0 ? 'World/rock_winter' : 'World/rock', ob.x, ob.y)]);
+      if (ob.kind === 'apple') draws.push([ob.y, () => sprite(c, 'World/apple_ground', ob.x, ob.y)]);
     }
-    draws.push([-0.03 - 1.0, () => sprite(c, G.story.season === 0 ? 'World/well_winter' : 'World/well', 3.68, -0.03, 2.3)]);
-    if (starVineOpen()) draws.push([LADDER[1] - 2, () => sprite(c, 'World/star_ladder', LADDER[0], LADDER[1], 4.1)]);
+    draws.push([-0.03 - 0.6, () => sprite(c, G.story.season === 0 ? 'World/well_winter' : 'World/well', 3.68, -0.03)]);
+    if (starVineOpen()) draws.push([LADDER[1] - 1.1, () => sprite(c, 'World/star_ladder', LADDER[0], LADDER[1])]);
   }
-  if (G.scene === 'home') { draws.push([-1.5, () => sprite(c, 'World/bed', -0.07, 1.26, 4.9)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03, 0.9)]); }
+  if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
   if (G.scene === 'market') {
-    draws.push([2.0, () => sprite(c, 'World/merchant', 3.92, 3.01, 2.6)]);
-    draws.push([-2.3, () => sprite(c, 'World/donation_box', -4.2, -2.0, 1.1)]);
-    draws.push([0, () => sprite(c, G.story.season === 0 ? 'World/exit_sign_winter' : 'World/exit_sign', -8.27, -0.05, 0.9)]);
+    draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
+    draws.push([-2.5, () => sprite(c, 'World/donation_box', -4.2, -2.0)]);
+    draws.push([0, () => sprite(c, G.story.season === 0 ? 'World/exit_sign_winter' : 'World/exit_sign', -8.27, -0.05)]);
   }
-  if (G.scene === 'hill') for (const s of G.stars) draws.push([s.y, () => sprite(c, 'Items/star_fragment', s.x, s.y, 0.6 * (1 + Math.sin(performance.now() / 160 + s.x) * 0.1))]);
+  if (G.scene === 'hill') for (const s of G.stars) draws.push([s.y, () => sprite(c, 'Items/star_fragment', s.x, s.y, 0.5 * (1 + Math.sin(performance.now() / 160 + s.x) * 0.1))]);
   for (const v of VILLAGERS) if (v.scene === G.scene) {
-    draws.push([v.y - 0.9, () => {
-      const k = 1 + Math.sin((v.pulse || 0) * Math.PI) * 0.15; sprite(c, villagerSprite(v), v.x, v.y, 1.84 * k);
-      if (!villagerProgress(v.id).met || wishReady(v)) sprite(c, 'World/bubble', v.x + 0.35, v.y + 1.05 + Math.sin(performance.now() / 250) * 0.04, 0.69);
+    draws.push([v.y - 0.45, () => {
+      const k = 1 + Math.sin((v.pulse || 0) * Math.PI) * 0.15; sprite(c, villagerSprite(v), v.x, v.y, k);
+      if (!villagerProgress(v.id).met || wishReady(v)) sprite(c, 'World/bubble', v.x + 0.19, v.y + 0.62 + Math.sin(performance.now() / 250) * 0.03);
     }]);
   }
   if (G.scene !== 'haggle') {
     const frameIdx = G.step === 1 ? 1 : G.step === 3 ? 2 : 0;
-    draws.push([G.py - 0.9, () => sprite(c, `Player/player_${G.dir}_${frameIdx}`, G.px, G.py, 1.84, 'center', G.dir === 'side' && G.facingLeft)]);
-    if (G.spirit) draws.push([G.spirit.y - 0.5, () => sprite(c, 'Spirit/' + spiritForm(S().spirit), G.spirit.x, G.spirit.y, 1.56 * (1 + Math.sin(G.spirit.pulse * Math.PI) * 0.25), 'center', G.spirit.vx < -0.05)]);
+    draws.push([G.py - 0.45, () => sprite(c, `Player/player_${G.dir}_${frameIdx}`, G.px, G.py, 1, 'center', G.dir === 'side' && G.facingLeft)]);
+    if (G.spirit) draws.push([G.spirit.y - 0.3, () => sprite(c, 'Spirit/' + spiritForm(S().spirit), G.spirit.x, G.spirit.y, 1 + Math.sin(G.spirit.pulse * Math.PI) * 0.25, 'center', G.spirit.vx < -0.05)]);
   }
   draws.sort((a, b) => b[0] - a[0]).forEach(d => d[1]());
   // night
@@ -937,15 +937,15 @@ function renderUI() {
 }
 function promptText() {
   if (G.scene === 'farm') {
-    const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.2)) return `[E] Talk to ${mina.name}`;
-    if (near(3.68, -0.4, 1.6)) return '[E] Drink and refill your watering can';
-    if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.2, 1.4)) return '[E] Climb the glowing vine';
+    const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.0)) return `[E] Talk to ${mina.name}`;
+    if (near(3.68, -0.4, 1.2)) return '[E] Drink and refill your watering can';
+    if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
     if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The pond is full of fish');
     if (near(-8.38, -4.54, 1.6)) return 'Home';
     if (near(8.4, -4.5, 1.6)) return 'To the market';
-  } else if (G.scene === 'home') { if (Math.abs(G.px + 0.07) < 1.9 && Math.abs(G.py - 1.26) < 3.0) return '[E] Sleep and end the day'; if (G.px > 6.8) return 'Back to the farm';
+  } else if (G.scene === 'home') { if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) return '[E] Sleep and end the day'; if (G.px > 6.8) return 'Back to the farm';
   } else if (G.scene === 'market') {
-    for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.2)) return `[E] Talk to ${v.name}`;
+    for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) return `[E] Talk to ${v.name}`;
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade with the merchant';
     if (G.px < -7) return 'Back to the farm';
@@ -954,7 +954,7 @@ function promptText() {
 }
 
 // ------------------------------------------------------------------ save
-const SAVE_KEY = 'mlf-preview-v1';
+const SAVE_KEY = 'mlf-preview-v2';
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { /* storage unavailable: preview still works */ } }
 function load() { try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); return true; } } catch (e) { /* ignore */ } return false; }
 

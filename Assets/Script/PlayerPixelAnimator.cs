@@ -30,7 +30,7 @@ public class PlayerPixelAnimator : MonoBehaviour
         }
 
         SpriteRenderer original = GetComponent<SpriteRenderer>();
-        view = PixelArt.Overlay(original, down[0], 0.9f);
+        view = PixelArt.Overlay(original, down[0], native: true);   // 배경과 같은 픽셀 크기 (밭 한 칸 높이)
         if (view == null)
         {
             enabled = false;

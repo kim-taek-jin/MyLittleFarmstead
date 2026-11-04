@@ -34,11 +34,11 @@ public static class PixelArtWorld
                 Sprite sprite = SeasonalSprite(key);
                 SpriteRenderer view;
                 if (key.StartsWith("bg_"))
-                    view = PixelArt.Overlay(sr, sprite, 1f, stretch: true);          // 배경: 원래 영역에 정확히
+                    view = PixelArt.Overlay(sr, sprite, 1f, stretch: true);                 // 배경: 원래 영역에 정확히
                 else if (key == "tree")
-                    view = PixelArt.Overlay(sr, sprite, 1.45f, anchorBottom: true);  // 나무: 플레이어보다 크게, 밑동 고정
+                    view = PixelArt.Overlay(sr, sprite, anchorBottom: true, native: true);  // 나무: 배경과 같은 픽셀 크기, 밑동 고정
                 else
-                    view = PixelArt.Overlay(sr, sprite);
+                    view = PixelArt.Overlay(sr, sprite, native: true);                      // 나머지도 배경과 같은 픽셀 크기
                 if (view != null && view.GetComponent<SeasonalArt>() == null) view.gameObject.AddComponent<SeasonalArt>().baseKey = key;
             }
         }
