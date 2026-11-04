@@ -100,6 +100,7 @@ public class PixelHUD : MonoBehaviour
         for (int i = 0; i < 4; i++)
         {
             TextMeshProUGUI label = Label(names[i], bars, 24f, TextAlignmentOptions.Left);
+            label.text = names[i];
             Place(label.rectTransform, 20f, -14f - i * 34f, 110f, 30f);
             RectTransform back = Rect("Back", bars, new Color(0.1f, 0.08f, 0.07f, 1f));
             Place(back, 130f, -18f - i * 34f, 250f, 22f);
