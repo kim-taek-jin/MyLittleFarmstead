@@ -18,6 +18,7 @@ import crops  # noqa: E402
 import world  # noqa: E402
 import preview  # noqa: E402
 import backgrounds  # noqa: E402
+import farmmap  # noqa: E402
 import villagers  # noqa: E402
 import spirit  # noqa: E402
 
@@ -202,6 +203,13 @@ def main():
     exported['World'].append(export('World', 'tree_autumn', world.tree(larch)))
     for name in ('tree', 'rock', 'well', 'storage_box', 'exit_sign'):
         exported['World'].append(export('World', f'{name}_winter', backgrounds.snow_cap(world.WORLD[name]())))
+    # ---- expanded farm map (drawn from Assets/Resources/Maps/farm.json) and the things you clear on it ----
+    for season in backgrounds.SEASONS:
+        bgs.append(export_image('World', f'bg_farmmap_{season}', farmmap.farmmap(season)))
+    for name, fn in farmmap.DEBRIS.items():
+        exported['World'].append(export('World', name, fn()))
+    for name, canvas in farmmap.debris_variants().items():
+        exported['World'].append(export('World', name, canvas))
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))
 

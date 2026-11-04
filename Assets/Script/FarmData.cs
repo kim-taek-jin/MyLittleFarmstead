@@ -15,6 +15,17 @@ public class FarmData
 {
     public List<FarmTileData> tilledTiles = new List<FarmTileData>();
     public List<CropData> crops = new List<CropData>();
+    // 넓어진 농장에서 치운 잡초/그루터기/바위 칸 ("x,y"). 한 번 치우면 다시 생기지 않습니다.
+    public List<string> clearedDebris = new List<string>();
+
+    public static string CellKey(int x, int y) => x + "," + y;
+    public bool IsDebrisCleared(int x, int y) => clearedDebris != null && clearedDebris.Contains(CellKey(x, y));
+    public void ClearDebris(int x, int y)
+    {
+        if (clearedDebris == null) clearedDebris = new List<string>();
+        string k = CellKey(x, y);
+        if (!clearedDebris.Contains(k)) clearedDebris.Add(k);
+    }
 
     // --- 타일 ---
     public FarmTileData GetTile(int x, int y)

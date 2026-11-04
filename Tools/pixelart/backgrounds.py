@@ -406,42 +406,8 @@ def pond(bg, cx, cy, rx, ry, frozen=False):
         bg.prop(rd, x=int(cx + dx), y=int(cy + dy) + 3)
 
 
-# ======================================================================
-# Farm
-# ======================================================================
-def farm(season='spring'):
-    # World bounds of the old background: 17.92 x 10.24 around (-0.03, -0.03)
-    bg = BG(574, 328, 17.92, 10.24, (-0.03, -0.03))
-    bg.season = season
-    ground = season_ground(season)
-    grass(bg, base=ground)
-    patch_col = {'winter': SNOW[1], 'spring': P['leaf2'][2], 'summer': SUMMER[1], 'autumn': AUT_ORANGE[1]}[season]
-    patch_tuft = {'winter': SNOW, 'spring': P['leaf2'], 'summer': SUMMER, 'autumn': AUT_YELLOW}[season]
-    for (wx, wy, rx, ry) in [(-4.5, 3.6, 70, 18), (5.6, -2.4, 60, 22), (6.8, 3.0, 40, 14), (-7.6, -0.6, 30, 30)]:
-        x, y = bg.px(wx, wy)
-        patch(bg, x, y, rx, ry, patch_col, ground, patch_tuft)
-
-    # --- paths (pixel rects from world coordinates) ---
-    def wr(x0, y0, x1, y1):
-        a = bg.px(x0, y1)
-        b = bg.px(x1, y0)
-        return (a[0], a[1], b[0], b[1])
-    path(bg, [
-        wr(-9.2, -5.3, 9.2, -3.95),     # main road along the bottom (home <-> market)
-        wr(0.35, -4.0, 1.55, 3.4),      # up past the field
-        wr(-0.7, 3.0, 1.55, 3.9),       # jog
-        wr(-0.7, 3.0, 0.55, 5.4),       # north exit (haggle)
-        wr(1.5, -0.55, 2.7, 0.45),      # to the well
-    ], TRAMPLED if season == 'winter' else P['tan'])
-
-    # field soil underlay (the Dirt tiles render on top of this exact area) + a raised soil rim around it
-    field = set()
-    for (x0, y0, x1, y1) in [(-8, 0, -1, 3), (-6, -3, 0, 0)]:
-        a, b = bg.px(x0, y1), bg.px(x1, y0)
-        for y in range(a[1], b[1]):
-            for x in range(a[0], b[0]):
-                bg.c.set(x, y, P['dirt'][2])
-                field.add((x, y))
+def soil_rim(bg, field, season):
+    """A dug trench and a raised lip of soil (or snow) around a set of soil pixels."""
     rim = {}
     for (x, y) in field:
         for dx in range(-3, 4):
@@ -463,6 +429,48 @@ def farm(season='spring'):
             col = (SNOW[3] if snow else darken_c(season_ground(season)[1], 0.95))   # grass shadow / snow lip
         bg.c.set(x, y, col)
 
+
+# ======================================================================
+# Farm
+# ======================================================================
+def farm(season='spring', bg=None, east=9.2, extra_paths=()):
+    """The home farm. Alone it is one screen (the old background: 17.92 x 10.24 around (-0.03, -0.03)).
+    farmmap.py passes a bigger BG and `east` to stretch the road and the hedge across the expanded map."""
+    big = bg is not None
+    if bg is None:
+        bg = BG(574, 328, 17.92, 10.24, (-0.03, -0.03))
+    bg.season = season
+    ground = season_ground(season)
+    grass(bg, base=ground)
+    patch_col = {'winter': SNOW[1], 'spring': P['leaf2'][2], 'summer': SUMMER[1], 'autumn': AUT_ORANGE[1]}[season]
+    patch_tuft = {'winter': SNOW, 'spring': P['leaf2'], 'summer': SUMMER, 'autumn': AUT_YELLOW}[season]
+    for (wx, wy, rx, ry) in [(-4.5, 3.6, 70, 18), (5.6, -2.4, 60, 22), (6.8, 3.0, 40, 14), (-7.6, -0.6, 30, 30)]:
+        x, y = bg.px(wx, wy)
+        patch(bg, x, y, rx, ry, patch_col, ground, patch_tuft)
+
+    # --- paths (pixel rects from world coordinates) ---
+    def wr(x0, y0, x1, y1):
+        a = bg.px(x0, y1)
+        b = bg.px(x1, y0)
+        return (a[0], a[1], b[0], b[1])
+    path(bg, [
+        wr(-9.2, -5.3, east, -3.95),    # main road along the bottom (home <-> market)
+        wr(0.35, -4.0, 1.55, 3.4),      # up past the field
+        wr(-0.7, 3.0, 1.55, 3.9),       # jog
+        wr(-0.7, 3.0, 0.55, 5.4),       # north exit (haggle)
+        wr(1.5, -0.55, 2.7, 0.45),      # to the well
+    ] + [wr(*r) for r in extra_paths], TRAMPLED if season == 'winter' else P['tan'])
+
+    # field soil underlay (the Dirt tiles render on top of this exact area) + a raised soil rim around it
+    field = set()
+    for (x0, y0, x1, y1) in [(-8, 0, -1, 3), (-6, -3, 0, 0)]:
+        a, b = bg.px(x0, y1), bg.px(x1, y0)
+        for y in range(a[1], b[1]):
+            for x in range(a[0], b[0]):
+                bg.c.set(x, y, P['dirt'][2])
+                field.add((x, y))
+    soil_rim(bg, field, season)
+
     # --- tree line along the top (gap for the north path) ---
     def hedge_ramp(i):
         if season == 'winter':
@@ -474,9 +482,11 @@ def farm(season='spring'):
         return P['leaf2'] if i % 4 == 1 else P['leaf']
     blossom = P['jam'] if season == 'spring' else None
     back = [-9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.2, 1.1, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+    back += [float(x) for x in range(10, int(east) + 1)]
     for i, wx in enumerate(back):
         bg.prop(bush(36, 24, hedge_ramp(i)), wx=wx, wy=4.85)
     front = [-8.5, -7.4, -6.3, -5.3, -4.2, -3.1, -2.1, 2.3, 3.4, 4.5, 5.6, 6.6, 7.7, 8.7]
+    front += [9.8 + 1.05 * k for k in range(int((east - 9.8) / 1.05) + 1)] if big else []
     for i, wx in enumerate(front):
         bg.prop(bush(32, 22, hedge_ramp(i + 2), blossom if i % 2 == 0 else None),
                 wx=wx + (0.15 if i % 2 else -0.1), wy=4.35 + (0.08 if i % 3 == 0 else 0))
@@ -495,7 +505,8 @@ def farm(season='spring'):
     bg.prop(log_pile(), wx=-9.0, wy=-2.05)
 
     # --- market signpost and pond ---
-    bg.prop(signpost(coin_bag), wx=7.3, wy=-3.85)
+    if not big:
+        bg.prop(signpost(coin_bag), wx=7.3, wy=-3.85)
     x, y = bg.px(7.05, -0.6)
     pond(bg, x, y, 30, 20, frozen=(season == 'winter'))
 
@@ -522,7 +533,7 @@ def farm(season='spring'):
         for (wx, wy), col in zip(spots, cols):
             x, y = bg.px(wx, wy)
             flower_cluster(bg, x, y, col, 5 if season == 'summer' else 4)
-    return bg.image()
+    return bg if big else bg.image()
 
 
 # ======================================================================

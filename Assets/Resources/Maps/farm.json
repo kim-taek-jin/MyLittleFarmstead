@@ -1,0 +1,97 @@
+{
+ "name": "farm",
+ "originX": -9,
+ "originY": 5,
+ "width": 36,
+ "height": 20,
+ "rows": [
+  "~~~~~~~~~~~~~~~~~~..................",
+  "~~~~~~~~~~~~~~~~~~..T....T......T...",
+  "~~~~~~~~~~~~~~~~~~....T...*..T......",
+  "~~~~~~~~~~~~~~~~~~.a..............r.",
+  "~~~~~~~~~~~~~~~~~~.....*...T........",
+  "~~~~~~~~~~~~~~~~~~...r........r..*..",
+  "~~~~~~~~~~~~~~~~~~......a...*..a....",
+  "~~~~~~~~~~~~~~~~~~..................",
+  "~~~~~~~~~~~~~~~~~~==================",
+  "~~~~~~~~~~~~~~~~~~==================",
+  ".........==.........................",
+  "..T....T.==..xxxgogkooxgoxkgxxg.....",
+  "......r..==..xxxkggxxgggoxgggkg..T..",
+  "===========..goxgxggogggxgkxgkx.....",
+  "===========..kgxkgogxggxgxggkxg.....",
+  "...a.....==..ggggxgggggokgxgxgk.....",
+  "..*..T..*==..gkgxggxgxgggxggxkx...T.",
+  "....r.*..==..xxgkgkoggggggggxgx.....",
+  ".T.......==.....*.....a.....*...r...",
+  ".........==........................."
+ ],
+ "exits": [
+  {
+   "to": "Market",
+   "x0": 26.3,
+   "y0": -5.2,
+   "x1": 27.0,
+   "y1": -3.8,
+   "spawnX": -7.6,
+   "spawnY": -3.6,
+   "locked": ""
+  },
+  {
+   "to": "Forest",
+   "x0": -9.0,
+   "y0": -10.2,
+   "x1": -8.4,
+   "y1": -8.8,
+   "spawnX": 0,
+   "spawnY": 0,
+   "locked": "Spring",
+   "sign": "The forest path is overgrown with gray thorns. Maybe when spring comes in your heart..."
+  },
+  {
+   "to": "Station",
+   "x0": 0.2,
+   "y0": -15.0,
+   "x1": 1.8,
+   "y1": -14.4,
+   "spawnX": 0,
+   "spawnY": 0,
+   "locked": "Autumn",
+   "sign": "The old railway is buried in fog. You're not ready to see it yet."
+  }
+ ],
+ "signs": [
+  {
+   "x": -7.6,
+   "y": -8.0,
+   "text": "Forest"
+  },
+  {
+   "x": 2.6,
+   "y": -13.6,
+   "text": "Old Station"
+  },
+  {
+   "x": 24.8,
+   "y": -3.2,
+   "text": "Market"
+  }
+ ],
+ "arrivals": [
+  {
+   "from": "Home",
+   "x": -7.2,
+   "y": -4.9
+  },
+  {
+   "from": "Market",
+   "x": 25.6,
+   "y": -4.6
+  },
+  {
+   "from": "MiniGame",
+   "x": 0.0,
+   "y": 3.8
+  }
+ ]
+}

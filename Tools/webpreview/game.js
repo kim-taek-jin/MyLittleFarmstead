@@ -169,8 +169,20 @@ const PHOTOS = [
 ].map(p => ({ season: p[0], id: p[1], title: p[2], hint: p[3], evt: p[4], arg: p[5], sprite: p[6] }));
 
 // ------------------------------------------------------------------ scenes
+// the expanded farm (Assets/Resources/Maps/farm.json, inlined by build.py): one glyph per tile, 1 tile = 1 unit = 32 px
+const MAP = /*__MAP__*/null;
+const MAPB = { x0: MAP.originX, y0: MAP.originY - MAP.height, x1: MAP.originX + MAP.width, y1: MAP.originY };
+const mapAt = (cx, cy) => { const c = cx - MAP.originX, r = MAP.originY - 1 - cy; return r >= 0 && r < MAP.height && c >= 0 && c < MAP.width ? MAP.rows[r][c] : ' '; };
+const MAPCELLS = [];  // [cellX, cellY, glyph]
+MAP.rows.forEach((row, r) => [...row].forEach((ch, c) => MAPCELLS.push([MAP.originX + c, MAP.originY - 1 - r, ch])));
+const isDebris = ch => ch === 'g' || ch === 'k' || ch === 'o';
+const DEBRIS_TOTAL = MAPCELLS.filter(([, , ch]) => isDebris(ch)).length;
+const exitRect = e => [Math.min(e.x0, e.x1), Math.min(e.y0, e.y1), Math.max(e.x0, e.x1), Math.max(e.y0, e.y1)];
+const inRect = ([x0, y0, x1, y1], x, y, pad = 0) => x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad;
+const arrival = from => { const a = MAP.arrivals.find(a => a.from === from); return a ? [a.x, a.y] : [0, 0]; };
 const SCENES = {
-  farm: { ww: 17.92, wh: 10.24, cx: -0.03, cy: -0.03, bg: () => 'World/bg_farm_' + seasonKey(), outdoor: true },
+  // the farm is bigger than the screen: the camera (cx, cy) follows the player inside the map
+  farm: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_farmmap_' + seasonKey(), outdoor: true, map: true },
   home: { ww: 18.43, wh: 10.24, cx: 0, cy: -0.027, bg: () => 'World/bg_home' },
   market: { ww: 18.28, wh: 10.24, cx: 0.09, cy: -0.08, bg: () => 'World/bg_market_' + seasonKey(), outdoor: true },
   haggle: { ww: 17.95, wh: 10.04, cx: -0.035, cy: -0.079, bg: () => 'World/bg_minigame' },
@@ -194,7 +206,7 @@ function newGame() {
     inv: { Hoe: 1, 'Watering Can': 1, Scythe: 1, 'Carrot Seed': 5, Apple: 3 },
     gold: 50, health: 100, hunger: 100, thirst: 100, energy: 0, heart: 20,
     day: 1, hour: 6, minute: 0, raining: false, snowing: false, water: 10,
-    tiles: {}, crops: {}, cleared: [],
+    tiles: {}, crops: {}, cleared: [], clearedDebris: [], debrisHits: {},
     market: { demand: 'Carrot', haggle: 0, haggled: false, sold: {} },
     log: { harvested: 0, meals: 0, exhausted: false, starved: false, drank: false },
     story: { season: 0, highest: 0, unlocks: [], photos: [], villagers: {}, kindness: 0, shareDay: -1, sharedToday: 0, donationDay: -1,
@@ -350,6 +362,37 @@ function selectedItem() { if (!has(G.selected)) { const it = hotbarItems(); G.se
 
 // ------------------------------------------------------------------ farm actions (CropManager)
 const tileAt = (x, y) => G.tiles[x + ',' + y];
+const debrisCleared = (x, y) => G.clearedDebris.includes(x + ',' + y);
+// soil you can till: the old field, open soil on the map, and plot cells you have cleared
+function tillable(x, y) { if (FIELDSET.has(x + ',' + y)) return true; const ch = mapAt(x, y); return ch === 'x' || (isDebris(ch) && debrisCleared(x, y)); }
+function debrisAt(x, y) { const ch = mapAt(x, y); return isDebris(ch) && !debrisCleared(x, y) ? ch : null; }
+const debrisHitsFor = (ch, tier) => ch === 'k' ? (tier >= 2 ? 2 : 3) : ch === 'o' ? (tier >= 2 ? 3 : 4) : 1;
+const debrisKey = (ch, x, y) => ch === 'k' ? 'stump' : ch === 'o' ? 'boulder' : 'weeds_' + (Math.abs(x + y) % 2);
+let debrisPunch = {};
+// clearing the old plot: weeds (scythe or hoe, 2 energy), stumps and boulders (hoe, 4 energy a swing)
+function hitDebris(x, y, ch, d) {
+  const k = x + ',' + y;
+  if (ch === 'g') {
+    if (d.tool !== 'scythe' && d.tool !== 'hoe') { toast('Weeds. Cut them with a scythe or dig them out with a hoe.', 2.5); return; }
+    if (!useEnergy(2)) return; clearDebris(x, y); return;
+  }
+  if (d.tool !== 'hoe') { toast(ch === 'k' ? 'An old stump. Dig around its roots with a hoe.' : 'A heavy boulder. Pry it loose with a hoe.', 2.5); return; }
+  const need = debrisHitsFor(ch, d.tier); let left = Math.min(G.debrisHits[k] ?? need, need);
+  if (!useEnergy(4)) return;
+  left--; debrisPunch[k] = 1;
+  if (left > 0) { G.debrisHits[k] = left; toast(ch === 'k' ? `The roots creak... (${left} more)` : `The boulder shifts... (${left} more)`, 1.2); return; }
+  delete G.debrisHits[k];
+  if (ch === 'k') { add('Wood', 2); toast('You pulled out the old stump. +2 Wood', 2); }
+  else { add('Stone', 2); if (Math.random() * 100 < 10 * (0.5 + G.heart / 100)) { add("Earth's Breath"); toast("[#ffe28a]Earth's Breath was sleeping under the boulder![/]"); } else toast('You rolled the boulder away. +2 Stone', 2); }
+  clearDebris(x, y);
+}
+function clearDebris(x, y) {
+  G.clearedDebris.push(x + ',' + y);
+  const done = G.clearedDebris.length, before = Math.floor((done - 1) * 4 / DEBRIS_TOTAL), after = Math.floor(done * 4 / DEBRIS_TOTAL);
+  if (after === before) return;
+  if (done >= DEBRIS_TOTAL) { toast("[#ffe28a]The old field is completely cleared. It's all yours now![/]", 4); changeHeart(5, 'You brought the old field back to life.'); }
+  else toast(`The old field is ${after * 25}% cleared. (${done}/${DEBRIS_TOTAL})`, 3);
+}
 const cropAt = (x, y) => G.crops[x + ',' + y];
 const mature = c => c.days >= CROPS[c.id].days;
 function cellsFor(cx, cy, tier) { return tier >= 2 ? [[cx, cy], [cx - 1, cy], [cx + 1, cy]] : [[cx, cy]]; }
@@ -367,6 +410,7 @@ function worldClick(wx, wy) {
   const cx = Math.floor(wx), cy = Math.floor(wy);
   if (Math.hypot(G.px - (cx + 0.5), G.py - (cy + 0.5)) > 3.5) { toast("That's too far away. Walk closer.", 1.5); return; }
   const item = selectedItem(); const d = ITEMS[item] || {};
+  const deb = debrisAt(cx, cy); if (deb) { hitDebris(cx, cy, deb, d); return; }
   if (d.tool === 'scythe') {
     const ripe = []; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const c = cropAt(cx + dx, cy + dy); if (c && mature(c)) ripe.push([cx + dx, cy + dy]); }
     if (!ripe.length) { toast('Nothing is ripe here yet.'); return; }
@@ -375,7 +419,7 @@ function worldClick(wx, wy) {
   const crop = cropAt(cx, cy);
   if (crop && mature(crop)) { harvestCell(cx, cy); return; }
   if (d.tool === 'hoe') {
-    const t = cellsFor(cx, cy, d.tier).filter(([x, y]) => FIELDSET.has(x + ',' + y) && !tileAt(x, y));
+    const t = cellsFor(cx, cy, d.tier).filter(([x, y]) => tillable(x, y) && !debrisAt(x, y) && !tileAt(x, y));
     if (!t.length) { toast(tileAt(cx, cy) ? 'This soil is already tilled. Plant a seed here!' : 'You can only till the dirt field.'); return; }
     if (!useEnergy(d.tier >= 2 ? 6 : 4)) return; t.forEach(([x, y]) => G.tiles[x + ',' + y] = { wet: false });
   } else if (d.tool === 'can') {
@@ -541,6 +585,10 @@ function objectsFor(scene) {
   TREES.forEach(([x, y], i) => o.push({ kind: 'tree', x, y, key: 't' + i }));
   STONES.forEach(([x, y], i) => o.push({ kind: 'rock', x, y, key: 's' + i }));
   APPLES.forEach(([x, y], i) => o.push({ kind: 'apple', x, y, key: 'a' + i }));
+  for (const [x, y, ch] of MAPCELLS) {
+    const kind = ch === 'T' ? 'tree' : ch === 'r' ? 'rock' : ch === 'a' ? 'apple' : null;
+    if (kind) o.push({ kind, x: x + 0.5, y: y + 0.5, key: 'm' + x + ',' + y });
+  }
   return o.filter(ob => !G.cleared.includes(ob.key));
 }
 function gather(ob) {
@@ -718,7 +766,7 @@ function update(dt) {
         G.market.haggled = true; G.market.haggle = Math.max(G.market.haggle, bonus); if (bonus) { changeHeart(1, 'A friendly chat with the merchant.'); report('haggle'); }
         haggle = { done: true, text, t: 2.2 };
       }
-    } else { haggle.t -= dt; if (haggle.t <= 0) go('farm', 0, -4.2); }
+    } else { haggle.t -= dt; if (haggle.t <= 0) go('farm', ...arrival('MiniGame')); }
     clearPressed(); return;
   }
 
@@ -747,9 +795,17 @@ function update(dt) {
 
   // portals
   if (G.scene === 'farm') {
+    const open = MAP.exits.find(e => !e.locked && inRect(exitRect(e), G.px, G.py));
     if (near(-8.38, -4.54, 0.7)) go('home', 0, -3.5);
-    else if (near(8.4, -4.5, 0.7)) go('market', -7.6, -3.6);
+    else if (open) go(open.to.toLowerCase(), open.spawnX, open.spawnY);          // the end of the road is the way to the market
     else if (G.py > 4.35 && Math.abs(G.px) < 0.7) go('haggle', 0, 0);
+    const thorn = MAP.exits.find(e => e.locked && inRect(exitRect(e), G.px, G.py - 0.4, 0.5));
+    if (thorn && performance.now() > (G.signT || 0)) {
+      G.signT = performance.now() + 4000;
+      toast(S().season >= SEASONS.indexOf(thorn.locked) ? 'The gray thorns have started to loosen... Not yet, but soon.' : thorn.sign, 3.5);
+    }
+  }
+  if (G.scene === 'farm') {
     for (const ob of objectsFor('farm')) if (near(ob.x, ob.y, ob.kind === 'apple' ? 0.45 : 0.55)) gather(ob);
     if (fishing) {
       fishing.t -= dt;
@@ -757,8 +813,8 @@ function update(dt) {
       else if (fishing.state === 'bite' && fishing.t <= 0) { fishing = null; toast('It got away...'); }
       if (fishing && !near(POND[0], POND[1], 2.2)) { fishing = null; toast('You reeled in your line.'); }
     }
-  } else if (G.scene === 'home') { if (G.px > 8.4 && Math.abs(G.py) < 1.2) go('farm', -7.9, 0); }
-  else if (G.scene === 'market') { if (G.px < -8.5 && Math.abs(G.py) < 1.3) go('farm', 7.4, 0); }
+  } else if (G.scene === 'home') { if (G.px > 8.4 && Math.abs(G.py) < 1.2) go('farm', ...arrival('Home')); }
+  else if (G.scene === 'market') { if (G.px < -8.5 && Math.abs(G.py) < 1.3) go('farm', ...arrival('Market')); }
   else if (G.scene === 'hill') updateStars(dt);
 
   // spirit follows
@@ -768,6 +824,7 @@ function update(dt) {
     G.spirit.pulse = Math.max(0, G.spirit.pulse - dt * 2.5);
   }
   VILLAGERS.forEach(v => v.pulse = Math.max(0, (v.pulse || 0) - dt * 2));
+  for (const k in debrisPunch) { debrisPunch[k] -= dt * 6; if (debrisPunch[k] <= 0) delete debrisPunch[k]; }
 
   // keys
   if (pressed.KeyE) interact();
@@ -781,13 +838,24 @@ function update(dt) {
 }
 function clampPlayer() {
   const s = sc(); let minX = s.cx - s.ww / 2 + 0.4, maxX = s.cx + s.ww / 2 - 0.4, minY = s.cy - s.wh / 2 + 0.6, maxY = s.cy + s.wh / 2 - 0.9;
-  if (G.scene === 'farm') { if (Math.abs(G.px) > 0.7) maxY = 4.2; else maxY = 4.6; }
+  if (G.scene === 'farm') { minX = MAPB.x0 + 0.3; maxX = MAPB.x1 - 0.3; minY = MAPB.y0 + 0.5; maxY = Math.abs(G.px) > 0.7 ? MAPB.y1 - 0.8 : MAPB.y1 - 0.35; }
   if (G.scene === 'market') maxY = 2.4;
   if (G.scene === 'home') maxY = 3.0;
   if (G.scene === 'hill') { minX = -8.4; maxX = 8.4; minY = -4.6; maxY = -1.2; }
   G.px = Math.max(minX, Math.min(maxX, G.px)); G.py = Math.max(minY, Math.min(maxY, G.py));
   const solids = [];
-  if (G.scene === 'farm') { solids.push([3.68, -0.45, 0.55]); solids.push([VILLAGERS[2].x, VILLAGERS[2].y - 0.4, 0.25]); }
+  if (G.scene === 'farm') {
+    solids.push([3.68, -0.45, 0.55]); solids.push([VILLAGERS[2].x, VILLAGERS[2].y - 0.4, 0.25]);
+    // stumps and boulders near the player block the way (weeds don't)
+    const pcx = Math.floor(G.px), pcy = Math.floor(G.py - 0.4);
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const ch = debrisAt(pcx + dx, pcy + dy); if (ch === 'k' || ch === 'o') solids.push([pcx + dx + 0.5, pcy + dy + 0.3, 0.45]); }
+    // gray thorns close the lanes that are not open yet (west edge: forest, south edge: old station)
+    for (const e of MAP.exits) if (e.locked) {
+      const [x0, y0, x1, y1] = exitRect(e), feet = G.py - 0.4;
+      if (x0 <= MAPB.x0 + 0.1 && feet > y0 - 0.3 && feet < y1 + 0.3) G.px = Math.max(G.px, x1 + 0.35);
+      if (y0 <= MAPB.y0 + 0.1 && G.px > x0 - 0.2 && G.px < x1 + 0.2) G.py = Math.max(G.py, y1 + 0.75);
+    }
+  }
   if (G.scene === 'market') { solids.push([-4.2, -2.35, 0.35]); VILLAGERS.slice(0, 2).forEach(v => solids.push([v.x, v.y - 0.4, 0.25])); }
   const fx = G.px, fy = G.py - 0.4;
   for (const [x, y, r] of solids) { const d = Math.hypot(fx - x, fy - y); if (d < r && d > 0) { G.px += (fx - x) / d * (r - d); G.py += (fy - y) / d * (r - d); } }
@@ -805,13 +873,36 @@ function clearPressed() { for (const k in pressed) delete pressed[k]; }
 
 // ------------------------------------------------------------------ render
 function daylight(h) { if (h >= 24 || h < 4) return 0; if (h < 7) return (h - 4) / 3; if (h < 17) return 1; if (h < 21) return 1 - (h - 17) / 4; return 0; }
+// the camera follows the player inside the map and never shows past its edges (snapped to the art's pixel grid)
+function updateCamera() {
+  const s = SCENES.farm; const hw = s.ww / 2, hh = s.wh / 2;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  s.cx = Math.round(clamp(G.px, MAPB.x0 + hw, MAPB.x1 - hw) * 32) / 32;
+  s.cy = Math.round(clamp(G.py, MAPB.y0 + hh, MAPB.y1 - hh) * 32) / 32;
+}
+const seasonal = base => IMG[`World/${base}_${seasonKey()}`] ? `World/${base}_${seasonKey()}` : `World/${base}`;
 function renderWorld() {
   const c = wctx; c.clearRect(0, 0, CW, CH);
-  const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH);
+  if (sc().map) {
+    updateCamera();
+    sprite(c, sc().bg(), (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2);
+  } else { const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH); }
   const draws = [];  // [sortY, fn]
   if (G.scene === 'farm') {
-    for (const k of FIELD) { const [x, y] = k.split(',').map(Number); const t = G.tiles[k]; const key = t ? (t.wet ? 'Tiles/tilled_wet' : 'Tiles/tilled') : 'Tiles/dirt';
-      const [sx, sy] = toScreen(x, y + 1); c.drawImage(IMG[key], Math.round(sx), Math.round(sy), 64, 64); }
+    const soil = FIELD.slice();
+    for (const [x, y, ch] of MAPCELLS) if (ch === 'x' || (isDebris(ch) && debrisCleared(x, y))) soil.push(x + ',' + y);
+    for (const k of soil) { const [x, y] = k.split(',').map(Number); const t = G.tiles[k]; const key = t ? (t.wet ? 'Tiles/tilled_wet' : 'Tiles/tilled') : 'Tiles/dirt';
+      const [sx, sy] = toScreen(x, y + 1); if (sx < -64 || sy < -64 || sx > CW || sy > CH) continue; c.drawImage(IMG[key], Math.round(sx), Math.round(sy), 64, 64); }
+    for (const [x, y, ch] of MAPCELLS) {
+      if (!isDebris(ch) || debrisCleared(x, y)) continue;
+      const k = x + ',' + y, p = debrisPunch[k] || 0;
+      draws.push([y + 0.1, () => sprite(c, seasonal(debrisKey(ch, x, y)), x + 0.5, y + 0.03, 1 + Math.sin(p * Math.PI) * 0.12, 'bottom')]);
+    }
+    for (const e of MAP.exits) if (e.locked) {
+      const [x0, y0, x1, y1] = exitRect(e), w = 56 / 32, h = 52 / 32;
+      const tx = Math.max(MAPB.x0 + w / 2 - 0.3, Math.min(MAPB.x1 - w / 2 + 0.3, (x0 + x1) / 2)), ty = Math.max(MAPB.y0 + h / 2, Math.min(MAPB.y1 - h / 2, (y0 + y1) / 2));
+      draws.push([ty - h / 2, () => sprite(c, seasonal('thorns'), tx, ty)]);
+    }
     for (const k in G.crops) {
       const cr = G.crops[k]; const [x, y] = k.split(',').map(Number); const def = CROPS[cr.id];
       const stage = mature(cr) ? 3 : Math.min(2, Math.floor(cr.days * 3 / def.days));
@@ -942,7 +1033,10 @@ function promptText() {
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
     if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The pond is full of fish');
     if (near(-8.38, -4.54, 1.6)) return 'Home';
-    if (near(8.4, -4.5, 1.6)) return 'To the market';
+    if (G.px > MAPB.x1 - 2.2 && Math.abs(G.py + 4.5) < 1.3) return 'To the market →';
+    if (debrisAt(Math.floor(G.px), Math.floor(G.py - 0.4)) === 'g' || ['k', 'o'].some(ch => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => debrisAt(Math.floor(G.px) + dx, Math.floor(G.py - 0.4) + dy) === ch))) {
+      const it = ITEMS[selectedItem()] || {}; return it.tool === 'hoe' || it.tool === 'scythe' ? 'Click to clear the old field' : 'The old field: clear it with a hoe or scythe';
+    }
   } else if (G.scene === 'home') { if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) return '[E] Sleep and end the day'; if (G.px > 6.8) return 'Back to the farm';
   } else if (G.scene === 'market') {
     for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) return `[E] Talk to ${v.name}`;
@@ -980,18 +1074,18 @@ uiCanvas.addEventListener('wheel', e => { e.preventDefault(); const it = hotbarI
 // preview tools
 const $ = id => document.getElementById(id);
 $('t-heart').onclick = () => { changeHeart(10, 'Preview tool'); uiCanvas.focus(); };
-$('t-day').onclick = () => { if (!G.dead) { endDay(false); if (G.scene === 'haggle') go('farm', 0, -4.2); } uiCanvas.focus(); };
+$('t-day').onclick = () => { if (!G.dead) { endDay(false); if (G.scene === 'haggle') go('farm', ...arrival('MiniGame')); } uiCanvas.focus(); };
 $('t-items').onclick = () => {
   [['Carrot', 5], ['Strawberry', 4], ['Corn', 3], ['Apple', 4], ['Minnow', 2], ['Carp', 1], ['Sunshine Shard', 2], ["Earth's Breath", 2], ['Star Fragment', 3], ['Wood', 12], ['Stone', 16], ['Campfire', 1], ['Bread', 2], ['Potato Seed', 4], ['Strawberry Seed', 4], ['Corn Seed', 4]].forEach(([n, c]) => add(n, c));
   toast('Preview: items added to your bag.'); uiCanvas.focus();
 };
-$('t-hill').onclick = () => { S().kindness = Math.max(S().kindness, 60); unlock('starhill'); G.raining = G.snowing = false; if (G.hour < 20) { G.hour = 20; G.minute = 30; } toast('Preview: Star Hill is open. The vine grows top-right of the farm at night.'); uiCanvas.focus(); };
+$('t-hill').onclick = () => { S().kindness = Math.max(S().kindness, 60); unlock('starhill'); G.raining = G.snowing = false; if (G.hour < 20) { G.hour = 20; G.minute = 30; } toast('Preview: Star Hill is open. The vine grows above the pond at night.'); uiCanvas.focus(); };
 $('t-night').onclick = () => { G.hour = Math.max(G.hour, 20); G.minute = 30; toast('Preview: it is night now.'); uiCanvas.focus(); };
 $('t-speed').onclick = e => { speed = speed === 1 ? 4 : 1; e.currentTarget.classList.toggle('on', speed === 4); e.currentTarget.textContent = speed === 4 ? '시간 1배속' : '시간 4배속'; uiCanvas.focus(); };
 $('t-new').onclick = () => { newGame(); toasts = []; dialogue = null; panel = null; announce = null; G.spirit = null; save(); introAnnounce(); uiCanvas.focus(); };
 
 function introAnnounce() {
-  showAnnounce('[#ff8fb1]A new life begins[/]\n\n"Day after day in the gray city felt endless. So I left it all behind and set out for a quiet village. I wonder... can I build my happiness again?"\n\nThe world is gray. It is winter in your heart.\nEat, drink, rest and go to bed on time: spring will come.\n\n[#c8c0b0]Till the dirt (Hoe) → plant (Carrot Seed) → water → sleep. Walk into trees and rocks to gather.[/]', 14);
+  showAnnounce('[#ff8fb1]A new life begins[/]\n\n"Day after day in the gray city felt endless. So I left it all behind and set out for a quiet village. I wonder... can I build my happiness again?"\n\nThe world is gray. It is winter in your heart.\nEat, drink, rest and go to bed on time: spring will come.\n\n[#c8c0b0]Till the dirt (Hoe) → plant (Carrot Seed) → water → sleep. Walk into trees and rocks to gather.\nEast of the road, an old overgrown field is waiting to be cleared.[/]', 14);
 }
 
 // ------------------------------------------------------------------ boot
@@ -1003,6 +1097,7 @@ function loop(t) {
 newGame();
 const resumed = load();
 if (G.scene === 'haggle' || G.scene === 'hill') { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
+G.clearedDebris = G.clearedDebris || []; G.debrisHits = G.debrisHits || {};   // saves from before the bigger farm
 if (G.story.spirit.found && !G.spirit) G.spirit = { x: G.px, y: G.py, vx: 0, pulse: 0 };
 Promise.all([loadAll(), document.fonts ? document.fonts.ready : Promise.resolve()]).then(() => {
   renderWorld(); renderUI();

@@ -23,24 +23,7 @@ public static class PixelArtWorld
 
         foreach (GameObject root in scene.GetRootGameObjects())
         {
-            foreach (SpriteRenderer sr in root.GetComponentsInChildren<SpriteRenderer>(true))
-            {
-                if (sr.gameObject.name == "PixelArt") continue;
-                if (sr.GetComponentInParent<Crop>() != null) continue;
-                if (sr.CompareTag("Player")) continue;
-
-                string key = KeyFor(sr);
-                if (key == null) continue;
-                Sprite sprite = SeasonalSprite(key);
-                SpriteRenderer view;
-                if (key.StartsWith("bg_"))
-                    view = PixelArt.Overlay(sr, sprite, 1f, stretch: true);                 // 배경: 원래 영역에 정확히
-                else if (key == "tree")
-                    view = PixelArt.Overlay(sr, sprite, anchorBottom: true, native: true);  // 나무: 배경과 같은 픽셀 크기, 밑동 고정
-                else
-                    view = PixelArt.Overlay(sr, sprite, native: true);                      // 나머지도 배경과 같은 픽셀 크기
-                if (view != null && view.GetComponent<SeasonalArt>() == null) view.gameObject.AddComponent<SeasonalArt>().baseKey = key;
-            }
+            ApplyTo(root);
         }
 
         // 플레이어는 DontDestroyOnLoad라 씬 루트에 없으므로 따로 처리
@@ -48,6 +31,31 @@ public static class PixelArtWorld
         if (player != null && player.GetComponent<PlayerPixelAnimator>() == null)
         {
             player.AddComponent<PlayerPixelAnimator>();
+        }
+    }
+
+    // 한 오브젝트(와 자식)의 스프라이트를 픽셀 아트로. 이미 바꾼 것은 그대로 둡니다. (FarmMap이 복제한 자원에도 씀)
+    public static void ApplyTo(GameObject root)
+    {
+        foreach (SpriteRenderer sr in root.GetComponentsInChildren<SpriteRenderer>(true))
+        {
+            if (sr.gameObject.name == "PixelArt") continue;
+            if (sr.GetComponentInParent<Crop>() != null) continue;
+            if (sr.CompareTag("Player")) continue;
+
+            string key = KeyFor(sr);
+            if (key == null) continue;
+            Sprite sprite = SeasonalSprite(key);
+            SpriteRenderer view;
+            if (key == "bg_farmmap")
+                view = FarmMap.PlaceGround(sr, sprite);                                 // 넓어진 농장: 맵 전체 그림
+            else if (key.StartsWith("bg_"))
+                view = PixelArt.Overlay(sr, sprite, 1f, stretch: true);                 // 배경: 원래 영역에 정확히
+            else if (key == "tree")
+                view = PixelArt.Overlay(sr, sprite, anchorBottom: true, native: true);  // 나무: 배경과 같은 픽셀 크기, 밑동 고정
+            else
+                view = PixelArt.Overlay(sr, sprite, native: true);                      // 나머지도 배경과 같은 픽셀 크기
+            if (view != null && view.GetComponent<SeasonalArt>() == null) view.gameObject.AddComponent<SeasonalArt>().baseKey = key;
         }
     }
 
@@ -80,7 +88,7 @@ public static class PixelArtWorld
         string tex = sr.sprite.texture.name;
         switch (tex)
         {
-            case "BackGroundFarm": return "bg_farm";
+            case "BackGroundFarm": return FarmMap.Active && SeasonalSprite("bg_farmmap") != null ? "bg_farmmap" : "bg_farm";
             case "BackGroundHome": return "bg_home";
             case "BackGroundMarket": return "bg_market";
             case "BGMG": return "bg_minigame";

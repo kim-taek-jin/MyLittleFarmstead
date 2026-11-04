@@ -18,7 +18,10 @@ with open(os.path.join(HERE, 'template.html'), encoding='utf-8') as f:
     html = f.read()
 with open(os.path.join(HERE, 'game.js'), encoding='utf-8') as f:
     js = f.read()
-html = html.replace('/*__GAME__*/', js.replace('/*__ASSETS__*/{}', json.dumps(assets)))
+with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'farm.json'), encoding='utf-8') as f:
+    farm_map = json.load(f)
+js = js.replace('/*__ASSETS__*/{}', json.dumps(assets)).replace('/*__MAP__*/null', json.dumps(farm_map, separators=(',', ':')))
+html = html.replace('/*__GAME__*/', js)
 out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'Docs', 'web_preview.html')
 with open(out, 'w', encoding='utf-8') as f:
     f.write(html)

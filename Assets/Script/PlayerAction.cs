@@ -116,6 +116,14 @@ public class PlayerAction : MonoBehaviour
         ItemDef def = ItemDB.Get(selected);
         ToolType tool = def != null ? def.toolType : ToolType.None;
 
+        // 넓어진 농장의 묵은 밭: 잡초/그루터기/바위가 있으면 먼저 치움
+        Debris debris = Debris.At(cell);
+        if (debris != null)
+        {
+            debris.Hit(def);
+            return;
+        }
+
         // 낫: 주변 3x3 수확
         if (tool == ToolType.Scythe)
         {

@@ -565,6 +565,8 @@ public class DataManager : MonoBehaviour
         return $"{sceneName}:{go.tag}:{Mathf.RoundToInt(p.x * 10f)},{Mathf.RoundToInt(p.y * 10f)}";
     }
 
+    public bool IsResourceCleared(string sceneName, GameObject go) => clearedResources.Contains(ResourceKey(sceneName, go));
+
     public void MarkResourceCleared(GameObject go)
     {
         clearedResources.Add(ResourceKey(go.scene.name, go));

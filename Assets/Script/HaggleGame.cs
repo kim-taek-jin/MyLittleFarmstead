@@ -92,6 +92,7 @@ public class HaggleGame : MonoBehaviour
 
     void ReturnToFarm()
     {
+        FarmMap.ReturnFrom("MiniGame");   // 농장 북쪽 문 앞으로
         SceneManager.LoadScene("Farm");
     }
 }
