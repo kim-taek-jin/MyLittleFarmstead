@@ -183,11 +183,9 @@ def _farmer(direction, frame, skin=P['skin'], shirt=P['shirt'], pants=P['denim']
 
 
 def player_frames():
-    out = {}
-    for d in ('down', 'up', 'side'):
-        for f in range(3):
-            out[f'player_{d}_{f}'] = _farmer(d, f)
-    return out
+    # hand pixel-mapped frames (same method and outline as the merchant)
+    import characters
+    return characters.player_frames()
 
 
 def merchant():
@@ -227,5 +225,5 @@ WORLD = {
     'storage_box': storage_box,
     'bed': bed,
     'exit_sign': exit_sign,
-    'merchant': merchant,
+    'merchant': lambda: __import__('haggle').merchant_small(),
 }

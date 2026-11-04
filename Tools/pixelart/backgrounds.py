@@ -923,6 +923,6 @@ BACKGROUNDS = {
     'bg_farm': farm,
     'bg_home': home,
     'bg_market': market,
-    'bg_minigame': minigame,
+    'bg_minigame': lambda: __import__('haggle').scene(),
     'bg_city': city,
 }
