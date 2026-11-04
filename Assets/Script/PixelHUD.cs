@@ -44,6 +44,8 @@ public class PixelHUD : MonoBehaviour
     private int viewOpenedFrame;
 
     private float nextFontPass;
+    private static GameObject introPanel;   // 시작 인트로가 떠 있는 동안에는 이 UI를 숨김
+    private Canvas canvas;
 
     public IReadOnlyList<HotbarSlot> HotbarSlots => hotbarSlots;
 
@@ -76,13 +78,16 @@ public class PixelHUD : MonoBehaviour
         if (!scene.IsValid()) return;
         foreach (GameObject rootGO in scene.GetRootGameObjects())
             foreach (Transform t in rootGO.GetComponentsInChildren<Transform>(true))
+            {
                 if (OldUI.Contains(t.name)) t.gameObject.SetActive(false);
+                if (t.name == "IntroPanel") introPanel = t.gameObject;
+            }
     }
 
     // ---------------------------------------------------------------- 만들기
     void Build()
     {
-        Canvas canvas = gameObject.AddComponent<Canvas>();
+        canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = -10;   // 장면의 메뉴(상점, 제작, 상자)가 이 위에 그려지도록
         CanvasScaler scaler = gameObject.AddComponent<CanvasScaler>();
@@ -231,6 +236,8 @@ public class PixelHUD : MonoBehaviour
     // ---------------------------------------------------------------- 매 프레임
     void Update()
     {
+        bool intro = introPanel != null && introPanel.activeInHierarchy;
+        if (canvas != null && canvas.enabled == intro) canvas.enabled = !intro;
         DataManager data = DataManager.instance;
         GameTimeManager time = GameTimeManager.instance;
         if (data != null)

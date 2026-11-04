@@ -20,6 +20,9 @@ public static class UIScale
     {
         // 한 화면짜리 장면: 배경 그림 밖이 보이지 않게 카메라 맞춤
         CameraFit.Attach(Camera.main);
+        // 시작 인트로의 도시 그림은 늘 화면을 꽉 채우게
+        foreach (SpriteRenderer sr in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (sr.name == "City_0" && sr.GetComponent<CoverCamera>() == null) sr.gameObject.AddComponent<CoverCamera>();
         // 장면의 글자도 픽셀 글꼴로
         if (PixelFont.Asset != null)
             foreach (TMPro.TMP_Text text in Object.FindObjectsByType<TMPro.TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None))
