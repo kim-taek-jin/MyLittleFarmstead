@@ -22,6 +22,15 @@
 - 계절이 돌아가도 **작물은 시들지 않는다.** 멈출 뿐이다. 벌보다 보상 위주로 가자는 원칙.
 - **날씨도 마음을 따른다.** 전날 마음이 많이 올랐으면 비 확률이 절반, 마음이 줄었으면 비가 더 잦다. 겨울엔 눈이 온다.
 
+<video src="media/15/spring_comes.mp4" controls width="100%"></video>
+
+*▶ 마음이 30을 넘긴 다음 날 아침, 겨울 농장에 봄이 온다*
+
+![마음의 계절: 겨울 → 봄 → 여름 → 가을](media/15/heart_seasons.png)
+
+*마음의 계절: 겨울 → 봄 → 여름 → 가을*
+
+
 ```csharp
 // 올라갈 땐 기준을 넘기면 바로, 내려갈 땐 기준보다 5 넘게 떨어져야 (깜빡임 방지)
 public static Season Evaluate(float heart, Season current, Season cap = Season.Autumn)
@@ -37,9 +46,6 @@ public static Season Evaluate(float heart, Season current, Season cap = Season.A
     return current;
 }
 ```
-
-<!-- 이미지: Docs/heart_seasons_preview.png, Docs/pixelart_bg_farm_winter.png → spring → summer → autumn -->
-
 ---
 
 ### 📝 2. 색을 먹는 정령
@@ -54,8 +60,14 @@ public static Season Evaluate(float heart, Season current, Season cap = Season.A
 - 언덕은 새 씬이 아니라 **Farm 씬 안 아주 먼 곳**에 코드로 만들고, 카메라만 옮긴다. 씬 전환 버그를 다시 겪고 싶지 않았다.
 
 > 정령 키우기와 나눔 점수는 '시장놀이'(조이월드)의 "새끼 용 키우기", "선행 점수 → 하늘나라" 구조에서 아이디어를 얻었다. 이름, 캐릭터, 그림은 가져오지 않고 구조만 이 게임의 주제(색, 마음)에 맞게 바꿨다.
+![색을 먹는 정령과 별의 언덕](media/15/spirit_starhill.png)
 
-<!-- 이미지: Docs/spirit_starhill_preview.png, Docs/pixelart_bg_starhill.png -->
+*색을 먹는 정령과 별의 언덕*
+
+![별의 언덕](media/15/star_hill.png)
+
+*별의 언덕*
+
 
 ### 📝 4. 계절 앨범 (P)과 내일 예고
 - 계절마다 사진 6장, 총 24장. 조건(첫 당근 수확, 처음 낚은 물고기, 황금 잉어...)을 이루면 회색 실루엣이 컬러 사진이 된다.
