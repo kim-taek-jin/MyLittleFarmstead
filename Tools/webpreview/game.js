@@ -33,7 +33,7 @@ reg('Fertile Hoe', 'Tool', { tool: 'hoe', tier: 2, desc: 'Tills 3 tiles at once.
 reg('Watering Can', 'Tool', { tool: 'can', tier: 1, cap: 10, desc: 'Waters crops. Refill at the well.' });
 reg('Copper Watering Can', 'Tool', { tool: 'can', tier: 2, cap: 25, desc: 'Waters 3 tiles at once.' });
 reg('Scythe', 'Tool', { tool: 'scythe', desc: 'Harvests ripe crops around the target.' });
-reg('Fishing Rod', 'Tool', { tool: 'rod', desc: 'Press E at the farm pond to fish.' });
+reg('Fishing Rod', 'Tool', { tool: 'rod', desc: 'Press E by the stream or the lake to fish.' });
 reg('Carrot Seed', 'Seed', { sell: 5, crop: 'carrot' });
 reg('Potato Seed', 'Seed', { sell: 15, crop: 'potato' });
 reg('Corn Seed', 'Seed', { sell: 12, crop: 'corn' });
@@ -47,14 +47,14 @@ reg('Strawberry', 'Crop', { sell: 120, hunger: 6, thirst: 4, heart: 1 });
 reg('Sunflower', 'Crop', { sell: 90 });
 reg('Pumpkin', 'Crop', { sell: 160, hunger: 10 });
 reg('Apple', 'Food', { sell: 8, hunger: 20, thirst: 5 });
-reg('Bread', 'Food', { sell: 10, hunger: 40 });
+reg('Rice Cake', 'Food', { sell: 10, hunger: 40, desc: 'Chewy rice cake from the mill. Fills you up.' });
 reg('Roasted Carrot', 'Food', { sell: 60, hunger: 35, heart: 2 });
 reg('Baked Potato', 'Food', { sell: 110, hunger: 50, heart: 2 });
-reg('Corn Soup', 'Food', { sell: 130, hunger: 30, thirst: 35, heart: 3 });
+reg('Steamed Corn', 'Food', { sell: 130, hunger: 30, thirst: 35, heart: 3, desc: 'Corn steamed in its husk, sweet and salty. A taste of summer.' });
 reg('Strawberry Jam', 'Food', { sell: 420, hunger: 20, heart: 6 });
 reg('Grilled Fish', 'Food', { sell: 90, hunger: 40, heart: 2 });
-reg('Carrot Cake', 'Food', { sell: 250, hunger: 30, heart: 6 });
-reg('Pumpkin Pie', 'Food', { sell: 320, hunger: 45, heart: 4 });
+reg('Carrot Pancake', 'Food', { sell: 250, hunger: 30, heart: 6, desc: "Grandma Boksun's recipe. Crisp at the edges, warm in the middle." });
+reg('Pumpkin Porridge', 'Food', { sell: 320, hunger: 45, heart: 4, desc: 'Golden pumpkin porridge with little rice cake balls. Tastes like a good year.' });
 reg('Minnow', 'Fish', { sell: 15 });
 reg('Carp', 'Fish', { sell: 45 });
 reg('Golden Koi', 'Fish', { sell: 300 });
@@ -99,7 +99,15 @@ const CROPS = {
   pumpkin: { harvest: 'Pumpkin', days: 6, regrow: 0, season: 3 },
 };
 
-const SHOP = [['Wood', 5], ['Carrot Seed', 10], ['Potato Seed', 40], ['Strawberry Seed', 50], ['Corn Seed', 30], ['Campfire', 50], ['Bread', 20], ['Apple', 12]];
+const SHOP = [['Wood', 5], ['Carrot Seed', 10], ['Potato Seed', 40], ['Strawberry Seed', 50], ['Corn Seed', 30], ['Campfire', 50], ['Rice Cake', 20], ['Apple', 12]];
+// five-day market (장날): every 5th day the lane fills with stalls, rare goods and an old farmer to haggle with
+const MARKET_CYCLE = 5;
+const isMarketDay = d => d > 0 && d % MARKET_CYCLE === 3;
+const daysUntilMarket = d => { for (let i = 0; i < MARKET_CYCLE; i++) if (isMarketDay(d + i)) return i; return MARKET_CYCLE; };
+const FAIR_STOCK = [['Compost', 30], ["Earth's Breath", 180], ['Sunshine Shard', 200]];
+const HAGGLER = [2.6, -2.2];
+const FAIR_STALLS = [[-1.6, -2.7, 1.0], [2.6, -3.0, 1.3], [6.4, -2.6, 1.1]];
+const ALIASES = { Bread: 'Rice Cake', 'Corn Soup': 'Steamed Corn', 'Carrot Cake': 'Carrot Pancake', 'Pumpkin Pie': 'Pumpkin Porridge' };
 
 const RECIPES = [
   { out: 'Campfire', n: 1, req: [['Wood', 5], ['Stone', 2]] },
@@ -110,55 +118,259 @@ const RECIPES = [
   { out: 'Morel Soup', n: 1, req: [['Morel', 2], ['Wild Garlic', 1]], station: 'Campfire', lock: 'forest_open' },
   { out: 'Roasted Carrot', n: 1, req: [['Carrot', 2], ['Wood', 1]], station: 'Campfire' },
   { out: 'Baked Potato', n: 1, req: [['Potato', 1], ['Wood', 1]], station: 'Campfire' },
-  { out: 'Corn Soup', n: 1, req: [['Corn', 2]], station: 'Campfire' },
+  { out: 'Steamed Corn', n: 1, req: [['Corn', 2]], station: 'Campfire' },
   { out: 'Strawberry Jam', n: 1, req: [['Strawberry', 3]], station: 'Campfire' },
-  { out: 'Carrot Cake', n: 1, req: [['Carrot', 2], ['Bread', 1]], station: 'Campfire', lock: 'recipe_carrot_cake' },
+  { out: 'Carrot Pancake', n: 1, req: [['Carrot', 2], ['Potato', 1]], station: 'Campfire', lock: 'recipe_carrot_cake' },
   { out: 'Grilled Fish', n: 1, req: [['Minnow', 1], ['Wood', 1]], station: 'Campfire', lock: 'fishing' },
   { out: 'Grilled Fish', n: 2, req: [['Carp', 1], ['Wood', 1]], station: 'Campfire', lock: 'fishing' },
-  { out: 'Pumpkin Pie', n: 1, req: [['Pumpkin', 1], ['Bread', 1]], station: 'Campfire', lock: 'season_autumn' },
+  { out: 'Pumpkin Porridge', n: 1, req: [['Pumpkin', 1], ['Rice Cake', 1]], station: 'Campfire', lock: 'season_autumn' },
 ];
 
 const VILLAGERS = [
-  { id: 'rosa', name: 'Grandma Rosa', scene: 'market', x: -6.0, y: 1.0,
-    intro: 'Oh, a new face! Forgive me, dear... Since my husband passed, the colors just faded away. Even my bread tastes gray.',
-    gray: ['The oven feels so cold these days.', 'I used to bake every morning. Now I just... sit.'],
-    color: ['Come by anytime, dear! The bread\'s still warm.', 'You look tired. Did you eat today? Eat, eat!'],
-    season: ["Winters are long when you're alone. Come in, warm your hands.", 'Smell that? Spring always makes me want to bake something sweet.', 'Summer! The bread rises so fast I can barely keep up.', 'Autumn was his favorite. Golden, just like a good crust.'],
-    restored: 'I can see the colors again... Thank you, dear. Truly.',
-    wishes: [
-      { items: [['Carrot', 3]], req: 'Would you bring me 3 Carrots? I\'d like to bake something sweet again.', thanks: 'These are lovely! Here, some bread for you. And let me teach you my Carrot Cake.', heart: 3, reward: [['Bread', 3]], unlock: 'recipe_carrot_cake', unlockText: 'New recipe: Carrot Cake' },
-      { items: [['Corn', 2], ['Apple', 2]], req: 'The children loved my corn muffins. I\'d need 2 Corn and 2 Apples.', thanks: 'Mmm, the whole market smells like muffins again! Take this for your trouble.', heart: 3, gold: 150 },
-      { items: [['Strawberry Jam', 1]], req: 'Strawberry jam... he made it every summer. Could you make some? I\'d like to taste it once more.', thanks: '...It tastes just like his. Here, take these cakes.', heart: 8, gold: 300, reward: [['Carrot Cake', 2]] },
-    ] },
-  { id: 'theo', name: 'Theo the Smith', scene: 'market', x: -1.4, y: 1.0,
-    intro: 'Hmph. The forge has been cold for a year. Nothing worth making anymore.',
-    gray: ['Hmph.', "Hammer's heavier than it used to be."],
-    color: ["Fire's roaring today. Feels good.", "Bring me good stone and I'll make you good tools."],
-    season: ['Cold hands, cold forge. Same thing every winter.', "Snow's melting off the roof. Guess I'll fix the gutters.", 'Too hot to work the forge at noon. I work at dawn now.', "Autumn's for good tools. Fields need them before the frost."],
-    restored: 'Listen to that. The forge is singing again.',
-    wishes: [
-      { items: [['Wood', 10]], req: "If you want to be useful, bring 10 Wood. Maybe I'll light the forge.", thanks: "...Fire's going. Here, I'll show you how to make a copper watering can.", heart: 2, unlock: 'recipe_copper_can', unlockText: 'New recipe: Copper Watering Can' },
-      { items: [['Stone', 15]], req: "Chimney's cracked. Need 15 Stone to rebuild it.", thanks: 'Solid stone. Here, I made this with the first good fire in a year.', heart: 3, gold: 200, reward: [['Fertile Hoe', 1]] },
-      { items: [['Sunshine Shard', 1], ["Earth's Breath", 1]], req: "My daughter used to say the forge sings when nature's spirit touches it. Bring me a Sunshine Shard and an Earth's Breath.", thanks: "...She was right. You hear that? Here. Don't argue, just take it.", heart: 8, gold: 500 },
-    ] },
-  { id: 'mina', name: 'Mina', scene: 'farm', x: 5.0, y: -2.4,
-    intro: "...Hi. I'm not supposed to talk to strangers. Everything here is boring. Everything's gray.",
-    gray: ['The pond is boring. The fish are boring.', 'Grandpa just sleeps all day now.'],
-    color: ['Did you catch anything big? Show me!', 'Grandpa smiled today! A real smile!'],
-    season: ["The pond froze! ...It's still boring though.", 'Look, the frogs are back! Spring is the best!', 'Summer means fishing every day! Grandpa says so!', 'The leaves are crunchy! Listen! *crunch crunch*'],
-    restored: 'Everything looks so bright now! Is this what you see all the time?',
-    wishes: [
-      { items: [['Apple', 2]], req: "If you give me 2 Apples, I'll give you Grandpa's old fishing rod.", thanks: 'Deal! Here! You can fish in the pond. Stand close and press E!', heart: 2, reward: [['Fishing Rod', 1]], unlock: 'fishing', unlockText: 'Fishing unlocked! New recipe: Grilled Fish' },
-      { items: [['Carp', 1]], req: 'Can you catch a Carp? A big orange one. I want to show Grandpa!', thanks: "Woah, it's huge! Here, I found these seeds in his shed.", heart: 3, reward: [['Strawberry Seed', 3]] },
-      { items: [['Sunshine Shard', 1], ['Strawberry', 2]], req: "Bring me a Sunshine Shard and 2 Strawberries and I'll show you something!", thanks: 'Look! Sunflower seeds! And the market will sell them now too!', heart: 8, reward: [['Sunflower Seed', 5]], unlock: 'shop_sunflower', unlockText: 'Sunflower Seeds are now sold at the market' },
-    ] },
-];
+ {
+  "id": "rosa",
+  "name": "Grandma Boksun",
+  "scene": "market",
+  "x": -6.0,
+  "y": 1.0,
+  "intro": "Oh my, a new face! Forgive me, dear... Since my husband passed, the mill has gone quiet and everything faded. Even my rice cakes taste gray.",
+  "gray": [
+   "The mill used to rumble from dawn. Now it's just me and the clock.",
+   "I steam rice cakes out of habit, then don't eat them."
+  ],
+  "color": [
+   "Come by anytime! The rice cakes are still warm.",
+   "You look thin. Did you eat? Eat, eat!",
+   "He would have liked you, you know."
+  ],
+  "season": [
+   "Winter nights are long when you're alone. Come in, warm your hands.",
+   "Spring! Time for mugwort rice cakes. Smell that?",
+   "Too hot to light the steamer at noon. I work at dawn now.",
+   "Autumn was his favorite. New rice, new rice cakes."
+  ],
+  "restored": "I can see the colors again... Thank you, dear. Truly.",
+  "wishes": [
+   {
+    "items": [
+     [
+      "Carrot",
+      3
+     ]
+    ],
+    "req": "Would you bring me 3 Carrots? I haven't fried a pancake in so long.",
+    "thanks": "Lovely carrots! Here, some rice cakes. And let me show you my carrot pancakes.",
+    "heart": 3.0,
+    "reward": [
+     [
+      "Rice Cake",
+      3
+     ]
+    ],
+    "unlock": "recipe_carrot_cake",
+    "unlockText": "New recipe: Carrot Pancake (needs a Campfire)"
+   },
+   {
+    "items": [
+     [
+      "Corn",
+      2
+     ],
+     [
+      "Apple",
+      2
+     ]
+    ],
+    "req": "The children used to come for snacks after school. I'd need 2 Corn and 2 Apples.",
+    "thanks": "The whole market smells sweet again! Take this for your trouble.",
+    "heart": 3.0,
+    "gold": 150
+   },
+   {
+    "items": [
+     [
+      "Strawberry Jam",
+      1
+     ]
+    ],
+    "req": "Strawberry jam... he made it every summer. Could you make some? I'd like to taste it once more.",
+    "thanks": "...It tastes just like his. Look at me, crying like a girl. Here, take these.",
+    "heart": 8.0,
+    "gold": 300,
+    "reward": [
+     [
+      "Carrot Pancake",
+      2
+     ]
+    ]
+   }
+  ]
+ },
+ {
+  "id": "theo",
+  "name": "Mr. Dongsu",
+  "scene": "market",
+  "x": -1.4,
+  "y": 1.0,
+  "intro": "Hmph. The forge behind the store's been cold for a year. Nothing worth making anymore.",
+  "gray": [
+   "Hmph.",
+   "The hammer's heavier than it used to be."
+  ],
+  "color": [
+   "Fire's roaring today. Feels good.",
+   "Bring me good stone and I'll make you good tools.",
+   "...Thanks. For before. Don't make it weird."
+  ],
+  "season": [
+   "Cold hands, cold forge. Same every winter.",
+   "Snow's off the roof. Guess I'll fix the gutters.",
+   "Too hot at noon. I hammer at dawn now.",
+   "Autumn's for sharp sickles. Fields need them before the frost."
+  ],
+  "restored": "Listen to that. The forge is singing again.",
+  "wishes": [
+   {
+    "items": [
+     [
+      "Wood",
+      10
+     ]
+    ],
+    "req": "If you want to be useful, bring 10 Wood. Maybe I'll light the forge.",
+    "thanks": "...Fire's going. Strange feeling. Here, I'll show you how to make a copper watering can.",
+    "heart": 2.0,
+    "unlock": "recipe_copper_can",
+    "unlockText": "New recipe: Copper Watering Can"
+   },
+   {
+    "items": [
+     [
+      "Stone",
+      15
+     ]
+    ],
+    "req": "The chimney's cracked. Need 15 Stone to rebuild it.",
+    "thanks": "Solid stone. I made this with the first good fire in a year.",
+    "heart": 3.0,
+    "gold": 200,
+    "reward": [
+     [
+      "Fertile Hoe",
+      1
+     ]
+    ]
+   },
+   {
+    "items": [
+     [
+      "Sunshine Shard",
+      1
+     ],
+     [
+      "Earth's Breath",
+      1
+     ]
+    ],
+    "req": "My daughter used to say the forge sings when nature's spirit touches it. Bring me a Sunshine Shard and an Earth's Breath.",
+    "thanks": "...She was right. You hear that? Here. Don't argue, just take it.",
+    "heart": 8.0,
+    "gold": 500
+   }
+  ]
+ },
+ {
+  "id": "mina",
+  "name": "Mina",
+  "scene": "farm",
+  "x": 5.0,
+  "y": -2.4,
+  "intro": "...Hi. Grandma says not to talk to strangers. Everything here is boring. Everything's gray.",
+  "gray": [
+   "The stream is boring. The fish are boring.",
+   "Grandpa just sleeps all day now."
+  ],
+  "color": [
+   "Did you catch anything big? Show me!",
+   "Grandpa smiled today! A real smile!",
+   "When I grow up I'm gonna have a farm like yours."
+  ],
+  "season": [
+   "The stream froze! ...It's still boring though.",
+   "Look, the frogs are back! Spring is the best!",
+   "Summer means fishing every day! Grandpa says so!",
+   "The leaves are crunchy! Listen! *crunch crunch*"
+  ],
+  "restored": "Everything looks so bright now! Is this what you see all the time?",
+  "wishes": [
+   {
+    "items": [
+     [
+      "Apple",
+      2
+     ]
+    ],
+    "req": "If you give me 2 Apples, I'll give you Grandpa's old fishing rod. He doesn't use it anymore.",
+    "thanks": "Deal! Here! You can fish in the stream. Stand close and press E!",
+    "heart": 2.0,
+    "reward": [
+     [
+      "Fishing Rod",
+      1
+     ]
+    ],
+    "unlock": "fishing",
+    "unlockText": "Fishing unlocked! New recipe: Grilled Fish"
+   },
+   {
+    "items": [
+     [
+      "Carp",
+      1
+     ]
+    ],
+    "req": "Can you catch a Carp? A big orange one. I want to show Grandpa!",
+    "thanks": "Woah, it's huge! Grandpa's gonna flip! Here, I found these seeds in his shed.",
+    "heart": 3.0,
+    "reward": [
+     [
+      "Strawberry Seed",
+      3
+     ]
+    ]
+   },
+   {
+    "items": [
+     [
+      "Sunshine Shard",
+      1
+     ],
+     [
+      "Strawberry",
+      2
+     ]
+    ],
+    "req": "Grandma says sunflowers follow the sun. Bring me a Sunshine Shard and 2 Strawberries and I'll show you something!",
+    "thanks": "Look! Sunflower seeds! Grandpa says they're for you. And the market will sell them now too!",
+    "heart": 8.0,
+    "reward": [
+     [
+      "Sunflower Seed",
+      5
+     ]
+    ],
+    "unlock": "shop_sunflower",
+    "unlockText": "Sunflower Seeds are now sold at the market"
+   }
+  ]
+ }
+];  // generated from VillagerDB.cs by vgen.py
 
 const SPIRIT_FOOD = {
   'Sunshine Shard': [3, 0, 0, 0], Sunflower: [2, 0, 0, 0], Corn: [1, 0, 0, 0], "Earth's Breath": [0, 3, 0, 0],
   Carrot: [0, 1, 0, 0], Potato: [0, 1, 0, 0], Pumpkin: [0, 2, 0, 0], Minnow: [0, 0, 1, 0], Carp: [0, 0, 2, 0],
   'Golden Koi': [0, 0, 5, 0], 'Grilled Fish': [0, 0, 2, 0], Apple: [0, 0, 0, 1], Strawberry: [0, 0, 0, 1],
-  'Strawberry Jam': [0, 0, 0, 3], 'Carrot Cake': [0, 1, 0, 2], 'Pumpkin Pie': [0, 1, 0, 2], 'Star Fragment': [1, 1, 1, 1],
+  'Strawberry Jam': [0, 0, 0, 3], 'Carrot Pancake': [0, 1, 0, 2], 'Pumpkin Porridge': [0, 1, 0, 2], 'Star Fragment': [1, 1, 1, 1],
   'Wild Garlic': [0, 0, 0, 1], 'Fern Sprout': [0, 1, 0, 0], Morel: [0, 2, 0, 0], 'Spring Greens': [0, 1, 0, 1], 'Morel Soup': [0, 2, 1, 0],
   Bluegill: [0, 0, 2, 0], Moonfin: [0, 0, 3, 0], Glassfish: [0, 0, 4, 0], 'Wild Raspberry': [0, 0, 0, 1], Watercress: [0, 0, 1, 0],
   Pear: [0, 0, 1, 1], Persimmon: [1, 0, 0, 1], 'Dried Persimmon': [2, 1, 0, 2],
@@ -181,7 +393,7 @@ const PHOTOS = [
   [1, 's6', 'Growing Up', 'Your spirit grows up a little.', 'spirit_young', null, 'Spirit/spirit_bloom_young'],
   [2, 'u1', 'Sunflower Smile', 'Harvest a Sunflower.', 'harvest', 'Sunflower', 'Items/sunflower'],
   [2, 'u2', 'Tall Corn', 'Harvest Corn.', 'harvest', 'Corn', 'Items/corn'],
-  [2, 'u3', "It's a Deal!", 'Win a haggle with the merchant.', 'haggle', null, 'World/merchant'],
+  [2, 'u3', "It's a Deal!", 'Win a haggle on market day.', 'haggle', null, 'World/haggler'],
   [2, 'u4', 'The Big One', 'Catch a Carp.', 'fish', 'Carp', 'Items/carp'],
   [2, 'u5', 'Starry Night', 'Visit Star Hill.', 'starhill', null, 'World/star_ladder'],
   [2, 'u6', 'Something Saved', 'Have 1000G at once.', 'gold1000', null, 'World/storage_box'],
@@ -190,7 +402,7 @@ const PHOTOS = [
   [3, 'a3', 'Shining Koi', 'Catch a Golden Koi.', 'fish', 'Golden Koi', 'Items/golden_koi'],
   [3, 'a4', 'Colors Restored', 'Bring all the color back to a villager.', 'restored', null, 'Villagers/rosa_3'],
   [3, 'a5', 'Shooting Star', 'Catch a Star Fragment.', 'star', null, 'Items/star_fragment'],
-  [3, 'a6', 'Pie for Two', 'Bake a Pumpkin Pie.', 'craft', 'Pumpkin Pie', 'Items/pumpkin_pie'],
+  [3, 'a6', 'Porridge for Two', 'Cook Pumpkin Porridge.', 'craft', 'Pumpkin Porridge', 'Items/pumpkin_porridge'],
 ].map(p => ({ season: p[0], id: p[1], title: p[2], hint: p[3], evt: p[4], arg: p[5], sprite: p[6] }));
 
 // ------------------------------------------------------------------ scenes
@@ -266,7 +478,7 @@ const CHEST = ANCHOR('storage', -3.89, -1.07);
 const COTTAGE = ANCHOR('cottage', -7.75, -3.85);
 const farmBlocked = (cx, cy) => 'PwWHJKBCRb|'.includes(mapAt(cx, cy));
 { const [mx, my] = ANCHOR('mina', 5.0, -2.4); VILLAGERS[2].x = mx; VILLAGERS[2].y = my; }
-const ORGANIC = new Set(['Carrot', 'Potato', 'Corn', 'Strawberry', 'Sunflower', 'Pumpkin', 'Apple', 'Pear', 'Persimmon', 'Wild Garlic', 'Fern Sprout', 'Morel', 'Wild Raspberry', 'Watercress', 'Acorn', 'Bread', 'Roasted Carrot', 'Baked Potato', 'Corn Soup', 'Spring Greens']);
+const ORGANIC = new Set(['Carrot', 'Potato', 'Corn', 'Strawberry', 'Sunflower', 'Pumpkin', 'Apple', 'Pear', 'Persimmon', 'Wild Garlic', 'Fern Sprout', 'Morel', 'Wild Raspberry', 'Watercress', 'Acorn', 'Rice Cake', 'Roasted Carrot', 'Baked Potato', 'Steamed Corn', 'Spring Greens']);
 
 // ------------------------------------------------------------------ state
 let G;  // game state
@@ -402,7 +614,7 @@ function addKindness(n, fromBox) {
   if (n <= 0) return;
   if (!fromBox) S().kindness += n;
   if (S().donationDay !== G.day) { S().donationDay = G.day; changeHeart(2, 'Sharing warms your heart.'); }
-  if (S().kindness >= 60 && unlock('starhill')) showAnnounce('[#ffb6d0]Word of your kindness spreads[/]\n\nGrandma Rosa whispers: "On clear nights, look for the glowing vine at the edge of your farm."\n\nStar Hill unlocked: clear nights after 20:00, top-right of the farm.', 8);
+  if (S().kindness >= 60 && unlock('starhill')) showAnnounce('[#ffb6d0]Word of your kindness spreads[/]\n\nGrandma Boksun whispers: "On clear nights, look for the glowing vine at the edge of your farm."\n\nStar Hill unlocked: clear nights after 20:00, top-right of the farm.', 8);
 }
 function useEnergy(a) {
   if (G.energy >= a) { G.energy -= a; if (G.energy < 1) G.log.exhausted = true; return true; }
@@ -795,6 +1007,7 @@ function todayPreview(season) {
   const ripe = Object.values(G.crops).filter(mature).length; if (ripe) tips.push(`${ripe} crop(s) ripe`);
   const tm = Object.values(G.crops).filter(c => !mature(c) && season >= CROPS[c.id].season && c.days + 1 >= CROPS[c.id].days).length;
   if (tm) tips.push(`${tm} crop(s) ripen tomorrow if watered`);
+  if (isMarketDay(G.day)) tips.push('Market day! Stalls, rare goods and haggling at the market'); else if (daysUntilMarket(G.day) === 1) tips.push('Tomorrow is market day');
   if (season < 3) tips.push(`${SEASONS[season + 1]} at ${Math.ceil(THRESH[season + 1] - G.heart)} more Heart`);
   const ready = VILLAGERS.find(v => villagerProgress(v.id).met && wishReady(v)); if (ready) tips.push(`You have everything for ${ready.name}'s wish`);
   if (unlocked('starhill') && !G.raining && !G.snowing) tips.push('Clear skies tonight: the star vine will grow');
@@ -819,9 +1032,12 @@ function go(scene, x, y) {
   if (G.spirit) { G.spirit.x = x - 0.8; G.spirit.y = y + 0.8; }
   if (scene === 'forest' && F().forageDay !== G.day) rollForage();
   if (scene === 'lake' && Lk().forageDay !== G.day) rollLakeForage();
-  if (scene === 'market') toast(`Today's demand: ${G.market.demand} (+50%)` + (G.market.haggle ? `  |  Haggle bonus +${Math.round(G.market.haggle * 100)}%` : ''), 4);
+  if (scene === 'market') {
+    if (isMarketDay(G.day)) toast("It's market day! Stalls line the lane, and the old farmer by the green tarp is up for some haggling.", 4);
+    else toast(`Today's demand: ${G.market.demand} (+50%)` + (G.market.haggle ? `  |  Haggle bonus +${Math.round(G.market.haggle * 100)}%` : '') + `   Next market day: ${daysUntilMarket(G.day) === 1 ? 'tomorrow' : 'in ' + daysUntilMarket(G.day) + ' days'}`, 4);
+  }
   if (scene === 'haggle') {
-    if (G.market.haggled) { haggle = { done: true, text: 'The merchant is busy today.\nCome back tomorrow!', t: 2.5 }; }
+    if (G.market.haggled) { haggle = { done: true, text: "You've already haggled today.\nCome back next market day!", t: 2.5 }; }
     else haggle = { v: 0, dir: 1, done: false };
   }
   if (scene === 'hill') { if (S().starsDay !== G.day) { S().starsDay = G.day; S().starsTonight = 0; } G.stars = []; G.starTimer = 1.5; report('starhill'); toast('You climb the glowing vine... the whole sky opens up.'); }
@@ -884,6 +1100,7 @@ function interact() {
   } else if (G.scene === 'market') {
     for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) { talk(v); return; }
     if (near(-4.2, -2.0, 1.1)) { share(); return; }
+    if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) { if (G.market.haggled) toast('"We\'ve struck our deal for today. Come back next market day!"', 2.5); else go('haggle', 0, 0); return; }
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) { panel = { kind: 'shop', tab: 'buy' }; return; }
   } else if (G.scene === 'hill') {
     if (near(0, -4.4, 1.4)) { go('farm', LADDER[0] - 0.6, LADDER[1] - 1.0); return; }
@@ -930,6 +1147,7 @@ function shopStock() {
   const list = SHOP.slice();
   if (unlocked('shop_sunflower')) list.push(['Sunflower Seed', 60]);
   if (S().season >= 3) list.push(['Pumpkin Seed', 70]);
+  if (isMarketDay(G.day)) list.push(...FAIR_STOCK);
   if (!has('Mattock')) list.push(['Mattock', 150]);
   return list.filter(([n]) => { const d = ITEMS[n]; return !(d.cat === 'Seed' && d.crop && CROPS[d.crop].season > S().season); });
 }
@@ -1049,11 +1267,11 @@ function update(dt) {
       haggle.v += haggle.dir * 2 * dt; if (haggle.v >= 1) { haggle.v = 1; haggle.dir = -1; } if (haggle.v <= 0) { haggle.v = 0; haggle.dir = 1; }
       if (pressed.Space) {
         const d = Math.abs(haggle.v - 0.5); let bonus = 0, text;
-        if (d <= 0.1 * 0.35) { bonus = 0.5; text = 'PERFECT! Today\'s sell prices +50%'; } else if (d <= 0.1) { bonus = 0.25; text = 'Deal! Today\'s sell prices +25%'; } else text = 'Haggle failed... Try again tomorrow.';
-        G.market.haggled = true; G.market.haggle = Math.max(G.market.haggle, bonus); if (bonus) { changeHeart(1, 'A friendly chat with the merchant.'); report('haggle'); }
+        if (d <= 0.1 * 0.35) { bonus = 0.5; text = 'PERFECT! Today\'s sell prices +50%'; } else if (d <= 0.1) { bonus = 0.25; text = 'Deal! Today\'s sell prices +25%'; } else text = 'Haggle failed... Try again next market day.';
+        G.market.haggled = true; G.market.haggle = Math.max(G.market.haggle, bonus); if (bonus) { changeHeart(1, 'A friendly haggle with the old farmer.'); report('haggle'); }
         haggle = { done: true, text, t: 2.2 };
       }
-    } else { haggle.t -= dt; if (haggle.t <= 0) go('farm', ...arrival('MiniGame')); }
+    } else { haggle.t -= dt; if (haggle.t <= 0) go('market', HAGGLER[0], HAGGLER[1] - 1.1); }
     clearPressed(); return;
   }
 
@@ -1088,7 +1306,6 @@ function update(dt) {
     const open = MAP.exits.find(e => !e.locked && inRect(exitRect(e), G.px, G.py));
     if (near(DOOR[0], DOOR[1], 0.7)) go('home', 0, -3.5);
     else if (open) go(open.to.toLowerCase(), open.spawnX, open.spawnY);          // the end of the road is the way to the market
-    else if (G.py > 4.35 && Math.abs(G.px) < 0.7) go('haggle', 0, 0);
     const gate = MAP.exits.find(e => areaOpen(e.to) && inRect(exitRect(e), G.px, G.py));
     if (gate && G.scene === 'farm') {
       const R = REGIONS[gate.to], a = R.map.arrivals.find(a => a.from === 'Farm'); go(R.scene, a.x, a.y); toast(R.line);
@@ -1177,6 +1394,7 @@ function clampPlayer() {
       if (y0 <= MAPB.y0 + 0.1 && G.px > x0 - 0.2 && G.px < x1 + 0.2) G.py = Math.max(G.py, y1 + 0.75);
     }
   }
+  if (G.scene === 'market' && isMarketDay(G.day)) { FAIR_STALLS.forEach(([x, y, r]) => { for (let dx = -r + 0.25; dx <= r - 0.25; dx += 0.5) solids.push([x + dx, y + 0.3, 0.3]); }); solids.push([HAGGLER[0], HAGGLER[1] - 0.4, 0.3]); }
   if (G.scene === 'market') { solids.push([-4.2, -2.35, 0.35]); VILLAGERS.slice(0, 2).forEach(v => solids.push([v.x, v.y - 0.4, 0.25])); }
   const fx = G.px, fy = G.py - 0.4;
   for (const [x, y, r] of solids) { const d = Math.hypot(fx - x, fy - y); if (d < r && d > 0) { G.px += (fx - x) / d * (r - d); G.py += (fy - y) / d * (r - d); } }
@@ -1251,7 +1469,10 @@ function renderWorld() {
     else if (G.scene === 'lake') drawLakeGround(c);
     else if (G.scene === 'sunset') drawHillGround(c);
     else sprite(c, sc().bg(), (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2);
-  } else { const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH); }
+  } else {
+    const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH);
+    if (G.scene === 'market' && isMarketDay(G.day) && IMG['World/market_fair']) c.drawImage(IMG['World/market_fair'], 0, 0, CW, CH);   // market-day stalls
+  }
   const draws = [];  // [sortY, fn]
   if (G.scene === 'farm') {
     for (const k in G.tiles) { const [x, y] = k.split(',').map(Number); const key = G.tiles[k].wet ? 'Tiles/tilled_wet' : 'Tiles/tilled';
@@ -1321,6 +1542,7 @@ function renderWorld() {
   if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
   if (G.scene === 'market') {
     draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
+    if (isMarketDay(G.day)) draws.push([HAGGLER[1], () => sprite(c, 'World/haggler', HAGGLER[0], HAGGLER[1])]);
     draws.push([-2.5, () => sprite(c, 'World/donation_box', -4.2, -2.0)]);
     draws.push([0, () => sprite(c, G.story.season === 0 ? 'World/exit_sign_winter' : 'World/exit_sign', -8.27, -0.05)]);
   }
@@ -1433,7 +1655,7 @@ function promptText() {
     const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.0)) return `[E] Talk to ${mina.name}`;
     if (near(3.68, -0.4, 1.2)) return '[E] Drink and refill your watering can';
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
-    if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The pond is full of fish');
+    if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The stream is full of fish');
     if (near(DOOR[0], DOOR[1], 1.6)) return 'Home';
     if (near(COMPOST[0], COMPOST[1], 1.4)) return G.compostReady ? `[E] Take ${G.compostReady} bag(s) of compost` : ORGANIC.has(selectedItem()) ? `[E] Put ${selectedItem()} in the heap  (Shift+E: all)` : `Compost heap (${G.compostPoints} inside)`;
     if (G.px < MAPB.x0 + 2.2 && Math.abs(G.py + 9.1) < 1.4) return F().open ? '← To the forest' : 'Gray thorns block the forest path';
@@ -1446,7 +1668,8 @@ function promptText() {
   } else if (G.scene === 'market') {
     for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) return `[E] Talk to ${v.name}`;
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
-    if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade with the merchant';
+    if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) return G.market.haggled ? 'The old farmer is done haggling for today' : '[E] Haggle with the old farmer';
+    if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade at the stall';
     if (G.px < -7) return 'Back to the farm';
   } else if (G.scene === 'sunset') {
     if (near(HRACK[0], HRACK[1], 1.5)) { const h = Hl(); return h.drying.some(d => G.day >= d) ? '[E] Take down the dried persimmons' : has('Persimmon') ? '[E] Hang your persimmons' : h.drying.length ? 'The persimmons are drying' : 'A drying rack for persimmons'; }
@@ -1472,7 +1695,11 @@ function promptText() {
 // ------------------------------------------------------------------ save
 const SAVE_KEY = 'mlf-preview-v2';
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { /* storage unavailable: preview still works */ } }
-function load() { try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); return true; } } catch (e) { /* ignore */ } return false; }
+function load() { try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); migrateNames(); return true; } } catch (e) { /* ignore */ } return false; }
+function migrateNames() {   // old saves: Bread -> Rice Cake and so on (same rule as ItemDB.Normalize)
+  for (const [o, n] of Object.entries(ALIASES)) if (G.inv[o]) { G.inv[n] = (G.inv[n] || 0) + G.inv[o]; delete G.inv[o]; }
+  if (ALIASES[G.selected]) G.selected = ALIASES[G.selected];
+}
 
 // ------------------------------------------------------------------ input
 uiCanvas.addEventListener('keydown', e => {
@@ -1498,10 +1725,15 @@ const $ = id => document.getElementById(id);
 $('t-heart').onclick = () => { changeHeart(10, 'Preview tool'); uiCanvas.focus(); };
 $('t-day').onclick = () => { if (!G.dead) { endDay(false); if (G.scene === 'haggle') go('farm', ...arrival('MiniGame')); } uiCanvas.focus(); };
 $('t-items').onclick = () => {
-  [['Carrot', 5], ['Strawberry', 4], ['Corn', 3], ['Apple', 4], ['Minnow', 2], ['Carp', 1], ['Sunshine Shard', 2], ["Earth's Breath", 2], ['Star Fragment', 3], ['Wood', 12], ['Stone', 16], ['Campfire', 1], ['Bread', 2], ['Potato Seed', 4], ['Strawberry Seed', 4], ['Corn Seed', 4]].forEach(([n, c]) => add(n, c));
+  [['Carrot', 5], ['Strawberry', 4], ['Corn', 3], ['Apple', 4], ['Minnow', 2], ['Carp', 1], ['Sunshine Shard', 2], ["Earth's Breath", 2], ['Star Fragment', 3], ['Wood', 12], ['Stone', 16], ['Campfire', 1], ['Rice Cake', 2], ['Potato Seed', 4], ['Strawberry Seed', 4], ['Corn Seed', 4]].forEach(([n, c]) => add(n, c));
   toast('Preview: items added to your bag.'); uiCanvas.focus();
 };
-$('t-hill').onclick = () => { S().kindness = Math.max(S().kindness, 60); unlock('starhill'); G.raining = G.snowing = false; if (G.hour < 20) { G.hour = 20; G.minute = 30; } toast('Preview: Star Hill is open. The vine grows above the pond at night.'); uiCanvas.focus(); };
+$('t-market').onclick = () => {   // skip ahead to the next market day and walk into the market
+  if (G.dead) return;
+  let guard = 0; while (!isMarketDay(G.day) && guard++ < 6) endDay(false);
+  announce = null; go('market', -7.6, -3.6); uiCanvas.focus();
+};
+$('t-hill').onclick = () => { S().kindness = Math.max(S().kindness, 60); unlock('starhill'); G.raining = G.snowing = false; if (G.hour < 20) { G.hour = 20; G.minute = 30; } toast('Preview: Star Hill is open. The vine glows at the meadow edge at night.'); uiCanvas.focus(); };
 $('t-forest').onclick = () => {
   if (G.heart < 30) changeHeart(30 - G.heart, 'Preview tool');
   if (S().season < 1) { S().season = 1; S().highest = Math.max(S().highest, 1); }
