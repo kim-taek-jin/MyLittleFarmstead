@@ -124,7 +124,7 @@ public class DataManager : MonoBehaviour
 
         if (SaveSystem.HasSave() && LoadGame())
         {
-            HUD.Toast($"Welcome back. Day {(timeManager != null ? timeManager.day : 1)}.");
+            HUD.Toast(Loc.T($"Welcome back. Day {(timeManager != null ? timeManager.day : 1)}.", $"다시 왔어요. {(timeManager != null ? timeManager.day : 1)}일째."));
         }
         else
         {
@@ -188,7 +188,7 @@ public class DataManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F5) && !IsGameOver)
         {
             SaveGame();
-            HUD.Toast("Game saved.");
+            HUD.Toast(Loc.T("Game saved.", "저장했어요."));
         }
         if (Input.GetKeyDown(KeyCode.F9) && SaveSystem.HasSave())
         {
@@ -222,21 +222,21 @@ public class DataManager : MonoBehaviour
 
     void CheckStatWarnings()
     {
-        if (hunger < 20f && !warnedHunger) { warnedHunger = true; HUD.Toast("You're getting hungry. (Right-click / F to eat)"); }
+        if (hunger < 20f && !warnedHunger) { warnedHunger = true; HUD.Toast(Loc.T("You're getting hungry. (Right-click / F to eat)", "배가 고파요. (오른쪽 클릭 / F: 먹기)")); }
         if (hunger > 30f) warnedHunger = false;
-        if (thirst < 20f && !warnedThirst) { warnedThirst = true; HUD.Toast("You're thirsty. Drink at the well (E)."); }
+        if (thirst < 20f && !warnedThirst) { warnedThirst = true; HUD.Toast(Loc.T("You're thirsty. Drink at the well (E).", "목이 말라요. 우물에서 물을 마셔요 (E).")); }
         if (thirst > 30f) warnedThirst = false;
     }
 
     string BuildStatusLine()
     {
-        string weather = snowing ? "<color=#e4ecf4>Snow</color>" : (raining ? "<color=#8fb8ff>Rain</color>" : "<color=#ffe28a>Sunny</color>");
+        string weather = snowing ? "<color=#e4ecf4>" + Loc.T("Snow", "눈") + "</color>" : (raining ? "<color=#8fb8ff>" + Loc.T("Rain", "비") + "</color>" : "<color=#ffe28a>" + Loc.T("Sunny", "맑음") + "</color>");
         weather = $"<color={SeasonSystem.Color(CurrentSeason)}>{SeasonSystem.Name(CurrentSeason)}</color>  {weather}";
         string held = Hotbar.SelectedItem;
-        string heldText = string.IsNullOrEmpty(held) ? "" : $"   Holding: {held}";
+        string heldText = string.IsNullOrEmpty(held) ? "" : "   " + Loc.T("Holding: ", "손에 든 것: ") + ItemNames.Display(held);
         int capacity = WaterCapacity;
-        string water = capacity > 0 ? $"   Water {waterCharges}/{capacity}" : "";
-        return $"<color=#ff8fb1>Heart</color> {heart:0}/{maxHeart:0}   {weather}{water}{heldText}";
+        string water = capacity > 0 ? "   " + Loc.T("Water", "물") + $" {waterCharges}/{capacity}" : "";
+        return "<color=#ff8fb1>" + Loc.T("Heart", "마음") + $"</color> {heart:0}/{maxHeart:0}   {weather}{water}{heldText}";
     }
 
     // ===================================================================
@@ -392,7 +392,7 @@ public class DataManager : MonoBehaviour
             return true;
         }
         today.exhausted = true;
-        HUD.Toast("You're too tired... Eat something or get some sleep.");
+        HUD.Toast(Loc.T("You're too tired... Eat something or get some sleep.", "너무 지쳤어요... 뭘 좀 먹거나 잠을 자요."));
         return false;
     }
 
@@ -425,11 +425,11 @@ public class DataManager : MonoBehaviour
         if (def.thirst > 0f) today.drankWater = true;
 
         if (def.category == ItemCategory.Food && def.heart > 0f) Album.Report("eat_cooked", def.name);
-        string msg = $"Ate {def.name}.";
+        string msg = Loc.T($"Ate {def.name}.", $"{ItemNames.Display(def.name)}을(를) 먹었어요.");
         if (def.heart > 0f)
         {
             ChangeHeart(def.heart, null);
-            msg += $"  <color=#ff8fb1>+{def.heart:0} Heart</color>";
+            msg += $"  <color=#ff8fb1>+{def.heart:0} " + Loc.T("Heart", "마음") + "</color>";
         }
         HUD.Toast(msg);
         UpdateStatusUI();
@@ -446,7 +446,7 @@ public class DataManager : MonoBehaviour
         if (!string.IsNullOrEmpty(reason) && Mathf.Abs(amount) >= 0.5f)
         {
             string sign = amount > 0 ? "+" : "";
-            HUD.Toast($"<color=#ff8fb1>{sign}{amount:0} Heart</color>  {reason}");
+            HUD.Toast($"<color=#ff8fb1>{sign}{amount:0} " + Loc.T("Heart", "마음") + $"</color>  {reason}");
         }
 
         foreach (int milestone in heartMilestones)
@@ -463,10 +463,10 @@ public class DataManager : MonoBehaviour
     {
         switch (milestone)
         {
-            case 30: return "<size=40>Color returns...</size>\n\nThe gray haze of the city is starting to lift.\nThe sky looks a little bluer today.";
-            case 50: return "<size=40>Breathing again</size>\n\nYou notice the smell of the soil and the sound of the wind.\nYou feel like you can do a little more each day.";
-            case 75: return "<size=40>Warm days</size>\n\nThe village feels like home now.\nYour fields shine with color.";
-            default: return "<size=40>Happiness rebuilt</size>\n\nThe world is full of color again.\nYou built this life with your own hands.";
+            case 30: return Loc.T("<size=40>Color returns...</size>\n\nThe gray haze of the city is starting to lift.\nThe sky looks a little bluer today.", "<size=40>색이 돌아와요...</size>\n\n도시의 잿빛 안개가 걷히기 시작했어요.\n오늘은 하늘이 조금 더 파래 보여요.");
+            case 50: return Loc.T("<size=40>Breathing again</size>\n\nYou notice the smell of the soil and the sound of the wind.\nYou feel like you can do a little more each day.", "<size=40>다시 숨이 쉬어져요</size>\n\n흙 냄새와 바람 소리가 들어오기 시작했어요.\n하루하루 조금씩 더 할 수 있을 것 같아요.");
+            case 75: return Loc.T("<size=40>Warm days</size>\n\nThe village feels like home now.\nYour fields shine with color.", "<size=40>따뜻한 날들</size>\n\n이제 이 마을이 집처럼 느껴져요.\n밭이 색으로 반짝여요.");
+            default: return Loc.T("<size=40>Happiness rebuilt</size>\n\nThe world is full of color again.\nYou built this life with your own hands.", "<size=40>다시 찾은 행복</size>\n\n세상이 다시 색으로 가득해요.\n이 삶은 내 손으로 일군 거예요.");
         }
     }
 
@@ -502,9 +502,9 @@ public class DataManager : MonoBehaviour
         today.harvested += amount;
         Album.Report("harvest", itemName);
         if (blessed) Album.Report("golden", itemName);
-        if (itemName == "Sunflower") ChangeHeart(2f * amount, "The sunflower makes you smile.");
-        if (blessed) ChangeHeart(3f, "A golden harvest!");
-        else if (today.harvested == amount) ChangeHeart(1f, "Your first harvest of the day.");
+        if (itemName == "Sunflower") ChangeHeart(2f * amount, Loc.T("The sunflower makes you smile.", "해바라기를 보니 웃음이 나요."));
+        if (blessed) ChangeHeart(3f, Loc.T("A golden harvest!", "황금빛 수확!"));
+        else if (today.harvested == amount) ChangeHeart(1f, Loc.T("Your first harvest of the day.", "오늘의 첫 수확."));
     }
 
     // ===================================================================
@@ -538,16 +538,20 @@ public class DataManager : MonoBehaviour
         if (story.donationDay != day)
         {
             story.donationDay = day;
-            ChangeHeart(2f, "Sharing warms your heart.");
+            ChangeHeart(2f, Loc.T("Sharing warms your heart.", "나누니 마음이 따뜻해져요."));
         }
 
         if (story.kindness >= StarHill.KindnessToUnlock && story.Unlock("starhill"))
         {
             HUD.Announce(
-                "<size=40>Word of your kindness spreads</size>\n\n" +
-                "Grandma Rosa whispers: \"On clear nights, look for the glowing vine at the edge of your farm.\n" +
-                "It leads up to the hill where stars come down to rest.\"\n\n" +
-                "<size=24>Star Hill unlocked: clear nights after 20:00, top-right of the farm.</size>", 9f);
+                Loc.T("<size=40>Word of your kindness spreads</size>\n\n" +
+                      $"{VillagerDB.Get("rosa").name} whispers: \"On clear nights, look for the glowing vine in the meadow below your farm road.\n" +
+                      "It leads up to the hill where stars come down to rest.\"\n\n" +
+                      "<size=24>Star Hill unlocked: clear nights after 20:00, the meadow east of the farm.</size>",
+                      "<size=40>나눔 소문이 퍼졌어요</size>\n\n" +
+                      $"{VillagerDB.Get("rosa").name}가 속삭여요: \"맑은 밤에 농장 큰길 아래 풀밭을 봐요. 빛나는 덩굴이 있을 거야.\n" +
+                      "별들이 내려와 쉬는 언덕으로 이어져 있지.\"\n\n" +
+                      "<size=24>별의 언덕이 열렸어요: 맑은 밤 20시 이후, 농장 동쪽 풀밭</size>"), 9f);
         }
     }
 
@@ -556,7 +560,7 @@ public class DataManager : MonoBehaviour
         market.haggledToday = true;
         market.haggleBonus = Mathf.Max(market.haggleBonus, bonus);
         if (bonus > 0f) Album.Report("haggle");
-        if (bonus > 0f) ChangeHeart(1f, "A friendly chat with the merchant.");
+        if (bonus > 0f) ChangeHeart(1f, Loc.T("A friendly chat at the market.", "장터에서 정답게 흥정했어요."));
     }
 
     // ===================================================================
@@ -608,7 +612,7 @@ public class DataManager : MonoBehaviour
         bool tired = energy <= MaxEnergyNow * 0.25f;
         if (hour < 18 && !tired)
         {
-            HUD.Toast("It's too early to sleep. (You can sleep after 18:00)");
+            HUD.Toast(Loc.T("It's too early to sleep. (You can sleep after 18:00)", "아직 잠들기엔 일러요. (18시부터 잘 수 있어요)"));
             return false;
         }
         EndDay(false);
@@ -637,32 +641,32 @@ public class DataManager : MonoBehaviour
         if (passedOut)
         {
             delta -= 8f;
-            lines.Add("Passed out from exhaustion  <color=#ff8080>-8</color>");
+            lines.Add(Loc.T("Passed out from exhaustion", "지쳐서 쓰러졌어요") + "  <color=#ff8080>-8</color>");
             int lost = Mathf.Min(gold / 10, 100);
             if (lost > 0)
             {
                 gold -= lost;
-                lines.Add($"Someone carried you home... you lost {lost}G");
+                lines.Add(Loc.T($"Someone carried you home... you lost {lost}G", $"누군가 집까지 데려다줬어요... {lost}G를 잃었어요"));
             }
         }
         else if (hour < 24)
         {
             delta += 4f;
-            lines.Add("Went to bed on time  <color=#9dff9d>+4</color>");
+            lines.Add(Loc.T("Went to bed on time", "제때 잠자리에 들었어요") + "  <color=#9dff9d>+4</color>");
             Album.Report("sleep_early");
         }
         else
         {
             delta -= 2f;
-            lines.Add("Stayed up too late  <color=#ff8080>-2</color>");
+            lines.Add(Loc.T("Stayed up too late", "너무 늦게까지 깨어 있었어요") + "  <color=#ff8080>-2</color>");
         }
 
-        if (today.mealsEaten > 0) { delta += 3f; lines.Add("Ate proper meals  <color=#9dff9d>+3</color>"); }
-        if (today.drankWater) { delta += 1f; lines.Add("Drank fresh water  <color=#9dff9d>+1</color>"); }
-        if (!today.exhausted) { delta += 3f; lines.Add("Didn't overwork  <color=#9dff9d>+3</color>"); }
-        else { delta -= 3f; lines.Add("Worked until exhausted  <color=#ff8080>-3</color>"); }
-        if (today.starved) { delta -= 5f; lines.Add("Went hungry or thirsty  <color=#ff8080>-5</color>"); }
-        if (today.harvested > 0) { delta += 2f; lines.Add($"Harvested {today.harvested} crops  <color=#9dff9d>+2</color>"); }
+        if (today.mealsEaten > 0) { delta += 3f; lines.Add(Loc.T("Ate proper meals", "밥을 챙겨 먹었어요") + "  <color=#9dff9d>+3</color>"); }
+        if (today.drankWater) { delta += 1f; lines.Add(Loc.T("Drank fresh water", "시원한 물을 마셨어요") + "  <color=#9dff9d>+1</color>"); }
+        if (!today.exhausted) { delta += 3f; lines.Add(Loc.T("Didn't overwork", "무리하지 않았어요") + "  <color=#9dff9d>+3</color>"); }
+        else { delta -= 3f; lines.Add(Loc.T("Worked until exhausted", "기력이 바닥날 때까지 일했어요") + "  <color=#ff8080>-3</color>"); }
+        if (today.starved) { delta -= 5f; lines.Add(Loc.T("Went hungry or thirsty", "배고프거나 목마른 채로 지냈어요") + "  <color=#ff8080>-5</color>"); }
+        if (today.harvested > 0) { delta += 2f; lines.Add(Loc.T($"Harvested {today.harvested} crops", $"작물 {today.harvested}개를 거뒀어요") + "  <color=#9dff9d>+2</color>"); }
 
         ChangeHeart(delta, null);
 
@@ -697,7 +701,7 @@ public class DataManager : MonoBehaviour
         if (bloomLevel > 0)
         {
             delta += bloomLevel;
-            lines.Add($"Your spirit hummed you to sleep  <color=#9dff9d>+{bloomLevel}</color>");
+            lines.Add(Loc.T("Your spirit hummed you to sleep", "정령이 콧노래로 재워 줬어요") + $"  <color=#9dff9d>+{bloomLevel}</color>");
             ChangeHeart(bloomLevel, null);
         }
         market.StartNewDay(rng, after);
@@ -721,21 +725,23 @@ public class DataManager : MonoBehaviour
         SaveGame();
 
         int day = timeManager != null ? timeManager.day : 0;
-        string weatherLine = snowing ? "Soft snow is falling." : (raining ? "It's raining. The fields are watered." : "A clear morning.");
-        if (delta >= 6f && !raining && !snowing) weatherLine = "A clear morning. Yesterday was a good day.";
-        else if (delta < 0f && (raining || snowing)) weatherLine += " The sky feels as heavy as you do.";
-        string header = $"<size=42>{SeasonSystem.Name(after)}, Day {day}</size>\n{weatherLine}";
-        if (matured > 0) header += $"\n{matured} crop(s) are ready to harvest!";
+        string weatherLine = snowing ? Loc.T("Soft snow is falling.", "포근한 눈이 내려요.") : (raining ? Loc.T("It's raining. The fields are watered.", "비가 와요. 밭에 물이 들었어요.") : Loc.T("A clear morning.", "맑은 아침이에요."));
+        if (delta >= 6f && !raining && !snowing) weatherLine = Loc.T("A clear morning. Yesterday was a good day.", "맑은 아침이에요. 어제는 좋은 하루였어요.");
+        else if (delta < 0f && (raining || snowing)) weatherLine += Loc.T(" The sky feels as heavy as you do.", " 하늘도 내 마음만큼 무거워요.");
+        string header = "<size=42>" + Loc.T($"{SeasonSystem.Name(after)}, Day {day}", $"{SeasonSystem.Name(after)}, {day}일째") + $"</size>\n{weatherLine}";
+        if (matured > 0) header += "\n" + Loc.T($"{matured} crop(s) are ready to harvest!", $"거둘 작물이 {matured}개 있어요!");
 
         if (after > before)
         {
-            header = $"<size=44><color={SeasonSystem.Color(after)}>{SeasonSystem.Name(after)} has come</color></size>\n" +
-                     $"<size=24>{SeasonSystem.Arrival(after)}\n{NewCropsText(after)}</size>\n\n<size=30>Day {day}</size>";
+            header = $"<size=44><color={SeasonSystem.Color(after)}>" + Loc.T($"{SeasonSystem.Name(after)} has come", $"{SeasonSystem.Name(after)}이 왔어요") + "</color></size>\n" +
+                     $"<size=24>{SeasonSystem.Arrival(after)}\n{NewCropsText(after)}</size>\n\n<size=30>" + Loc.T($"Day {day}", $"{day}일째") + "</size>";
         }
         else if (after < before)
         {
-            header = $"<size=42><color=#c8d8ff>A cold snap...</color></size>\n<size=24>You pushed yourself too hard. It feels like {SeasonSystem.Name(after)} again.\n" +
-                     $"Some crops stopped growing for now. They'll wait for you.</size>\n\n<size=30>Day {day}</size>";
+            header = "<size=42><color=#c8d8ff>" + Loc.T("A cold snap...", "꽃샘추위...") + "</color></size>\n<size=24>" +
+                     Loc.T($"You pushed yourself too hard. It feels like {SeasonSystem.Name(after)} again.\nSome crops stopped growing for now. They'll wait for you.",
+                           $"너무 무리했어요. 다시 {SeasonSystem.Name(after)} 같아요.\n몇몇 작물이 잠시 자라기를 멈췄어요. 기다려 줄 거예요.") +
+                     "</size>\n\n<size=30>" + Loc.T($"Day {day}", $"{day}일째") + "</size>";
         }
         if (forestHeadline != null) header += $"\n<size=24>{forestHeadline}</size>";
         if (raining) Album.Report("rain_morning");
@@ -743,18 +749,21 @@ public class DataManager : MonoBehaviour
         string body = string.Join("\n", lines);
         string sign = delta >= 0 ? "+" : "";
         string preview = BuildTodayPreview(after, day);
-        HUD.Announce($"{header}\n\n<size=24>{body}</size>\n\n<color=#ff8fb1>Heart {sign}{delta:0}  ({heart:0}/{maxHeart:0})</color>{preview}", 8f);
+        HUD.Announce($"{header}\n\n<size=24>{body}</size>\n\n<color=#ff8fb1>" + Loc.T("Heart", "마음") + $" {sign}{delta:0}  ({heart:0}/{maxHeart:0})</color>{preview}", 8f);
 
         if (demoEndsNow)
         {
             story.Unlock("demo_end");
-            HUD.Announce("<size=44><color=#ffb6d0>Spring is coming...</color></size>\n\n" +
-                         "You made it through the winter.\nThe rest of the year is waiting in the full game.\n\n" +
-                         "<size=28>Thank you for playing the demo!</size>\n<size=24>[Enter] Wishlist on Steam</size>", 30f);
+            HUD.Announce(Loc.T("<size=44><color=#ffb6d0>Spring is coming...</color></size>\n\n" +
+                               "You made it through the winter.\nThe rest of the year is waiting in the full game.\n\n" +
+                               "<size=28>Thank you for playing the demo!</size>\n<size=24>[Enter] Wishlist on Steam</size>",
+                               "<size=44><color=#ffb6d0>봄이 오고 있어요...</color></size>\n\n" +
+                               "겨울을 잘 견뎌 냈어요.\n남은 한 해는 정식판에서 기다리고 있어요.\n\n" +
+                               "<size=28>데모를 플레이해 주셔서 고마워요!</size>\n<size=24>[Enter] 스팀 찜하기</size>"), 30f);
         }
         else if (demoMode && story.IsUnlocked("demo_end"))
         {
-            HUD.Toast("Demo: spring is waiting in the full game. [Enter] while this shows: Wishlist", 4f);
+            HUD.Toast(Loc.T("Demo: spring is waiting in the full game. [Enter] while this shows: Wishlist", "데모: 봄은 정식판에서 기다리고 있어요. 이 알림이 보일 때 [Enter]: 찜하기"), 4f);
         }
         if (after != before) PixelArtWorld.RefreshSeasonal();
 
@@ -768,7 +777,7 @@ public class DataManager : MonoBehaviour
     {
         var names = new List<string>();
         foreach (CropDef c in CropDB.All) if (c.minSeason == s) names.Add(c.harvestItem);
-        return names.Count > 0 ? $"<color=#9dff9d>Now growing: {string.Join(", ", names)}</color>" : "";
+        return names.Count > 0 ? "<color=#9dff9d>" + Loc.T("Now growing: ", "이제 심을 수 있어요: ") + string.Join(", ", names.ConvertAll(n => ItemNames.Display(n))) + "</color>" : "";
     }
 
     // 내일 예고: 아침 요약 끝에 '오늘 할 만한 일'을 보여줘서 하루 더 하고 싶게 만듭니다.
@@ -778,26 +787,26 @@ public class DataManager : MonoBehaviour
         if (MarketState.IsMarketDay(today)) tips.Add(Loc.T("Market day! Stalls, rare goods and haggling at the market", "장날! 장터에 노점과 귀한 물건, 흥정이 있어요"));
         else if (MarketState.DaysUntilMarket(today) == 1) tips.Add(Loc.T("Tomorrow is market day", "내일은 장날이에요"));
         int ripe = farm.RipeNow();
-        if (ripe > 0) tips.Add($"{ripe} crop(s) ripe in the field");
+        if (ripe > 0) tips.Add(Loc.T($"{ripe} crop(s) ripe in the field", $"밭에 다 익은 작물 {ripe}개"));
         int tomorrow = farm.RipeningTomorrow(season);
-        if (tomorrow > 0) tips.Add($"{tomorrow} crop(s) ripen tomorrow if you water them today");
+        if (tomorrow > 0) tips.Add(Loc.T($"{tomorrow} crop(s) ripen tomorrow if you water them today", $"오늘 물을 주면 내일 익을 작물 {tomorrow}개"));
         int toNext = SeasonSystem.HeartToNext(heart, season);
         if (toNext > 0 && !(demoMode && season == Season.Winter && story.IsUnlocked("demo_end")))
-            tips.Add($"{SeasonSystem.Name(season + 1)} comes at {toNext} more Heart");
+            tips.Add(Loc.T($"{SeasonSystem.Name(season + 1)} comes at {toNext} more Heart", $"{SeasonSystem.Name(season + 1)}까지 마음 {toNext}"));
         foreach (VillagerDef v in VillagerDB.All)
         {
             VillagerProgress p = story.Get(v.id);
             if (!p.met || p.wishIndex >= v.wishes.Length) continue;
             bool ready = true;
             foreach (var it in v.wishes[p.wishIndex].items) if (!HasItem(it.itemName, it.count)) { ready = false; break; }
-            if (ready) { tips.Add($"You have everything for {v.name}'s wish"); break; }
+            if (ready) { tips.Add(Loc.T($"You have everything for {v.name}'s wish", $"{v.name}의 소원 물건을 다 가지고 있어요")); break; }
         }
-        if (StarHill.IsUnlocked && !raining && !snowing) tips.Add("Clear skies tonight: the star vine will grow");
+        if (StarHill.IsUnlocked && !raining && !snowing) tips.Add(Loc.T("Clear skies tonight: the star vine will grow", "오늘 밤 맑음: 별 덩굴이 자라요"));
         int left = AlbumDB.PerSeason - Album.Count(story, season);
-        if (left > 0) tips.Add($"{left} {SeasonSystem.Name(season)} photo(s) left in your album [P]");
+        if (left > 0) tips.Add(Loc.T($"{left} {SeasonSystem.Name(season)} photo(s) left in your album [P]", $"앨범에 남은 {SeasonSystem.Name(season)} 사진 {left}장 [P]"));
         if (tips.Count == 0) return "";
         if (tips.Count > 3) tips.RemoveRange(3, tips.Count - 3);
-        return "\n\n<size=24><color=#ffd84a>Today</color>  " + string.Join("  ·  ", tips) + "</size>";
+        return "\n\n<size=24><color=#ffd84a>" + Loc.T("Today", "오늘") + "</color>  " + string.Join("  ·  ", tips) + "</size>";
     }
 
     // ===================================================================
@@ -819,7 +828,7 @@ public class DataManager : MonoBehaviour
         else
         {
             // 게임오버 패널이 없는 씬(집, 시장 등)에서는 잠시 후 자동 재시작
-            HUD.Announce("<size=42>You collapsed...</size>\n\nTake better care of yourself.\nWaking up from your last save.", 3f);
+            HUD.Announce(Loc.T("<size=42>You collapsed...</size>\n\nTake better care of yourself.\nWaking up from your last save.", "<size=42>쓰러졌어요...</size>\n\n몸을 좀 더 아껴 줘요.\n마지막 저장에서 다시 깨어나요."), 3f);
             Time.timeScale = 0f;
             StartCoroutine(AutoRestart());
         }
@@ -855,7 +864,7 @@ public class DataManager : MonoBehaviour
         Time.timeScale = 1f;
         IsGameOver = false;
         NewGameState();
-        HUD.Toast("Started a new game.");
+        HUD.Toast(Loc.T("Started a new game.", "새 게임을 시작했어요."));
         SceneManager.LoadScene("Farm");
     }
 
@@ -865,7 +874,7 @@ public class DataManager : MonoBehaviour
         IsGameOver = false;
         if (LoadGame())
         {
-            HUD.Toast("Loaded the last save.");
+            HUD.Toast(Loc.T("Loaded the last save.", "마지막 저장을 불러왔어요."));
             SceneManager.LoadScene("Farm");
         }
     }
