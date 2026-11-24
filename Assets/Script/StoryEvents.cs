@@ -163,8 +163,8 @@ public static class StoryEvents
         ForestState forest = story.forest;
         if (forest != null && forest.open)
         {
-            string tree = forest.treeAwake ? Loc.T("The old tree is awake.", "큰 나무가 깨어났어요.") : Loc.T("The old tree is asleep.", "큰 나무는 잠들어 있어요.");
-            sb.Append("<color=#9dff9d>" + Loc.T("Forest", "숲") + "</color>  " + Loc.T("clearings restored", "되살린 빈터") + $" {forest.Restored}/{ForestState.Clearings}   <size=22>{tree}</size>\n");
+            string tree = forest.treeAwake ? Loc.T("The old zelkova is awake.", "느티나무가 깨어났어요.") : Loc.T("The old zelkova is asleep.", "느티나무는 잠들어 있어요.");
+            sb.Append("<color=#9dff9d>" + Loc.T("Forest", "뒷산") + "</color>  " + Loc.T("clearings restored", "되살린 빈터") + $" {forest.Restored}/{ForestState.Clearings}   <size=22>{tree}</size>\n");
         }
         HillState sunset = story.hill;
         if (sunset != null && sunset.open)

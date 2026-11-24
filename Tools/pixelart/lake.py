@@ -15,7 +15,10 @@ import items
 
 ROOT = os.path.join(os.path.dirname(__file__), '..', '..')
 MAP_PATH = os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'lake.json')
-SAND = ramp('#7a5a34', '#b8925a', '#dcbc82', '#f2dcaa')
+SAND = ramp('#4e4026', '#6e5e3a', '#8c7a50', '#ac9a6c')       # muddy reservoir bank (not a beach)
+RIPRAP = ramp('#3a3834', '#5e5a52', '#868076', '#b0a99c')     # stone facing of the embankment
+CONCRETE = ramp('#5c5c58', '#8a8a84', '#b2b2aa', '#d8d8d0')
+LOTUS = ramp('#1e4a26', '#2e6c32', '#4c9444', '#86c068')
 GRASS = {'spring': P['leaf'], 'summer': SUMMER, 'autumn': AUTUMN_GRASS, 'winter': SNOW}
 
 
@@ -84,6 +87,60 @@ def steps():
     for (cx, cy, rx) in [(8, 6, 7), (17, 12, 7.5), (10, 19, 7)]:
         c.ellipse(cx, cy, rx, 3.6, P['stone'])
         c.line(cx - rx + 2, cy - 2, cx + rx - 3, cy - 2, P['stone'][3])
+    c.outline()
+    return c
+
+
+def intake_tower():
+    """The reservoir's concrete intake tower: a squat square shaft in the water, a railed deck and a
+    small control hut with a blue tin roof on top."""
+    c = Canvas(48, 72)
+    moss = ramp('#2a3a30', '#3e5446', '#566e5c', '#7a9480')
+    c.box(10, 30, 37, 68, CONCRETE)
+    for y in range(36, 66, 8):
+        c.line(11, y, 36, y, CONCRETE[1])                     # pour lines
+    c.rect(24, 30, 25, 66, CONCRETE[1])                       # the shaft's corner
+    c.rect(10, 62, 37, 68, moss[1]); c.rect(10, 61, 37, 61, moss[2])   # wet, mossy foot at the waterline
+    c.box(4, 25, 43, 30, CONCRETE)                            # the deck
+    for x in range(5, 44, 5):
+        c.line(x, 18, x, 25, P['metal'][1])                    # railing posts
+    c.line(4, 18, 43, 18, P['metal'][2])
+    c.box(14, 10, 33, 25, CONCRETE)                           # the control hut
+    c.poly([(11, 11), (23.5, 2), (36, 11)], kv_roof(), light_axis='x')
+    c.rect(21, 16, 26, 24, P['wood'][1])                       # door
+    c.rect(28, 14, 31, 17, P['water'][3])                      # a small window
+    c.outline()
+    return c
+
+
+def kv_roof():
+    import kvillage
+    return kvillage.ROOF
+
+
+def platform_parasol():
+    """The fishing platform's big striped parasol (on the far edge, over the water)."""
+    c = Canvas(40, 40)
+    cloth = ramp('#1e4a8a', '#2a64b4', '#4a8ad8', '#8ab8f0')
+    c.line(20, 14, 20, 38, P['metal'][1])
+    c.poly([(2, 16), (20, 4), (38, 16)], cloth, light_axis='x')
+    for k, x in enumerate(range(4, 37, 6)):
+        if k % 2:
+            c.line(x, 15, 20, 5, P['white'][2])
+    c.outline()
+    return c
+
+
+def lotus(seed, flower):
+    """A lotus leaf (yeon-ip) floating flat, sometimes a pink flower standing up from it."""
+    c = Canvas(18, 16)
+    c.ellipse(9, 10, 8, 4.5, LOTUS)
+    c.ellipse(9, 10, 3, 1.6, [LOTUS[3]] * 4, flat=True)
+    c.set(9, 6, None); c.set(10, 7, None)
+    if flower:
+        c.line(13, 9, 13, 5, LOTUS[1])
+        c.ellipse(13, 3.5, 2.6, 2.4, P['jam'])
+        c.set(13, 2, P['white'][3])
     c.outline()
     return c
 
@@ -306,34 +363,48 @@ def lake(season='summer'):
                 bg.c.line(x, y, x + 5, y, water[3])
     # lily pads in the coves (not in winter)
     if season != 'winter':
-        for (c, r) in [(9, 12), (11, 13), (22, 5), (24, 6), (14, 12), (21, 8)]:
-            if is_water(c, r):
-                lp = Canvas(11, 7)
-                lp.ellipse(5.5, 3.5, 5, 3, P['leaf'])
-                lp.set(5, 1, None); lp.set(6, 2, None)
-                if (c + r) % 2:
-                    lp.set(8, 2, P['jam'][3]); lp.set(8, 3, P['jam'][2])
-                bg.prop(lp, x=c * 32 + 16, y=r * 32 + 22)
+        for (c, r) in [(9, 12), (11, 13), (10, 13), (22, 5), (14, 12), (21, 8), (12, 12), (20, 7)]:
+            if is_water(c, r) and at(c, r) != 'p':
+                for k in range(2):
+                    bg.prop(lotus(c + r + k, season == 'summer' and (c + k) % 3 == 0),
+                            x=c * 32 + 8 + k * 14, y=r * 32 + 14 + k * 9)
+
+    # the embankment: the south shore (between the water and the dam-top path) is faced with stone
+    if season != 'winter':
+        for y in range(H * 32):
+            for x in range(W * 32):
+                c, r = x // 32, y // 32
+                if not (15 * 32 - 4 <= y < 16 * 32 + 2) or not (7 <= c <= 20) or at(c, r) == 'p':
+                    continue                                   # one straight band along the dam-top path
+                if water_v(x, y) <= 0.5 and at(c, 15) in ',.f':
+                    k = _h(x // 5 + (y // 4) % 2 * 2, y // 4, 13)
+                    col = RIPRAP[1 + k % 3]
+                    if (x + (y // 4) * 3) % 5 == 0 or y % 4 == 0:
+                        col = RIPRAP[0]
+                    bg.c.set(x, y, col)
 
     # paths (inset from non-path sides, like the forest)
-    rects = []
-    for r in range(H):
-        for c in range(W):
-            if at(c, r) == '=':
-                inset = lambda dc, dr: 0 if at(c + dc, r + dr) == '=' else 5
-                rects.append((c * 32 + inset(-1, 0), r * 32 + inset(0, -1), c * 32 + 31 - inset(1, 0), r * 32 + 31 - inset(0, 1)))
-    B.path(bg, rects, B.TRAMPLED if season == 'winter' else P['tan'])
+    trail = B.smooth_tile_mask(bg, W, H, lambda c, r: at(c, r) == '=', threshold=0.66, wobble=0.18)
+    B.path_mask(bg, trail, B.TRAMPLED if season == 'winter' else P['tan'])
 
     # the pier: planks across, posts at the sides
     for r in range(H):
         for c in range(W):
-            if at(c, r) == 'p' or (at(c, r) == 'F' and is_water(c, r)):
+            if at(c, r) == 'p':                          # a narrow plank walk on drums
                 for y in range(r * 32, r * 32 + 32):
-                    for x in range(c * 32 + 3, c * 32 + 29):
-                        k2 = (y - r * 32) % 8
-                        bg.c.set(x, y, P['woodlight'][1] if k2 == 7 else P['woodlight'][2] if k2 else P['woodlight'][3])
-                for x in (c * 32 + 2, c * 32 + 28):
-                    bg.c.rect(x, r * 32 + 26, x + 2, r * 32 + 31, P['wood'][1])
+                    for x in range(c * 32 + 7, c * 32 + 25):
+                        k2 = (y - r * 32) % 6
+                        bg.c.set(x, y, P['woodlight'][1] if k2 == 5 else P['woodlight'][2] if k2 else P['woodlight'][3])
+                for x in (c * 32 + 5, c * 32 + 25):
+                    bg.c.rect(x, r * 32 + 20, x + 2, r * 32 + 27, ramp('#16305a', '#24508a', '#3a74b8', '#6aa0e0')[1])
+            elif at(c, r) == 'F' and is_water(c, r):     # the fishing platform (jwa-dae): a square deck, a parasol behind
+                bg.prop(platform_parasol(), x=c * 32 + 16, y=r * 32 + 2)
+                for y in range(r * 32 - 4, r * 32 + 32):
+                    for x in range(c * 32 - 6, c * 32 + 38):
+                        edge = y in (r * 32 - 4, r * 32 + 31) or x in (c * 32 - 6, c * 32 + 37)
+                        k2 = (x - c * 32) % 7
+                        bg.c.set(x, y, P['wood'][1] if edge else P['woodlight'][1] if k2 == 6 else P['woodlight'][2])
+                bg.c.rect(c * 32 - 6, r * 32 + 32, c * 32 + 37, r * 32 + 34, P['water'][0])
 
     # props: trees, bushes, reeds, the willow and its bench, the stepping stones
     for r in range(H):
@@ -342,7 +413,9 @@ def lake(season='summer'):
             jx = _h(c, r, 1) % 9 - 4
             if ch == '#':
                 v = _h(c, r, 2) % 5
-                t = forest.pine() if v < 1 else forest.oak(season, v)
+                t = forest.pine(_h(c, r, 6) % 5) if v < 2 else forest.oak(season, v)
+                if season == 'winter' and v < 2:
+                    t = snow_cap(t)
                 bg.prop(t, x=c * 32 + 16 + jx, y=r * 32 + 31 + (_h(c, r, 4) % 3))
             elif ch == 'B':
                 bg.prop(forest.bush(season), x=c * 32 + 16, y=r * 32 + 28)
@@ -355,6 +428,7 @@ def lake(season='summer'):
                 bg.prop(bench(), x=c * 32 + 16, y=r * 32 + 28)
             elif ch == 'X':
                 bg.prop(steps(), x=c * 32 + 16, y=r * 32 + 30)
+    bg.prop(intake_tower(), x=25 * 32 + 8, y=6 * 32 + 30)                # in the east cove
 
     # flowers and seasonal details on grass
     for r in range(H):

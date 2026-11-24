@@ -1,5 +1,9 @@
 """The forest (map stage 3), drawn from Assets/Resources/Maps/forest.json.
 
+Direction C: a Korean back hill (dwit-san). Red pines and oaks, stepping stones over the stream, a stone
+cairn or two, a mountain spring with a bamboo spout and a gourd dipper, and in the middle the old village
+zelkova (dang-san-namu) on its round stone platform.
+
 Two versions of every season: full colour, and a deep gray one. The game shows the gray forest and
 lets the colour back in through a round mask over each clearing you restore, and everywhere once the
 old tree wakes up. The gray is a fixed per-colour mapping, so it stays a limited pixel-art palette.
@@ -8,6 +12,7 @@ import json
 import os
 
 import backgrounds as B
+import kvillage as K
 from backgrounds import BG, SNOW, SUMMER, AUTUMN_GRASS, AUT_ORANGE, AUT_RED, AUT_YELLOW, snow_cap
 from pixel import Canvas, P, ramp, darken_c, lighten_c
 from PIL import Image
@@ -63,9 +68,61 @@ def oak(season, variant=0):
     return c
 
 
-def pine():
-    import world
-    return world.tree(PINE)
+def pine(seed=0):
+    """Korean red pine: reddish trunk, flat layered needles (same tree as the farm's back hill)."""
+    return K.pine(seed=seed, h=56 + seed % 3 * 4)
+
+
+def cairn(seed=0):
+    """A little stone cairn (dol-tap): flat stones stacked by passing hikers."""
+    c = Canvas(26, 34)
+    c.shadow(13, 31, 11, 2.5)
+    y, w = 29, 10.5
+    k = 0
+    while w > 2.5:
+        dx = (_h(seed, k, 7) % 3) - 1
+        h = 2.6 if w > 5 else 2.2
+        c.ellipse(13 + dx, y, w, h, K.WALLSTONE)
+        c.set(int(13 + dx - w * 0.4), int(y - 1), K.WALLSTONE[3])
+        y -= h * 1.7
+        w -= 1.3 + (_h(seed, k, 3) % 2) * 0.5
+        k += 1
+    c.outline()
+    return c
+
+
+def flat_stone(w=9, h=5, seed=0):
+    c = Canvas(int(w * 2 + 4), int(h * 2 + 4))
+    c.ellipse(w + 2, h + 2, w, h, K.WALLSTONE)
+    c.set(int(w - 1), int(h), K.WALLSTONE[3]); c.set(int(w), int(h), K.WALLSTONE[3])
+    c.outline()
+    return c
+
+
+def gourd_dipper():
+    """A half-gourd dipper (ba-ga-ji) left upside down on a rock by the spring."""
+    c = Canvas(26, 18)
+    c.shadow(13, 15, 11, 2)
+    c.ellipse(13, 12, 10, 4, K.WALLSTONE)
+    c.ellipse(13, 8, 6.5, 4.5, P['tan'])
+    c.set(10, 6, P['tan'][3]); c.set(11, 5, P['tan'][3])
+    c.outline()
+    return c
+
+
+def bamboo_spout():
+    """A split-bamboo pipe sticking out of the bank, dribbling into the spring."""
+    c = Canvas(30, 30)
+    bam = ramp('#3e5a1c', '#5e8a2a', '#88b444', '#c4e07a')
+    c.ellipse(8, 22, 8, 6, K.WALLSTONE)                       # the rocks it comes out of
+    c.ellipse(4, 18, 4, 4, K.WALLSTONE)
+    c.thick_line(8, 18, 24, 14, bam[2], 3)
+    c.line(9, 17, 24, 13, bam[3])
+    c.set(15, 16, bam[0]); c.set(16, 16, bam[0])                # a joint
+    c.outline()
+    for y in range(17, 29, 2):                                  # the dribble (not outlined)
+        c.set(25, y, P['water'][3] if y % 4 else P['water'][2])
+    return c
 
 
 def bush(season):
@@ -92,34 +149,46 @@ def mushroom_ring(bg, x, y):
 
 # ----------------------------------------------------------------- runtime sprites
 def old_tree(awake):
-    """The old tree at the heart of the forest: gray and leafless asleep, blossoming awake."""
+    """The old village zelkova (dang-san-namu) on its round stone platform: gray and bare asleep,
+    a huge fresh-green crown awake."""
     c = Canvas(104, 120)
-    c.shadow(52, 115, 40, 5)
-    bark = P['wood'] if awake else ramp('#2a2a30', '#45454e', '#66666f', '#8c8c96')
-    # roots and trunk
-    c.poly([(36, 116), (42, 70), (62, 70), (68, 116)], bark, light_axis='x')
-    for (x0, x1) in [(36, 22), (40, 30), (64, 80), (68, 86)]:
-        c.thick_line(x0, 110, x1, 117, bark[1], 3)
-    for y in range(76, 112, 7):
-        c.line(46, y, 48, y + 4, bark[1]); c.line(56, y + 3, 58, y + 7, bark[1])
-    c.ellipse(52, 92, 4, 6, [bark[0]] * 4, flat=True)            # a hollow
-    # main limbs
-    for (x0, y0, x1, y1) in [(46, 74, 18, 40), (58, 74, 88, 38), (52, 72, 52, 20), (40, 60, 26, 58), (64, 58, 80, 60)]:
-        c.thick_line(x0, y0, x1, y1, bark[2], 5)
+    c.shadow(52, 115, 46, 5)
+    # the round stone platform (chuk-dae) people sit on in summer
+    c.ellipse(52, 108, 46, 9, K.WALLSTONE)
+    for y in range(104, 117, 4):
+        for x in range(10, 96, 9):
+            xx = x + (y // 4 % 2) * 4
+            if c.get(xx, y) is not None and c.get(xx, y - 3) is not None:
+                c.line(xx, y, xx, y + 2, K.WALLSTONE[1])
+    c.ellipse(52, 102, 42, 6, K.WALLSTONE, flat=True)          # the flat top
+    c.ellipse(52, 102, 38, 4.5, [K.WALLSTONE[2]] * 4, flat=True)
+    bark = ramp('#3a2a22', '#5a4434', '#7a604a', '#9a806a') if awake else ramp('#2a2a30', '#45454e', '#66666f', '#8c8c96')
+    # a short, very thick trunk that splits low into a vase of limbs
+    c.poly([(36, 104), (40, 74), (64, 74), (68, 104)], bark, light_axis='x')
+    for (x0, x1) in [(36, 28), (40, 34), (64, 72), (68, 78)]:
+        c.thick_line(x0, 100, x1, 105, bark[1], 3)
+    for y in range(78, 100, 6):
+        c.line(44, y, 45, y + 4, bark[1]); c.line(58, y + 2, 59, y + 6, bark[1])
+    for (x0, y0, x1, y1, w) in [(44, 76, 14, 36, 6), (60, 76, 92, 34, 6), (50, 74, 40, 18, 5), (56, 74, 66, 16, 5),
+                                (46, 66, 26, 54, 4), (60, 66, 80, 52, 4)]:
+        c.thick_line(x0, y0, x1, y1, bark[2], w)
     if awake:
-        leaf = P['leaf']
-        for (cx, cy, rx, ry) in [(22, 42, 20, 16), (82, 40, 20, 16), (52, 24, 28, 20), (36, 54, 16, 10), (70, 54, 16, 10), (52, 44, 22, 14)]:
+        leaf = ramp('#1e4a1c', '#2f6e2a', '#4a9a38', '#8ccc58')
+        for (cx, cy, rx, ry) in [(16, 40, 16, 14), (88, 38, 16, 14), (34, 24, 22, 16), (70, 22, 22, 16),
+                                 (52, 14, 22, 12), (52, 40, 30, 16), (28, 54, 16, 9), (76, 54, 16, 9)]:
             c.ellipse(cx, cy, rx, ry, leaf)
-        for k in range(70):                                         # blossoms, scattered by hand-picked hash
-            x, y = 6 + _h(k, 1, 5) % 94, 6 + _h(k, 2, 5) % 58
-            if c.get(x, y) is not None:
-                col = BLOSSOM if k % 3 else P['white']
-                c.set(x, y, col[3]); c.set(x + 1, y, col[2]); c.set(x, y + 1, col[2])
+        for k in range(90):                                     # sunlit leaf clusters, hand-picked by hash
+            x, y = 4 + _h(k, 1, 5) % 96, 4 + _h(k, 2, 5) % 56
+            if c.get(x, y) is not None and c.get(x, y - 2) is not None:
+                c.set(x, y, leaf[3]); c.set(x + 1, y, leaf[2])
+        for (x, y) in [(30, 60), (70, 60), (52, 56)]:           # limbs showing through underneath
+            c.set(x, y, bark[1])
     else:
         gray = ramp('#3a3a42', '#5a5a64', '#7c7c86', '#a2a2ac')
-        for (x0, y0, x1, y1) in [(18, 40, 6, 26), (18, 40, 22, 18), (88, 38, 98, 24), (88, 38, 80, 16), (52, 20, 40, 4), (52, 20, 64, 6)]:
-            c.thick_line(x0, y0, x1, y1, gray[1], 3)
-        for (x, y) in [(10, 28), (24, 20), (96, 26), (78, 18), (42, 6), (62, 8)]:   # a few dry leaves
+        for (x0, y0, x1, y1) in [(14, 36, 4, 22), (14, 36, 20, 16), (92, 34, 100, 20), (92, 34, 84, 14),
+                                 (40, 18, 32, 4), (66, 16, 74, 4), (26, 54, 14, 50), (80, 52, 94, 48)]:
+            c.thick_line(x0, y0, x1, y1, gray[1], 2)
+        for (x, y) in [(8, 24), (22, 18), (98, 22), (80, 14), (34, 6), (72, 6)]:
             c.set(x, y, gray[3]); c.set(x + 1, y + 1, gray[2])
     c.outline()
     return c
@@ -419,14 +488,9 @@ def forest(season='spring'):
                 bg.c.set(x, y, col[1]); bg.c.set(x + 1, y, col[3]); bg.c.set(x + 3, y + 2, col[1])
 
     # paths (one mask so junctions don't get seams), the bridge planks go on top later
-    rects = []
-    for r in range(H):
-        for c in range(W):
-            if base(c, r) in '=b':
-                # pull the path in from sides that aren't path, so floor shows along its edges
-                inset = lambda dc, dr: 0 if base(c + dc, r + dr) in '=b' else 5
-                rects.append((c * 32 + inset(-1, 0), r * 32 + inset(0, -1), c * 32 + 31 - inset(1, 0), r * 32 + 31 - inset(0, 1)))
-    B.path(bg, rects, B.TRAMPLED if season == 'winter' else P['tan'])
+    # a narrow mountain trail: rounded corners, a slightly uneven edge (floor shows along both sides)
+    trail = B.smooth_tile_mask(bg, W, H, lambda c, r: base(c, r) in '=b', threshold=0.78, wobble=0.22)
+    B.path_mask(bg, trail, B.TRAMPLED if season == 'winter' else P['tan'])
 
     # the stream: a smooth meander through its tiles (banks, water, a few ripples), a plank bridge on the path
     water = P['water'] if season != 'winter' else B.ICE
@@ -459,17 +523,26 @@ def forest(season='spring'):
             bg.c.line(ox, y, ox + 5, y, water[3])
     for r in range(H):
         for c in range(W):
-            if at(c, r) == 'b':                               # wooden bridge planks across the path
-                for y in range(r * 32 - 2, r * 32 + 34):
-                    for x in range(c * 32, c * 32 + 32):
-                        k = (x - c * 32) % 8
-                        bg.c.set(x, y, P['woodlight'][1] if k == 7 else P['woodlight'][2] if k else P['woodlight'][3])
+            if at(c, r) == 'b':                               # stepping stones (jing-geom-da-ri) across the stream
+                for k, (dx, dy) in enumerate(((7, 9), (23, 14), (10, 25))):
+                    st = flat_stone(7 + _h(c, r, k) % 3, 4, k)
+                    if season == 'winter':
+                        st = snow_cap(st)
+                    bg.prop(st, x=c * 32 + dx, y=r * 32 + dy + 5)
     # the spring: a small round pool
     ws = [(c, r) for r in range(H) for c in range(W) if at(c, r) == 'w']
     if ws:
         px = (min(c for c, _ in ws) + max(c for c, _ in ws) + 1) * 16
         py = (min(r for _, r in ws) + max(r for _, r in ws) + 1) * 16
         B.pond(bg, px, py, 26, 20, frozen=(season == 'winter'))
+        for k in range(14):                                   # a rim of rocks around the mountain spring
+            import math
+            a = k / 14 * 2 * math.pi
+            if 0.9 < a < 2.2:
+                continue                                      # leave the front open (that's where you drink)
+            bg.prop(flat_stone(5 + _h(k, 3) % 3, 3, k), x=int(px + math.cos(a) * 29), y=int(py + math.sin(a) * 22) + 4)
+        bg.prop(bamboo_spout(), x=px - 20, y=py - 14)
+        bg.prop(gourd_dipper(), x=px + 34, y=py + 14)
     # stones around the spring
     for (c, r) in [(16, 10), (17, 10), (18, 11), (18, 12), (16, 13), (17, 13), (15, 11)]:
         x, y = c * 32 + 16, r * 32 + 24
@@ -508,10 +581,15 @@ def forest(season='spring'):
             jx = _h(c, r, 1) % 9 - 4
             if ch == '#':
                 v = _h(c, r, 2) % 5
-                t = pine() if v < 2 else oak(season, v)
+                t = pine(_h(c, r, 6) % 5) if v < 3 else oak(season, v)
+                if season == 'winter' and v < 3:
+                    t = snow_cap(t)
                 bg.prop(t, x=c * 32 + 16 + jx, y=r * 32 + 31 + (_h(c, r, 4) % 3))
             elif ch == 'B':
-                bg.prop(bush(season), x=c * 32 + 16, y=r * 32 + 28)
+                if (c + r) % 3 == 1:
+                    bg.prop(cairn(c * 7 + r), x=c * 32 + 16, y=r * 32 + 30)
+                else:
+                    bg.prop(bush(season), x=c * 32 + 16, y=r * 32 + 28)
     return bg.image()
 
 

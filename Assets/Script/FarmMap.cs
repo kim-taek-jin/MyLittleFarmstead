@@ -361,7 +361,7 @@ public static class FarmMap
     static string ArriveLine(string to) => to == "Lake"
             ? Loc.T("The reeds rustle as you pass. The air smells of water.", "지나가는 걸음에 갈대가 사각거려요. 물 냄새가 나요.")
         : to == "Hill" ? Loc.T("Leaves crunch underfoot. The path climbs toward the sunset.", "발밑에서 낙엽이 바스락거려요. 길이 노을 쪽으로 올라가요.")
-        : Loc.T("The air turns cool and green. You step into the forest.", "공기가 서늘하고 푸르러져요. 숲으로 들어섰어요.");
+        : Loc.T("The air turns cool and green. You step into the forest.", "공기가 서늘하고 푸르러져요. 뒷산 숲길로 들어섰어요.");
 
     public static readonly Vector2 DefaultCottageBase = new Vector2(-7.75f, -3.85f);
     public static Vector2 CottageBase => Anchor("cottage", DefaultCottageBase);

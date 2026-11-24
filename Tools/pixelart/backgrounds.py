@@ -149,6 +149,30 @@ def path(bg, rects, r=P['tan']):
             for x in range(x0, x1 + 1):
                 if 0 <= x < bg.w and 0 <= y < bg.h:
                     mask.add((x, y))
+    path_mask(bg, mask, r)
+
+
+def smooth_tile_mask(bg, W, H, is_on, threshold=0.5, wobble=0.0):
+    """Pixel mask from a tile test, bilinear between tile centres: round corners instead of stair steps."""
+    M = [[1.0 if is_on(c, r) else 0.0 for c in range(W)] for r in range(H)]
+
+    def mv(c, r):
+        return M[min(H - 1, max(0, r))][min(W - 1, max(0, c))]
+    out = set()
+    for y in range(H * 32):
+        for x in range(W * 32):
+            u, v = (x + 0.5) / 32 - 0.5, (y + 0.5) / 32 - 0.5
+            c0, r0 = int(u // 1), int(v // 1)
+            fu, fv = u - c0, v - r0
+            val = (mv(c0, r0) * (1 - fu) * (1 - fv) + mv(c0 + 1, r0) * fu * (1 - fv)
+                   + mv(c0, r0 + 1) * (1 - fu) * fv + mv(c0 + 1, r0 + 1) * fu * fv)
+            t = threshold + (wobble * ((_h(x // 6, y // 6, 11) % 100) / 100 - 0.5) if wobble else 0)
+            if val > t:
+                out.add((x, y))
+    return out
+
+
+def path_mask(bg, mask, r=P['tan']):
     # wobble: nibble the outermost pixel row in short runs
     nibble = set()
     for (x, y) in mask:

@@ -443,7 +443,7 @@ HILL.rows.forEach((row, r) => [...row].forEach((ch, c) => HCELLS.push([HILL.orig
 const HTREES = HCELLS.filter(([, , ch]) => 'APK'.includes(ch)).slice(0, 6);            // [x, y, kind] in map order
 const HRACK = HCELLS.filter(([, , ch]) => ch === 'D').map(([x, y]) => [x + 0.5, y + 0.5])[0];
 const HBENCH = (() => { const v = HCELLS.filter(([, , ch]) => ch === 'V'); return [(Math.min(...v.map(c => c[0])) + Math.max(...v.map(c => c[0])) + 1) / 2, v[0][1] + 0.5]; })();
-const hillBlocked = (cx, cy) => '#CAPKDRB'.includes(hillAt(cx, cy));
+const hillBlocked = (cx, cy) => '#CAPKDRBG'.includes(hillAt(cx, cy));
 const FRUIT = { A: 'Apple', P: 'Pear', K: 'Persimmon' }, KIND = { A: 'apple', P: 'pear', K: 'persimmon' };
 const forestBlocked = (cx, cy) => { const ch = forestAt(cx, cy); return '#~wOB'.includes(ch) || (ch === 'L' && !debrisCleared(cx, cy)); };
 const mapAt = (cx, cy) => { const c = cx - MAP.originX, r = MAP.originY - 1 - cy; return r >= 0 && r < MAP.height && c >= 0 && c < MAP.width ? MAP.rows[r][c] : ' '; };
@@ -785,7 +785,7 @@ function forestMorning(lines) {
     if (f.sapling[i] >= 0 && f.sapling[i] < 3 && (f.watered[i] || G.raining)) { f.sapling[i]++; if (f.sapling[i] === 3) { delta += 3; lines.push(`Color came back to the ${CLEARING_NAMES[i]} clearing  [#9dff9d]+3[/]`); } }
     f.watered[i] = false;
   }
-  if (!f.treeAwake && forestRestored() === 3) { f.treeAwake = true; delta += 5; lines.push('The old tree woke up  [#9dff9d]+5[/]'); headline = '[#ffb6d0]Overnight, the old tree in the forest woke up.[/]\nColor is flowing back into the whole forest.'; }
+  if (!f.treeAwake && forestRestored() === 3) { f.treeAwake = true; delta += 5; lines.push('The old zelkova woke up  [#9dff9d]+5[/]'); headline = '[#ffb6d0]Overnight, the old zelkova on the back hill woke up.[/]\nColor is flowing back into the whole forest.'; }
   rollForage();
   return [delta, headline];
 }
@@ -1069,7 +1069,7 @@ function interact() {
     if (near(HRACK[0], HRACK[1], 1.5)) { useRack(); return; }
     if (near(HBENCH[0], HBENCH[1], 1.6)) {
       const [layers, caption] = panoramaLayers(); panel = { kind: 'view', layers, caption };
-      if (Hl().restDay !== G.day) { Hl().restDay = G.day; changeHeart(2, 'You sat on the hill and watched the sun go down over the valley.'); }
+      if (Hl().restDay !== G.day) { Hl().restDay = G.day; changeHeart(2, 'You sat in the pavilion and watched the sun go down over the valley.'); }
     }
     return;
   }
@@ -1086,7 +1086,7 @@ function interact() {
       else toast("You drink from the spring. It's cool and clear.");
       return;
     }
-    if (near(FTREE[0], FTREE[1] + 0.6, 2.2)) { toast(F().treeAwake ? 'The old tree hums softly. Petals drift down around you.' : `The old tree is asleep, gray to its roots. Maybe if the clearings around it came back to life... (${forestRestored()}/3)`, 4); return; }
+    if (near(FTREE[0], FTREE[1] + 0.6, 2.2)) { toast(F().treeAwake ? 'The old zelkova rustles softly. Its shade is cool and green.' : `The old zelkova on its stone platform is asleep, gray to its roots. Maybe if the clearings around it came back to life... (${forestRestored()}/3)`, 4); return; }
     return;
   }
   if (G.scene === 'farm') {
@@ -1204,7 +1204,7 @@ function drawPanel() {
     VILLAGERS.forEach(v => { const p = villagerProgress(v.id); L.push(`${v.name}  [${'#'.repeat(p.wish)}${'-'.repeat(3 - p.wish)}]  ` + (!p.met ? '[#a0a0a0]not met yet[/]' : p.wish >= 3 ? '[#9dff9d]colors restored[/]' : 'wants ' + itemsText(v.wishes[p.wish].items))); });
     if (sp.found) L.push(`\n[#ff9fc4]Spirit[/]  ${FORM_NAMES[spiritForm(sp)]}   [#ffd84a]Sun ${sp.pts[0]}[/]  [#9dff9d]Earth ${sp.pts[1]}[/]  [#8fd0ff]Water ${sp.pts[2]}[/]  [#ff9fc4]Bloom ${sp.pts[3]}[/]   forms ${sp.forms.length}/10`);
     L.push(`\n[#ffb6d0]Kindness[/] ${s.kindness}/60  ` + (unlocked('starhill') ? `Star Hill open on clear nights. Stars caught: ${s.starsTotal}` : `(sharing box today ${S().shareDay === G.day ? S().sharedToday : 0}/5)`));
-    if (s.forest.open) L.push(`[#9dff9d]Forest[/]  clearings restored ${forestRestored()}/3   ${s.forest.treeAwake ? 'The old tree is awake.' : 'The old tree is asleep.'}`);
+    if (s.forest.open) L.push(`[#9dff9d]Forest[/]  clearings restored ${forestRestored()}/3   ${s.forest.treeAwake ? 'The old zelkova is awake.' : 'The old zelkova is asleep.'}`);
     if (s.hill.open) L.push(`[#ffb070]Sunset Hill[/]  orchard trees revived ${hillRevived()}/6   on the drying rack: ${s.hill.drying.length}`);
     if (s.lake.open) L.push(`[#8fd0ff]Lake[/]  clear parts ${lakeZones()}/3   fish released ${s.lake.released}` + (lakeClear() ? '   Fireflies come out at night.' : `   ${LAKE_THRESH.find(t => s.lake.clarity < t) - s.lake.clarity} more to clear the next part`));
     L.push(`\n[#8fb8ff]Fish caught[/]  ` + ['Minnow', 'Carp', 'Golden Koi', 'Bluegill', 'Moonfin', 'Glassfish'].map(f => s.fish[f] ? `${f} x${s.fish[f]}` : '???').join('   '));
@@ -1673,7 +1673,7 @@ function promptText() {
     if (G.px < -7) return 'Back to the farm';
   } else if (G.scene === 'sunset') {
     if (near(HRACK[0], HRACK[1], 1.5)) { const h = Hl(); return h.drying.some(d => G.day >= d) ? '[E] Take down the dried persimmons' : has('Persimmon') ? '[E] Hang your persimmons' : h.drying.length ? 'The persimmons are drying' : 'A drying rack for persimmons'; }
-    if (near(HBENCH[0], HBENCH[1], 1.6)) return '[E] Sit and look out over the valley';
+    if (near(HBENCH[0], HBENCH[1], 1.6)) return '[E] Sit in the pavilion and look out over the valley';
     const i = HTREES.findIndex(([x, y]) => near(x + 0.5, y + 0.5, 1.6));
     if (i >= 0) { const t = Hl().tree[i], k = HTREES[i][2]; return t === 0 ? `An old ${KIND[k]} tree: prune it (Scythe)` : t === 1 ? `Give it Earth's Breath` : hasFruit(i) ? `Click to pick ${FRUIT[k]}` : `${KIND[k] === 'apple' ? 'An' : 'A'} ${KIND[k]} tree, growing fruit`; }
     if (G.py < HILB.y0 + 2) return 'Back to the farm ↓';
@@ -1684,7 +1684,7 @@ function promptText() {
     if (G.px < LAKB.x0 + 2) return '← Back to the farm';
   } else if (G.scene === 'forest') {
     if (near(FSEAT[0], FSEAT[1], 1.3)) return F().restDay === G.day ? '[E] Drink from the spring' : '[E] Rest by the spring';
-    if (near(FTREE[0], FTREE[1] + 0.6, 2.2)) return '[E] Look at the old tree';
+    if (near(FTREE[0], FTREE[1] + 0.6, 2.2)) return '[E] Look at the old zelkova';
     const i = FSPOTS.findIndex(([x, y]) => near(x + 0.5, y + 0.5, 1.6));
     if (i >= 0) { const st = F().sapling[i]; return st < 0 ? (has('Acorn') ? 'Click the pebble ring with the Acorn to plant it' : 'An empty spot. Acorns turn up on the forest floor.') : st >= 3 ? 'This clearing is full of color' : F().watered[i] ? `Sapling ${st}/3: watered today` : `Sapling ${st}/3: water it today`; }
     if (G.px > FORB.x1 - 2) return 'Back to the farm →';

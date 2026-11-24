@@ -69,7 +69,7 @@ public class ForestArea : MonoBehaviour
         float delta = 0f;
         if (CheckOpen(data))
             headline = Loc.T("<color=#ffb6d0>The gray thorns on the forest path have bloomed into an arch.</color>\nThe forest west of the farm is open.",
-                "<color=#ffb6d0>숲길을 막던 잿빛 가시덤불이 꽃 아치로 피어났어요.</color>\n농장 서쪽 숲이 열렸어요.");
+                "<color=#ffb6d0>숲길을 막던 잿빛 가시덤불이 꽃 아치로 피어났어요.</color>\n농장 서쪽 뒷산 길이 열렸어요.");
         ForestState f = data.story.forest;
         if (!f.open) return 0f;
 
@@ -82,9 +82,9 @@ public class ForestArea : MonoBehaviour
         if (woke)
         {
             delta += AwakeHeart;
-            lines.Add(Loc.T("The old tree woke up", "늙은 나무가 깨어났어요") + $"  <color=#9dff9d>+{AwakeHeart:0}</color>");
-            headline = Loc.T("<color=#ffb6d0>Overnight, the old tree in the forest woke up.</color>\nColor is flowing back into the whole forest.",
-                "<color=#ffb6d0>밤사이 숲의 늙은 나무가 깨어났어요.</color>\n숲 전체에 빛깔이 다시 흘러들어요.");
+            lines.Add(Loc.T("The old zelkova woke up", "늙은 느티나무가 깨어났어요") + $"  <color=#9dff9d>+{AwakeHeart:0}</color>");
+            headline = Loc.T("<color=#ffb6d0>Overnight, the old zelkova on the back hill woke up.</color>\nColor is flowing back into the whole forest.",
+                "<color=#ffb6d0>밤사이 뒷산의 늙은 느티나무가 깨어났어요.</color>\n뒷산 전체에 빛깔이 다시 흘러들어요.");
         }
         EnsureForage(data, day, true);
         return delta;
@@ -283,10 +283,10 @@ public class ForestArea : MonoBehaviour
         if (Vector2.Distance(p, treeBase + new Vector2(0f, 0.6f)) < 2.2f)
         {
             if (state.treeAwake)
-                HUD.Toast(Loc.T("The old tree hums softly. Petals drift down around you.", "늙은 나무가 나직이 웅웅거려요. 꽃잎이 주위로 흩날려요."), 3f);
+                HUD.Toast(Loc.T("The old zelkova rustles softly. Its shade is cool and green.", "늙은 느티나무가 나직이 바스락거려요. 그늘이 서늘하고 푸르러요."), 3f);
             else
-                HUD.Toast(Loc.T($"The old tree is asleep, gray to its roots. Maybe if the clearings around it came back to life... ({state.Restored}/3)",
-                    $"늙은 나무가 뿌리까지 잿빛으로 잠들어 있어요. 주위 빈터들이 살아나면 혹시... ({state.Restored}/3)"), 4f);
+                HUD.Toast(Loc.T($"The old zelkova on its stone platform is asleep, gray to its roots. Maybe if the clearings around it came back to life... ({state.Restored}/3)",
+                    $"돌 축대 위 늙은 느티나무가 뿌리까지 잿빛으로 잠들어 있어요. 주위 빈터들이 살아나면 혹시... ({state.Restored}/3)"), 4f);
         }
     }
 }

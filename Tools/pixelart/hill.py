@@ -54,6 +54,64 @@ def overlook_bench():
     return c
 
 
+GIWA = ramp('#22262c', '#363c44', '#4e565f', '#76808a')       # dark roof tiles
+PILLAR = ramp('#4a1c14', '#6e2c1e', '#94422c', '#b8664a')     # oxblood pillars
+DAN_GREEN = ramp('#0e3a30', '#1a5a48', '#2e8466', '#6ab89a')  # dancheong green under the eaves
+
+
+def pavilion(width=192):
+    """A small jeong-ja: stone plinth, raised wooden floor, four oxblood pillars, a dancheong band and a
+    wide tiled roof with upturned corners. Seen from the front, a little from above."""
+    import kvillage as K
+    h = 96
+    c = Canvas(width, h)
+    c.shadow(width / 2, h - 3, width / 2 - 4, 3)
+    # plinth (stone) and the raised floor (maru)
+    c.box(10, h - 16, width - 11, h - 4, K.WALLSTONE)
+    for x in range(14, width - 12, 11):
+        c.line(x, h - 14, x, h - 5, K.WALLSTONE[1])
+    c.box(6, h - 24, width - 7, h - 16, P['woodlight'])
+    for x in range(8, width - 8, 7):
+        c.line(x, h - 23, x, h - 17, P['woodlight'][1])
+    # pillars on round foundation stones
+    posts = [18, 18 + (width - 36) // 3, width - 18 - (width - 36) // 3, width - 18]
+    for x in posts:
+        c.box(x - 3, 34, x + 3, h - 24, PILLAR)
+        c.ellipse(x, h - 23, 5, 2, K.WALLSTONE)
+    # a low railing (nan-gan) between the outer pillars, open in the middle where you step up
+    for (x0, x1) in [(posts[0], posts[1]), (posts[2], posts[3])]:
+        c.rect(x0 + 3, h - 34, x1 - 3, h - 32, P['wood'][2])
+        for x in range(x0 + 7, x1 - 3, 6):
+            c.line(x, h - 32, x, h - 25, P['wood'][1])
+    # the roof: dark tiles, a long eave line that lifts at both corners, a short ridge on top
+    def eave_y(x):
+        t = abs(x - width / 2) / (width / 2)
+        return 36 - int(14 * t ** 3)
+    for x in range(0, width):
+        top = 8 + int(abs(x - width / 2) / (width / 2) * 10)
+        for y in range(top, eave_y(x)):
+            k = (x // 4) % 2
+            col = GIWA[2] if k else GIWA[1]
+            if y > eave_y(x) - 4:
+                col = GIWA[0]                                   # the tile ends along the eave
+            elif y < top + 2:
+                col = GIWA[3]
+            c.set(x, y, col)
+    for x in range(int(width * 0.26), int(width * 0.74)):       # ridge
+        c.set(x, 6, GIWA[3]); c.set(x, 7, GIWA[2]); c.set(x, 8, GIWA[1])
+    for (x, d) in ((int(width * 0.26), -1), (int(width * 0.74), 1)):
+        c.set(x + d, 5, GIWA[3]); c.set(x + 2 * d, 4, GIWA[3])
+    # dancheong: a green band under the eave with small red and white marks
+    for x in range(10, width - 10):
+        y0 = eave_y(x)
+        for y in range(y0, y0 + 4):
+            c.set(x, y, DAN_GREEN[2] if y < y0 + 3 else DAN_GREEN[0])
+        if x % 9 == 0:
+            c.set(x, y0 + 1, P['red'][2]); c.set(x + 1, y0 + 1, P['white'][3])
+    c.outline()
+    return c
+
+
 # ----------------------------------------------------------------- runtime sprites: orchard trees and the rack
 def _trunk(c, bark):
     c.shadow(24, 53, 16, 3)
@@ -192,32 +250,46 @@ def hill(season='autumn'):
         B.patch(bg, x, y, rx, ry, patch_col, grass, grass)
 
     # paths
-    rects = []
-    for r in range(H):
-        for c in range(W):
-            if at(c, r) in '=':
-                inset = lambda dc, dr: 0 if at(c + dc, r + dr) in '=S' else 5
-                rects.append((c * 32 + inset(-1, 0), r * 32 + inset(0, -1), c * 32 + 31 - inset(1, 0), r * 32 + 31 - inset(0, 1)))
-    B.path(bg, rects, B.TRAMPLED if season == 'winter' else P['tan'])
+    trail = B.smooth_tile_mask(bg, W, H, lambda c, r: at(c, r) in '=SV', threshold=0.62, wobble=0.16)
+    B.path_mask(bg, trail, B.TRAMPLED if season == 'winter' else P['tan'])
 
     # terrace cliffs: a grass lip on top, then an earth face with stones; stone stairs in the gaps
     for r in range(H):
         for c in range(W):
             ch = at(c, r)
-            if ch == 'C':
+            if ch == 'C':                                   # a dry-stone terrace wall (seok-chuk)
+                import kvillage as K
                 for y in range(r * 32, r * 32 + 32):
+                    dy = y - r * 32
+                    course = (dy - 5) // 6
                     for x in range(c * 32, c * 32 + 32):
-                        dy = y - r * 32
                         if dy < 4:
                             col = grass[1] if season != 'winter' else SNOW[3]
-                        elif dy < 6:
-                            col = CLIFF[0]
-                        elif dy > 28:
-                            col = CLIFF[0]
+                        elif dy < 5 or dy > 29:
+                            col = K.WALLSTONE[0]
                         else:
-                            col = CLIFF[2] if (x // 9 + dy // 7) % 4 else CLIFF[1]
-                            if (x * 5 + y * 3) % 41 == 0:
-                                col = CLIFF[3]
+                            # stones of uneven width per course; each stone gets its own tone
+                            shift = _h(course, r, 2) % 13
+                            xs = x + shift
+                            k = 0
+                            edge = 0
+                            while True:                               # walk the course to find this stone
+                                w = 7 + _h(k, course * 31 + r, 4) % 8
+                                if xs < edge + w:
+                                    break
+                                edge += w; k += 1
+                            sx, sw = xs - edge, w
+                            yin = (dy - 5) % 6
+                            tone = _h(k, course * 17 + r, 8) % 3
+                            col = [K.WALLSTONE[2], K.WALLSTONE[2], K.WALLSTONE[1]][tone]
+                            if yin == 0 or sx == 0:
+                                col = K.WALLSTONE[3]
+                            if yin == 5:
+                                col = K.WALLSTONE[0]
+                            elif sx == sw - 1:
+                                col = K.WALLSTONE[1] if tone != 2 else K.WALLSTONE[0]
+                            if (x * 5 + y * 3) % 67 == 0 and season != 'winter':
+                                col = P['leaf2'][1]                    # a little moss
                         bg.c.set(x, y, col)
             elif ch == 'S':
                 for y in range(r * 32, r * 32 + 32):
@@ -232,16 +304,29 @@ def hill(season='autumn'):
             jx = _h(c, r, 1) % 9 - 4
             if ch == '#':
                 v = _h(c, r, 2) % 5
-                t = forest.pine() if v < 2 else forest.oak(season, v)
+                t = forest.pine(_h(c, r, 6) % 5) if v < 2 else forest.oak(season, v)
+                if season == 'winter' and v < 2:
+                    t = snow_cap(t)
                 bg.prop(t, x=c * 32 + 16 + jx, y=r * 32 + 31 + (_h(c, r, 4) % 3))
             elif ch == 'B':
                 bg.prop(forest.bush(season), x=c * 32 + 16, y=r * 32 + 28)
-    rc = [c for c in range(W) if at(c, 1) == 'R']
-    if rc:
-        bg.prop(railing((max(rc) - min(rc) + 1) * 32), x=(min(rc) + max(rc) + 1) * 16, y=1 * 32 + 26)
-    vc = [c for c in range(W) if at(c, 2) == 'V']
-    if vc:
-        bg.prop(overlook_bench(), x=(min(vc) + max(vc) + 1) * 16, y=2 * 32 + 28)
+    # the railing runs along the top edge on both sides of the pavilion
+    runs, cur = [], []
+    for c in range(W):
+        if at(c, 1) == 'R':
+            cur.append(c)
+        elif cur:
+            runs.append(cur); cur = []
+    if cur:
+        runs.append(cur)
+    for rc in runs:
+        bg.prop(railing(len(rc) * 32), x=(rc[0] + rc[-1] + 1) * 16, y=1 * 32 + 26)
+    gc = [c for c in range(W) if at(c, 1) == 'G']
+    if gc:
+        pv = pavilion(len(gc) * 32)
+        if season == 'winter':
+            pv = snow_cap(pv)
+        bg.prop(pv, x=(gc[0] + gc[-1] + 1) * 16, y=2 * 32 + 31)
 
     # flowers / leaves on the terraces
     for r in range(H):

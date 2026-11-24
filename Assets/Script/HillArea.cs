@@ -79,7 +79,7 @@ public class HillArea : MonoBehaviour
         Vector2 center = map.Center;
         AreaKit.Ground(transform, "bg_hill_gray", center, -50, SpriteMaskInteraction.None, material);
         colorGround = AreaKit.Ground(transform, "bg_hill", center, -49, SpriteMaskInteraction.VisibleInsideMask, material);
-        AreaKit.Walls(transform, map, ch => "#CAPKDRB".IndexOf(ch) >= 0);
+        AreaKit.Walls(transform, map, ch => "#CAPKDRBG".IndexOf(ch) >= 0);
 
         foreach (var cell in map.Cells())
         {
@@ -215,7 +215,7 @@ public class HillArea : MonoBehaviour
         if (Vector2.Distance(p, bench) < 1.6f)
         {
             PixelHUD.ShowView(PanoramaLayers(data), PanoramaCaption(data));
-            if (state.Rest(Today)) data.ChangeHeart(RestHeart, Loc.T("You sat on the hill and watched the sun go down over the valley.", "언덕에 앉아 골짜기 너머로 해가 지는 걸 바라봤어요."));
+            if (state.Rest(Today)) data.ChangeHeart(RestHeart, Loc.T("You sat in the pavilion and watched the sun go down over the valley.", "정자에 앉아 골짜기 너머로 해가 지는 걸 바라봤어요."));
         }
     }
 
@@ -281,7 +281,7 @@ public class HillArea : MonoBehaviour
     {
         StoryState s = data.story;
         string Mark(bool done, string name) => done ? $"<color=#ffd84a>{name}</color>" : $"<color=#8a8a92>{name}</color>";
-        return Mark(FieldCleared(data) >= 0.75f, Loc.T("The plots", "텃밭")) + "   " + Mark(s.forest.treeAwake, Loc.T("The forest", "숲")) + "   " +
+        return Mark(FieldCleared(data) >= 0.75f, Loc.T("The plots", "텃밭")) + "   " + Mark(s.forest.treeAwake, Loc.T("The forest", "뒷산")) + "   " +
                Mark(s.lake.IsClear, Loc.T("The lake", "저수지")) + "   " + Mark(s.AllVillagersRestored, Loc.T("The village", "마을")) + "   " +
                Mark(s.hill.AllRevived, Loc.T("The orchard", "과수원")) + "   " + Mark(s.IsUnlocked("ending_seen"), Loc.T("Home", "집"));
     }

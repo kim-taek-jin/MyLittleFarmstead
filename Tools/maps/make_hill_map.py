@@ -6,7 +6,8 @@ In Unity it lives inside the Farm scene too (x 310..340), like the forest and th
 
   #  trees (blocking)    .  grass    =  path    C  terrace cliff (blocking)    S  stone stairs
   A / P / K  an old apple / pear / persimmon tree (its trunk blocks)   D  persimmon drying rack (blocking)
-  V  the overlook bench (sit here: E)    R  wooden railing at the top (blocking)    B  bush (blocking)
+  V  the pavilion floor (sit here: E)    G  the pavilion's back and front posts (blocking)
+  R  wooden railing at the top (blocking)    B  bush (blocking)
 """
 import json, os
 
@@ -60,9 +61,13 @@ for (c, r, ch) in [(7, 18, 'A'), (18, 17, 'A'), (12, 12, 'P'), (24, 11, 'P'), (9
     put(c, r, ch)
 put(17, 7, 'D')
 
-# the overlook at the top: a railing along the edge and a bench looking out
+# the overlook at the top: a railing along the edge, and a pavilion (jeong-ja) to sit in and look out.
+# G = the pavilion's back and its two front posts (blocking); you step up onto its floor at V.
 for c in range(6, 24):
     put(c, 1, 'R')
+for c in range(12, 18):
+    put(c, 1, 'G')
+put(12, 2, 'G'); put(17, 2, 'G')
 put(14, 2, 'V'); put(15, 2, 'V')
 for (c, r) in [(4, 3), (25, 2), (3, 12), (26, 16), (4, 17)]:
     if g[r][c] == '.':
