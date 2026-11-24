@@ -16,8 +16,8 @@ public static class ItemNames
         { "Carrot", "당근" }, { "Potato", "감자" }, { "Corn", "옥수수" }, { "Strawberry", "딸기" }, { "Sunflower", "해바라기" },
         { "Pumpkin", "호박" }, { "Apple", "사과" }, { "Pear", "배" }, { "Persimmon", "감" }, { "Dried Persimmon", "곶감" },
         // 음식
-        { "Bread", "빵" }, { "Roasted Carrot", "당근 구이" }, { "Baked Potato", "군감자" }, { "Corn Soup", "옥수수 수프" },
-        { "Strawberry Jam", "딸기잼" }, { "Grilled Fish", "생선구이" }, { "Carrot Cake", "당근 케이크" }, { "Pumpkin Pie", "호박 파이" },
+        { "Rice Cake", "떡" }, { "Roasted Carrot", "당근 구이" }, { "Baked Potato", "군감자" }, { "Steamed Corn", "찐 옥수수" },
+        { "Strawberry Jam", "딸기잼" }, { "Grilled Fish", "생선구이" }, { "Carrot Pancake", "당근전" }, { "Pumpkin Porridge", "호박죽" },
         { "Spring Greens", "봄나물 무침" }, { "Morel Soup", "곰보버섯 수프" },
         // 채집물
         { "Wild Garlic", "달래" }, { "Fern Sprout", "고사리" }, { "Morel", "곰보버섯" }, { "Wild Raspberry", "산딸기" }, { "Watercress", "물냉이" },

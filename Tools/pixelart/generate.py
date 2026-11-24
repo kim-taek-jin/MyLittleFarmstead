@@ -20,6 +20,7 @@ import preview  # noqa: E402
 import backgrounds  # noqa: E402
 import farmmap  # noqa: E402
 import kfarm  # noqa: E402
+import kmarket  # noqa: E402
 import forest  # noqa: E402
 import lake  # noqa: E402
 import hill  # noqa: E402
@@ -202,7 +203,7 @@ def main():
     # ---- heart seasons: seasonal backgrounds and world-object variants ----
     for season in backgrounds.SEASONS:
         bgs.append(export_image('World', f'bg_farm_{season}', backgrounds.farm(season)))
-        bgs.append(export_image('World', f'bg_market_{season}', backgrounds.market(season)))
+        bgs.append(export_image('World', f'bg_market_{season}', kmarket.market(season)))
     larch = [(90, 58, 16, 255), (160, 102, 26, 255), (216, 160, 48, 255), (246, 212, 112, 255)]
     exported['World'].append(export('World', 'tree_autumn', world.tree(larch)))
     for name in ('tree', 'rock', 'well', 'storage_box', 'exit_sign'):
@@ -262,7 +263,15 @@ def main():
     exported['World'].append(export('World', 'cottage_color_winter', kfarm.cottage_color('winter')))
     export_image('World', 'bg_home_gray', forest.gray(backgrounds.home()))
     for name, fn in backgrounds.BACKGROUNDS.items():
-        bgs.append(export_image('World', name, fn()))
+        bgs.append(export_image('World', name, kmarket.market('summer') if name == 'bg_market' else fn()))
+    # ---- the country market (direction C): market-day stalls, the haggler, the corner-store auntie,
+    #      a Korean well and a red pine for the gatherable tree (these replace the older sprites) ----
+    export_image('World', 'market_fair', kmarket.market_fair())
+    for name, fn in (('haggler', kmarket.haggler), ('merchant', kmarket.merchant), ('well', kmarket.well), ('tree', kmarket.tree)):
+        exported['World'].append(export('World', name, fn()))
+    exported['World'].append(export('World', 'tree_autumn', kmarket.tree()))
+    for name, fn in (('well_winter', kmarket.well), ('tree_winter', kmarket.tree)):
+        exported['World'].append(export('World', name, backgrounds.snow_cap(fn())))
 
     # folder metas (Resources/, Resources/PixelArt/, groups)
     for p in [os.path.join(ROOT, 'Assets', 'Resources'), OUT] + [os.path.join(OUT, g) for g in exported]:

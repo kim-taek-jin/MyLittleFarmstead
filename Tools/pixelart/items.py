@@ -508,3 +508,66 @@ ITEMS.update({
     'pumpkin_seed': lambda: seed_packet(pumpkin, P['orange']),
     'pumpkin_pie': pumpkin_pie,
 })
+
+
+# ---------------- Korean country food (direction C) ----------------
+def rice_cake():
+    """Garae-tteok: white rice-cake sticks on a plate, a few cut rounds."""
+    c = Canvas(S, S)
+    c.ellipse(16, 23, 14, 5, P['woodlight'], flat=False)      # a wooden tray, so the white rice cake stands out
+    c.ellipse(16, 22, 10, 3, P['woodlight'], flat=True)
+    tteok = [(150, 146, 140, 255), (206, 202, 192, 255), (238, 236, 228, 255), (255, 255, 252, 255)]
+    for (y, x0, x1) in ((15, 6, 24), (18, 8, 26)):
+        c.ellipse((x0 + x1) / 2, y, (x1 - x0) / 2, 2.6, tteok)
+        c.set(x1 - 1, y, tteok[1]); c.set(x0 + 1, y - 1, tteok[3])
+    for (x, y) in ((9, 21), (15, 22), (21, 21)):          # cut rounds in front
+        c.ellipse(x, y, 2.4, 1.6, tteok, flat=True)
+        c.set(x, y, tteok[3])
+    c.outline()
+    return c
+
+
+def steamed_corn():
+    """A cob steamed in its husk, a pinch of salt, steam rising."""
+    c = corn()
+    for x in (8, 15, 23):
+        c.set(x, 5, (255, 255, 255, 150)); c.set(x + 1, 3, (255, 255, 255, 110)); c.set(x, 1, (255, 255, 255, 80))
+    return c
+
+
+def carrot_pancake():
+    """Danggeun-jeon: a round golden pancake with carrot and green onion bits."""
+    c = Canvas(S, S)
+    plate(c, cy=23)
+    jeon = [(120, 72, 20, 255), (196, 132, 46, 255), (232, 184, 86, 255), (250, 224, 140, 255)]
+    c.ellipse(16, 18, 11, 5.5, jeon)
+    for (x, y) in ((10, 17), (14, 16), (19, 18), (22, 16), (13, 20), (17, 19)):
+        c.set(x, y, P['orange'][2]); c.set(x + 1, y, P['orange'][1])
+    for (x, y) in ((12, 18), (20, 17), (16, 15)):
+        c.set(x, y, P['leaf'][2])
+    c.line(8, 21, 23, 21, jeon[1])
+    c.outline()
+    return c
+
+
+def pumpkin_porridge():
+    """Hobak-juk: golden porridge with little white rice-cake balls."""
+    c = Canvas(S, S)
+    bowl(c, [(150, 86, 18, 255), (216, 150, 40, 255), (244, 196, 80, 255), (255, 228, 150, 255)])
+    for (x, y) in ((11, 15), (15, 14), (19, 15), (22, 14)):
+        c.set(x, y, P['white'][3]); c.set(x + 1, y, P['white'][2])
+    c.set(16, 16, P['leaf'][2])
+    for x in (10, 16, 21):
+        c.set(x, 9, (255, 255, 255, 140)); c.set(x + 1, 7, (255, 255, 255, 110)); c.set(x, 5, (255, 255, 255, 80))
+    c.outline()
+    return c
+
+
+for _old in ('bread', 'corn_soup', 'carrot_cake', 'pumpkin_pie'):
+    ITEMS.pop(_old, None)
+ITEMS.update({
+    'rice_cake': rice_cake,
+    'steamed_corn': steamed_corn,
+    'carrot_pancake': carrot_pancake,
+    'pumpkin_porridge': pumpkin_porridge,
+})

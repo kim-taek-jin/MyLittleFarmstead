@@ -8,7 +8,8 @@ public class Villager : MonoBehaviour
 
     public static Villager InRange { get; private set; }
 
-    private VillagerDef def;
+    // 주민 정의는 언어가 바뀌면 다시 만들어지므로, 매번 ID로 찾습니다.
+    private VillagerDef def => VillagerDB.Get(villagerId);
     private SpriteRenderer body;
     private SpriteRenderer bubble;
     private int shownStage = -1;
@@ -47,7 +48,6 @@ public class Villager : MonoBehaviour
 
         Villager v = go.AddComponent<Villager>();
         v.villagerId = def.id;
-        v.def = def;
         v.body = sr;
         v.bubble = bsr;
         v.baseScale = characterScale;
@@ -92,7 +92,6 @@ public class Villager : MonoBehaviour
 
     void Update()
     {
-        if (def == null) def = VillagerDB.Get(villagerId);
         if (def == null || Data == null) return;
         RefreshVisual();
 
@@ -141,14 +140,14 @@ public class Villager : MonoBehaviour
 
         if (HasItems(wish))
         {
-            HUD.Ask(def.name, $"{wish.request}\n<color=#ffd84a>Give {VillagerDB.ItemsText(wish.items)}?</color>", portrait,
-                () => Fulfill(wish), null, "Give", "Not yet");
+            HUD.Ask(def.name, $"{wish.request}\n<color=#ffd84a>" + Loc.T($"Give {VillagerDB.ItemsText(wish.items)}?", $"{VillagerDB.ItemsText(wish.items)}을(를) 줄까요?") + "</color>", portrait,
+                () => Fulfill(wish), null, Loc.T("Give", "주기"), Loc.T("Not yet", "아직"));
         }
         else
         {
             string idle = useSeason ? seasonLine : def.grayIdle[idleLine % def.grayIdle.Length];
             idleLine++;
-            HUD.Say(def.name, new[] { idle, wish.request + $"\n<color=#c8c0b0>(Needs: {VillagerDB.ItemsText(wish.items)})</color>" }, portrait);
+            HUD.Say(def.name, new[] { idle, wish.request + "\n<color=#c8c0b0>" + Loc.T($"(Needs: {VillagerDB.ItemsText(wish.items)})", $"(필요한 것: {VillagerDB.ItemsText(wish.items)})") + "</color>" }, portrait);
         }
     }
 
@@ -168,22 +167,23 @@ public class Villager : MonoBehaviour
         foreach (var s in wish.rewardItems)
         {
             Data.AddItem(s.itemName, s.count);
-            rewards.Add($"{s.itemName} x{s.count}");
+            rewards.Add($"{ItemNames.Display(s.itemName)} x{s.count}");
         }
         if (Data.story.Unlock(wish.unlock) && !string.IsNullOrEmpty(wish.unlockText)) rewards.Add(wish.unlockText);
-        if (wish.heart > 0f) Data.ChangeHeart(wish.heart, $"{def.name} smiled.");
+        if (wish.heart > 0f) Data.ChangeHeart(wish.heart, Loc.T($"{def.name} smiled.", $"{def.name}의 얼굴에 웃음이 번졌어요."));
 
         RefreshVisual();
         var lines = new System.Collections.Generic.List<string> { wish.thanks };
-        if (rewards.Count > 0) lines.Add("<color=#9dff9d>Received:</color> " + string.Join(", ", rewards));
+        if (rewards.Count > 0) lines.Add("<color=#9dff9d>" + Loc.T("Received:", "받은 것:") + "</color> " + string.Join(", ", rewards));
         if (Restored) lines.Add(def.restored);
 
         HUD.Say(def.name, lines.ToArray(), body.sprite, () =>
         {
             if (Restored)
             {
-                HUD.Announce($"<size=40>{def.name}'s colors have returned!</size>\n\n{Data.story.RestoredVillagers} / {VillagerDB.All.Count} villagers restored", 5f);
-                Data.ChangeHeart(5f, "The village feels a little brighter.");
+                HUD.Announce("<size=40>" + Loc.T($"{def.name}'s colors have returned!", $"{def.name}에게 색이 돌아왔어요!") + "</size>\n\n"
+                    + Loc.T($"{Data.story.RestoredVillagers} / {VillagerDB.All.Count} villagers restored", $"색을 되찾은 주민 {Data.story.RestoredVillagers} / {VillagerDB.All.Count}"), 5f);
+                Data.ChangeHeart(5f, Loc.T("The village feels a little brighter.", "마을이 조금 더 환해진 것 같아요."));
             }
             StoryEvents.CheckEnding();
         });
@@ -193,7 +193,7 @@ public class Villager : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         InRange = this;
-        if (def != null) HUD.Toast($"Press E to talk to {def.name}.", 2f);
+        if (def != null) HUD.Toast(Loc.T($"Press E to talk to {def.name}.", $"E: {def.name}와(과) 이야기하기"), 2f);
     }
 
     void OnTriggerExit2D(Collider2D other)

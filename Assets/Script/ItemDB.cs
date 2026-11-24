@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 // 아이템 분류
@@ -38,6 +38,11 @@ public static class ItemDB
     private static readonly Dictionary<string, string> aliases = new Dictionary<string, string>
     {
         { "Potaoto Seed", "Potato Seed" },
+        // 방향 C: 한국 시골 음식으로 바뀐 이름 (예전 저장 파일, 씬의 상점 목록)
+        { "Bread", "Rice Cake" },
+        { "Corn Soup", "Steamed Corn" },
+        { "Carrot Cake", "Carrot Pancake" },
+        { "Pumpkin Pie", "Pumpkin Porridge" },
     };
 
     static ItemDB()
@@ -63,10 +68,10 @@ public static class ItemDB
 
         // --- 음식 ---
         Register(new ItemDef { name = "Apple", category = ItemCategory.Food, sellPrice = 8, hunger = 20f, thirst = 5f, color = new Color(0.85f, 0.15f, 0.15f) });
-        Register(new ItemDef { name = "Bread", category = ItemCategory.Food, sellPrice = 10, hunger = 40f, color = new Color(0.85f, 0.7f, 0.45f) });
+        Register(new ItemDef { name = "Rice Cake", category = ItemCategory.Food, sellPrice = 10, hunger = 40f, color = new Color(0.95f, 0.92f, 0.85f), description = "Chewy rice cake from the mill. Fills you up." });
         Register(new ItemDef { name = "Roasted Carrot", category = ItemCategory.Food, sellPrice = 60, hunger = 35f, heart = 2f, iconFallback = "Carrot", color = new Color(0.8f, 0.4f, 0.1f) });
         Register(new ItemDef { name = "Baked Potato", category = ItemCategory.Food, sellPrice = 110, hunger = 50f, heart = 2f, iconFallback = "Potato", color = new Color(0.65f, 0.45f, 0.25f) });
-        Register(new ItemDef { name = "Corn Soup", category = ItemCategory.Food, sellPrice = 130, hunger = 30f, thirst = 35f, heart = 3f, iconFallback = "Corn", color = new Color(0.95f, 0.8f, 0.4f) });
+        Register(new ItemDef { name = "Steamed Corn", category = ItemCategory.Food, sellPrice = 130, hunger = 30f, thirst = 35f, heart = 3f, iconFallback = "Corn", color = new Color(0.95f, 0.8f, 0.4f), description = "Corn steamed in its husk, sweet and salty. A taste of summer." });
         Register(new ItemDef { name = "Strawberry Jam", category = ItemCategory.Food, sellPrice = 420, hunger = 20f, heart = 6f, iconFallback = "Strawberry", color = new Color(0.7f, 0.1f, 0.25f) });
 
         // --- 자원 ---
@@ -86,14 +91,14 @@ public static class ItemDB
         Register(new ItemDef { name = "Grilled Fish", category = ItemCategory.Food, sellPrice = 90, hunger = 40f, heart = 2f, color = new Color(0.7f, 0.4f, 0.2f) });
 
         // --- 주민 보상 / 새 작물 ---
-        Register(new ItemDef { name = "Carrot Cake", category = ItemCategory.Food, sellPrice = 250, hunger = 30f, heart = 6f, color = new Color(0.9f, 0.6f, 0.3f), description = "Rosa's recipe. Sweet enough to make anyone smile." });
+        Register(new ItemDef { name = "Carrot Pancake", category = ItemCategory.Food, sellPrice = 250, hunger = 30f, heart = 6f, color = new Color(0.9f, 0.6f, 0.3f), description = "Grandma Boksun's recipe. Crisp at the edges, warm in the middle." });
         Register(new ItemDef { name = "Sunflower Seed", category = ItemCategory.Seed, sellPrice = 15, cropId = "sunflower", color = new Color(1f, 0.85f, 0.2f) });
         Register(new ItemDef { name = "Sunflower", category = ItemCategory.Crop, sellPrice = 90, color = new Color(1f, 0.85f, 0.2f) });
 
         // --- 가을(결실의 계절) ---
         Register(new ItemDef { name = "Pumpkin Seed", category = ItemCategory.Seed, sellPrice = 20, cropId = "pumpkin", color = new Color(1f, 0.6f, 0.2f) });
         Register(new ItemDef { name = "Pumpkin", category = ItemCategory.Crop, sellPrice = 160, hunger = 10f, color = new Color(1f, 0.55f, 0.15f) });
-        Register(new ItemDef { name = "Pumpkin Pie", category = ItemCategory.Food, sellPrice = 320, hunger = 45f, heart = 4f, color = new Color(0.9f, 0.55f, 0.25f), description = "A golden autumn pie. Tastes like a good year." });
+        Register(new ItemDef { name = "Pumpkin Porridge", category = ItemCategory.Food, sellPrice = 320, hunger = 45f, heart = 4f, color = new Color(0.9f, 0.55f, 0.25f), description = "Golden pumpkin porridge with little rice cake balls. Tastes like a good year." });
 
         // --- 별의 언덕 ---
         Register(new ItemDef { name = "Compost", category = ItemCategory.Special, sellPrice = 0, color = new Color(0.4f, 0.3f, 0.2f), description = "Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life." });

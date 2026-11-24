@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
@@ -49,16 +49,16 @@ public class CraftingManager : MonoBehaviour
     {
         // 주민에게 배우는 레시피 (해금 전에는 목록에 안 보임)
         yield return Make("Copper Watering Can", 1, "", new ItemInfo("Watering Can", 1), new ItemInfo("Stone", 10), new ItemInfo("Wood", 5)).Locked("recipe_copper_can");
-        yield return Make("Carrot Cake", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Bread", 1)).Locked("recipe_carrot_cake");
+        yield return Make("Carrot Pancake", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Potato", 1)).Locked("recipe_carrot_cake");
         yield return Make("Grilled Fish", 1, "Campfire", new ItemInfo("Minnow", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Minnow)");
         yield return Make("Grilled Fish", 2, "Campfire", new ItemInfo("Carp", 1), new ItemInfo("Wood", 1)).Locked("fishing", "Recipe_Grilled Fish (Carp)");
-        yield return Make("Pumpkin Pie", 1, "Campfire", new ItemInfo("Pumpkin", 1), new ItemInfo("Bread", 1)).Locked("season_autumn");
+        yield return Make("Pumpkin Porridge", 1, "Campfire", new ItemInfo("Pumpkin", 1), new ItemInfo("Rice Cake", 1)).Locked("season_autumn");
         yield return Make("Mattock", 1, "", new ItemInfo("Wood", 5), new ItemInfo("Stone", 5));
         yield return Make("Spring Greens", 1, "", new ItemInfo("Wild Garlic", 1), new ItemInfo("Fern Sprout", 1)).Locked("forest_open");
         yield return Make("Morel Soup", 1, "Campfire", new ItemInfo("Morel", 2), new ItemInfo("Wild Garlic", 1)).Locked("forest_open");
         yield return Make("Roasted Carrot", 1, "Campfire", new ItemInfo("Carrot", 2), new ItemInfo("Wood", 1));
         yield return Make("Baked Potato", 1, "Campfire", new ItemInfo("Potato", 1), new ItemInfo("Wood", 1));
-        yield return Make("Corn Soup", 1, "Campfire", new ItemInfo("Corn", 2));
+        yield return Make("Steamed Corn", 1, "Campfire", new ItemInfo("Corn", 2));
         yield return Make("Strawberry Jam", 1, "Campfire", new ItemInfo("Strawberry", 3));
     }
 

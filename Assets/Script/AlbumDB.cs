@@ -52,7 +52,7 @@ public static class AlbumDB
         Add(Season.Autumn, "a_koi", "Shining Koi", "Catch a Golden Koi.", "fish", "Golden Koi", "Items/golden_koi");
         Add(Season.Autumn, "a_restored", "Colors Restored", "Bring all the color back to a villager.", "restored", null, "Villagers/rosa_3");
         Add(Season.Autumn, "a_shooting_star", "Shooting Star", "Catch a Star Fragment.", "star", null, "Items/star_fragment");
-        Add(Season.Autumn, "a_pie", "Pie for Two", "Bake a Pumpkin Pie.", "craft", "Pumpkin Pie", "Items/pumpkin_pie");
+        Add(Season.Autumn, "a_pie", "Porridge for Two", "Cook Pumpkin Porridge.", "craft", "Pumpkin Porridge", "Items/pumpkin_porridge");
     }
 
     public static List<PhotoDef> ForSeason(Season s) => All.FindAll(p => p.season == s);
