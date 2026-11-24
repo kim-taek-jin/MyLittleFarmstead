@@ -322,6 +322,7 @@ public class DataManager : MonoBehaviour
     public void AddGold(int amount)
     {
         gold = Mathf.Max(0, gold + amount);
+        if (amount > 0) Sfx.Play("coin", 1f, 0.1f);
         UpdateGoldUI();
         if (gold >= 1000) Album.Report("gold1000");
     }
@@ -334,6 +335,7 @@ public class DataManager : MonoBehaviour
         if (inventory.ContainsKey(itemName)) inventory[itemName] += count;
         else inventory.Add(itemName, count);
         InventoryChanged();
+        Sfx.Play("pickup", 0.8f, 0.12f);
 
         if ((itemName == "Sunshine Shard" || itemName == "Earth's Breath") && !story.spirit.found) Spirit.Discover();
     }
@@ -438,6 +440,7 @@ public class DataManager : MonoBehaviour
     {
         float before = heart;
         heart = Mathf.Clamp(heart + amount, 0f, maxHeart);
+        if (amount >= 1f && heart > before) Sfx.Play("heart", 0.8f, 0.5f);
         WorldColor.SetHeart(heart / maxHeart);
 
         if (!string.IsNullOrEmpty(reason) && Mathf.Abs(amount) >= 0.5f)

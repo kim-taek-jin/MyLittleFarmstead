@@ -276,7 +276,7 @@ public class PixelHUD : MonoBehaviour
             view.SetActive(false);
             return;
         }
-        if (Input.GetKeyDown(KeyCode.I) && !HUD.DialogueOpen && !HUD.AlbumOpen && !ViewOpen) ToggleBag();
+        if (Input.GetKeyDown(KeyCode.I) && !PauseMenu.Open && !HUD.DialogueOpen && !HUD.AlbumOpen && !ViewOpen) ToggleBag();
         else if (BagOpen && Input.GetKeyDown(KeyCode.Escape)) bag.SetActive(false);
     }
 

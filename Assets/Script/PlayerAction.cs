@@ -126,6 +126,7 @@ public class PlayerAction : MonoBehaviour
         if (debris != null)
         {
             debris.Hit(def);
+            Sfx.Play("hit");
             return;
         }
 
@@ -133,6 +134,7 @@ public class PlayerAction : MonoBehaviour
         if (tool == ToolType.Scythe)
         {
             farm.TryScythe(cell);
+            Sfx.Play("swish");
             return;
         }
 
@@ -140,7 +142,7 @@ public class PlayerAction : MonoBehaviour
         CropData crop = dataManager.farm.GetCrop(cell.x, cell.y);
         if (crop != null && crop.IsMature)
         {
-            farm.TryHarvest(cell);
+            if (farm.TryHarvest(cell)) Sfx.Play("harvest");
             return;
         }
 
@@ -149,11 +151,11 @@ public class PlayerAction : MonoBehaviour
         switch (def.category)
         {
             case ItemCategory.Tool:
-                if (tool == ToolType.Hoe) farm.TryTill(cell, def.toolTier);
-                else if (tool == ToolType.WateringCan) farm.TryWater(cell, def.toolTier);
+                if (tool == ToolType.Hoe) { if (farm.TryTill(cell, def.toolTier)) Sfx.Play("till"); }
+                else if (tool == ToolType.WateringCan) { if (farm.TryWater(cell, def.toolTier)) Sfx.Play("water"); }
                 break;
             case ItemCategory.Seed:
-                farm.TryPlant(cell, def.name);
+                if (farm.TryPlant(cell, def.name)) Sfx.Play("plant");
                 break;
             case ItemCategory.Special:
                 farm.TryUseEssence(cell, def.name);

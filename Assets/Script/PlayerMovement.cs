@@ -6,6 +6,7 @@ public class PlayerMovement : MonoBehaviour
     public float moveSpeed = 5f;
 
     private Rigidbody2D rb;
+    private float stepTimer;
 
     void Start()
     {
@@ -17,7 +18,7 @@ public class PlayerMovement : MonoBehaviour
         if (rb == null) return;
 
         // 게임 오버 상태에서는 움직이지 않음
-        if ((DataManager.instance != null && DataManager.instance.IsGameOver) || HUD.AlbumOpen || PixelHUD.BagOpen || PixelHUD.ViewOpen)
+        if ((DataManager.instance != null && DataManager.instance.IsGameOver) || PauseMenu.Open || HUD.AlbumOpen || PixelHUD.BagOpen || PixelHUD.ViewOpen)
         {
             rb.linearVelocity = Vector2.zero;
             return;
@@ -34,5 +35,13 @@ public class PlayerMovement : MonoBehaviour
         if (data != null && (data.hunger <= 0f || data.thirst <= 0f)) speed *= 0.6f;
 
         rb.linearVelocity = moveDirection * speed;
+
+        // 발소리: 걷는 동안 일정한 간격으로
+        if (moveDirection.sqrMagnitude > 0.01f)
+        {
+            stepTimer -= Time.deltaTime;
+            if (stepTimer <= 0f) { Sfx.Play("step", 0.5f, 0.1f, 0.15f); stepTimer = 1.6f / speed; }
+        }
+        else stepTimer = 0f;
     }
 }
