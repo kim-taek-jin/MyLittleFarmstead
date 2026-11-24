@@ -742,7 +742,7 @@ public class DataManager : MonoBehaviour
 
         string body = string.Join("\n", lines);
         string sign = delta >= 0 ? "+" : "";
-        string preview = BuildTodayPreview(after);
+        string preview = BuildTodayPreview(after, day);
         HUD.Announce($"{header}\n\n<size=24>{body}</size>\n\n<color=#ff8fb1>Heart {sign}{delta:0}  ({heart:0}/{maxHeart:0})</color>{preview}", 8f);
 
         if (demoEndsNow)
@@ -772,9 +772,11 @@ public class DataManager : MonoBehaviour
     }
 
     // 내일 예고: 아침 요약 끝에 '오늘 할 만한 일'을 보여줘서 하루 더 하고 싶게 만듭니다.
-    string BuildTodayPreview(Season season)
+    string BuildTodayPreview(Season season, int today)
     {
         var tips = new List<string>();
+        if (MarketState.IsMarketDay(today)) tips.Add(Loc.T("Market day! Stalls, rare goods and haggling at the market", "장날! 장터에 노점과 귀한 물건, 흥정이 있어요"));
+        else if (MarketState.DaysUntilMarket(today) == 1) tips.Add(Loc.T("Tomorrow is market day", "내일은 장날이에요"));
         int ripe = farm.RipeNow();
         if (ripe > 0) tips.Add($"{ripe} crop(s) ripe in the field");
         int tomorrow = farm.RipeningTomorrow(season);

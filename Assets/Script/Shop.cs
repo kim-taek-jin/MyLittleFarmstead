@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
@@ -101,6 +101,8 @@ public class Shop : MonoBehaviour
                 }
                 if (dataManager.CurrentSeason >= Season.Autumn) stock.Add(new ItemForSale { itemName = "Pumpkin Seed", price = 70 });
                 if (!dataManager.HasItem("Mattock")) stock.Add(new ItemForSale { itemName = "Mattock", price = 150 });
+                if (MarketState.IsMarketDay(dataManager.Today))
+                    foreach (ItemStack fair in MarketState.FairStock) stock.Add(new ItemForSale { itemName = fair.itemName, price = fair.count });   // 장날 (count = 가격)
             }
             foreach (var item in stock)
             {

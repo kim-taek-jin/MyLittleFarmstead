@@ -249,7 +249,8 @@ public class PixelHUD : MonoBehaviour
             Season s = data.CurrentSeason;
             string clock = time != null ? time.FormattedTime : "";
             int day = time != null ? time.day : 1;
-            infoLine1.text = $"<color={SeasonSystem.Color(s)}>{SeasonSystem.Name(s)}</color> " + Loc.T($"Day {day}", $"{day}일째") + $"  {clock}";
+            infoLine1.text = $"<color={SeasonSystem.Color(s)}>{SeasonSystem.Name(s)}</color> " + Loc.T($"Day {day}", $"{day}일째") + $"  {clock}"
+                + (MarketState.IsMarketDay(day) ? "  <color=#8fd0ff>" + Loc.T("Market day", "장날") + "</color>" : "");
             string weather = data.snowing ? "<color=#dfe8ff>" + Loc.T("Snow", "눈") + "</color>"
                 : data.raining ? "<color=#8fd0ff>" + Loc.T("Rain", "비") + "</color>"
                 : "<color=#ffd84a>" + Loc.T("Sunny", "맑음") + "</color>";

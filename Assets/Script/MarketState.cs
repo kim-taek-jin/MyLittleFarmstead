@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -21,6 +21,23 @@ public class MarketState
     public List<ItemStack> soldToday = new List<ItemStack>();
 
     public const float DemandBonus = 0.5f;
+
+    // 오일장: 5일마다 장이 섭니다 (3일째, 8일째, 13일째...). 장날에만 흥정과 귀한 물건.
+    public const int MarketCycle = 5;
+    public static bool IsMarketDay(int day) => day > 0 && day % MarketCycle == 3;
+    public static int DaysUntilMarket(int day)
+    {
+        for (int d = 0; d < MarketCycle; d++) if (IsMarketDay(day + d)) return d;
+        return MarketCycle;
+    }
+
+    // 장날에만 파는 물건
+    public static readonly ItemStack[] FairStock =
+    {
+        new ItemStack("Compost", 30),
+        new ItemStack("Earth's Breath", 180),
+        new ItemStack("Sunshine Shard", 200),
+    };
     public const float SaturationPerSale = 0.04f; // 같은 아이템을 하나 팔 때마다 -4%
     public const float MinSaturation = 0.5f;
 

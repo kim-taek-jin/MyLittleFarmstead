@@ -7,6 +7,9 @@ using TMPro;
 // 성공하면 그날 시장 판매가가 오릅니다. 완벽(Perfect) +50%, 성공 +25%.
 public class HaggleGame : MonoBehaviour
 {
+    // 흥정이 끝나면 돌아갈 곳 (장날 장터에서 왔으면 장터로)
+    public static string ReturnScene = "Farm";
+    public static Vector2 ReturnPosition;
     [Header("UI")]
     public Slider haggleSlider;
     public TextMeshProUGUI resultText;
@@ -92,6 +95,14 @@ public class HaggleGame : MonoBehaviour
 
     void ReturnToFarm()
     {
+        if (ReturnScene == "Market")
+        {
+            ReturnScene = "Farm";
+            SceneData.nextPlayerPosition = ReturnPosition;
+            SceneData.hasNextPlayerPosition = true;
+            SceneManager.LoadScene("Market");
+            return;
+        }
         FarmMap.ReturnFrom("MiniGame");   // 농장 북쪽 문 앞으로
         SceneManager.LoadScene("Farm");
     }

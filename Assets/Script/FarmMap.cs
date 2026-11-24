@@ -117,6 +117,8 @@ public static class FarmMap
             if (n == "well_0") MoveTo(root, map.Anchor("well", root.transform.position));
             else if (n == "Storage") MoveTo(root, map.Anchor("storage", root.transform.position));
             else if (n.StartsWith("Square")) root.SetActive(false);
+            else if (root.GetComponent<Portal>() != null && root.GetComponent<Portal>().destinationSceneName == "MiniGame")
+                root.SetActive(false);   // 흥정은 이제 장날 장터에서 (MarketFair). 뒷산 길은 길만 남김
             else
             {
                 Portal portal = root.GetComponent<Portal>();
