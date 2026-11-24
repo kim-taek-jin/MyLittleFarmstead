@@ -23,36 +23,44 @@ public static class AlbumDB
         All.Add(new PhotoDef { id = id, season = s, title = title, hint = hint, evt = evt, arg = arg, sprite = sprite });
     }
 
+    static string L(string en, string ko) => Loc.T(en, ko);
+
     static AlbumDB()
     {
+        Build();
+        Loc.Changed += () => { All.Clear(); Build(); };
+    }
+
+    static void Build()
+    {
         // 겨울: 번아웃에서 첫 걸음
-        Add(Season.Winter, "w_first_light", "First Light", "Harvest your first Carrot.", "harvest", "Carrot", "Items/carrot");
-        Add(Season.Winter, "w_warm_bowl", "A Warm Bowl", "Eat something you cooked.", "eat_cooked", null, "Items/roasted_carrot");
-        Add(Season.Winter, "w_early_night", "Early Night", "Go to bed before midnight.", "sleep_early", null, "World/bed");
-        Add(Season.Winter, "w_gray_friend", "A Gray Friend", "Meet a little spirit.", "spirit_found", null, "Spirit/spirit_gray");
-        Add(Season.Winter, "w_cold_water", "Cold Water", "Drink at the well.", "drink", null, "World/well_winter");
-        Add(Season.Winter, "w_neighbor", "Hello, Neighbor", "Talk to a villager.", "villager_met", null, "Villagers/rosa_0");
+        Add(Season.Winter, "w_first_light", L("First Light", "첫 햇살"), L("Harvest your first Carrot.", "처음으로 당근을 거둬요."), "harvest", "Carrot", "Items/carrot");
+        Add(Season.Winter, "w_warm_bowl", L("A Warm Bowl", "따뜻한 한 그릇"), L("Eat something you cooked.", "직접 만든 음식을 먹어요."), "eat_cooked", null, "Items/roasted_carrot");
+        Add(Season.Winter, "w_early_night", L("Early Night", "일찍 잠들기"), L("Go to bed before midnight.", "자정 전에 잠자리에 들어요."), "sleep_early", null, "World/bed");
+        Add(Season.Winter, "w_gray_friend", L("A Gray Friend", "잿빛 친구"), L("Meet a little spirit.", "작은 정령을 만나요."), "spirit_found", null, "Spirit/spirit_gray");
+        Add(Season.Winter, "w_cold_water", L("Cold Water", "시원한 물"), L("Drink at the well.", "우물물을 마셔요."), "drink", null, "World/well_winter");
+        Add(Season.Winter, "w_neighbor", L("Hello, Neighbor", "안녕하세요, 이웃님"), L("Talk to a villager.", "마을 사람과 이야기해요."), "villager_met", null, "Villagers/rosa_0");
         // 봄: 회복
-        Add(Season.Spring, "s_strawberry", "Strawberry Season", "Harvest a Strawberry.", "harvest", "Strawberry", "Items/strawberry");
-        Add(Season.Spring, "s_little_color", "A Little Color", "Grant a villager's wish.", "wish", null, "Villagers/mina_1");
-        Add(Season.Spring, "s_rainy_day", "Rainy Day", "Wake up to spring rain.", "rain_morning", null, "Tiles/tilled_wet");
-        Add(Season.Spring, "s_first_catch", "First Catch", "Catch a fish.", "fish", null, "Items/minnow");
-        Add(Season.Spring, "s_sharing", "Sharing", "Share food with the village.", "share", null, "World/donation_box");
-        Add(Season.Spring, "s_growing_up", "Growing Up", "Your spirit grows up a little.", "spirit_young", null, "Spirit/spirit_bloom_young");
+        Add(Season.Spring, "s_strawberry", L("Strawberry Season", "딸기 철"), L("Harvest a Strawberry.", "딸기를 거둬요."), "harvest", "Strawberry", "Items/strawberry");
+        Add(Season.Spring, "s_little_color", L("A Little Color", "조그만 빛깔"), L("Grant a villager's wish.", "마을 사람의 소원을 들어줘요."), "wish", null, "Villagers/mina_1");
+        Add(Season.Spring, "s_rainy_day", L("Rainy Day", "비 오는 날"), L("Wake up to spring rain.", "봄비 소리에 잠을 깨요."), "rain_morning", null, "Tiles/tilled_wet");
+        Add(Season.Spring, "s_first_catch", L("First Catch", "첫 손맛"), L("Catch a fish.", "물고기를 낚아요."), "fish", null, "Items/minnow");
+        Add(Season.Spring, "s_sharing", L("Sharing", "나눔"), L("Share food with the village.", "마을과 음식을 나눠요."), "share", null, "World/donation_box");
+        Add(Season.Spring, "s_growing_up", L("Growing Up", "쑥쑥"), L("Your spirit grows up a little.", "정령이 조금 자라요."), "spirit_young", null, "Spirit/spirit_bloom_young");
         // 여름: 활력
-        Add(Season.Summer, "u_sunflower", "Sunflower Smile", "Harvest a Sunflower.", "harvest", "Sunflower", "Items/sunflower");
-        Add(Season.Summer, "u_corn", "Tall Corn", "Harvest Corn.", "harvest", "Corn", "Items/corn");
-        Add(Season.Summer, "u_deal", "It's a Deal!", "Win a haggle with the merchant.", "haggle", null, "World/merchant");
-        Add(Season.Summer, "u_big_catch", "The Big One", "Catch a Carp.", "fish", "Carp", "Items/carp");
-        Add(Season.Summer, "u_starry", "Starry Night", "Visit Star Hill.", "starhill", null, "World/star_ladder");
-        Add(Season.Summer, "u_savings", "Something Saved", "Have 1000G at once.", "gold1000", null, "World/storage_box");
+        Add(Season.Summer, "u_sunflower", L("Sunflower Smile", "해바라기 웃음"), L("Harvest a Sunflower.", "해바라기를 거둬요."), "harvest", "Sunflower", "Items/sunflower");
+        Add(Season.Summer, "u_corn", L("Tall Corn", "키 큰 옥수수"), L("Harvest Corn.", "옥수수를 거둬요."), "harvest", "Corn", "Items/corn");
+        Add(Season.Summer, "u_deal", L("It's a Deal!", "좋아요, 그 값에!"), L("Win a haggle on market day.", "장날에 흥정에 이겨요."), "haggle", null, "World/haggler");
+        Add(Season.Summer, "u_big_catch", L("The Big One", "월척"), L("Catch a Carp.", "잉어를 낚아요."), "fish", "Carp", "Items/carp");
+        Add(Season.Summer, "u_starry", L("Starry Night", "별 헤는 밤"), L("Visit Star Hill.", "별 언덕에 올라요."), "starhill", null, "World/star_ladder");
+        Add(Season.Summer, "u_savings", L("Something Saved", "모아 둔 돈"), L("Have 1000G at once.", "한 번에 1000G를 모아요."), "gold1000", null, "World/storage_box");
         // 가을: 결실
-        Add(Season.Autumn, "a_pumpkin", "Pumpkin Harvest", "Harvest a Pumpkin.", "harvest", "Pumpkin", "Items/pumpkin");
-        Add(Season.Autumn, "a_golden", "Golden Harvest", "Harvest a crop blessed by sunlight.", "golden", null, "Items/sunshine_shard");
-        Add(Season.Autumn, "a_koi", "Shining Koi", "Catch a Golden Koi.", "fish", "Golden Koi", "Items/golden_koi");
-        Add(Season.Autumn, "a_restored", "Colors Restored", "Bring all the color back to a villager.", "restored", null, "Villagers/rosa_3");
-        Add(Season.Autumn, "a_shooting_star", "Shooting Star", "Catch a Star Fragment.", "star", null, "Items/star_fragment");
-        Add(Season.Autumn, "a_pie", "Porridge for Two", "Cook Pumpkin Porridge.", "craft", "Pumpkin Porridge", "Items/pumpkin_porridge");
+        Add(Season.Autumn, "a_pumpkin", L("Pumpkin Harvest", "호박 거두기"), L("Harvest a Pumpkin.", "호박을 거둬요."), "harvest", "Pumpkin", "Items/pumpkin");
+        Add(Season.Autumn, "a_golden", L("Golden Harvest", "황금 수확"), L("Harvest a crop blessed by sunlight.", "햇살 조각을 받은 작물을 거둬요."), "golden", null, "Items/sunshine_shard");
+        Add(Season.Autumn, "a_koi", L("Shining Koi", "반짝이는 잉어"), L("Catch a Golden Koi.", "황금 잉어를 낚아요."), "fish", "Golden Koi", "Items/golden_koi");
+        Add(Season.Autumn, "a_restored", L("Colors Restored", "되찾은 빛깔"), L("Bring all the color back to a villager.", "마을 사람 한 명의 빛깔을 모두 되찾아요."), "restored", null, "Villagers/rosa_3");
+        Add(Season.Autumn, "a_shooting_star", L("Shooting Star", "별똥별"), L("Catch a Star Fragment.", "별 조각을 받아요."), "star", null, "Items/star_fragment");
+        Add(Season.Autumn, "a_pie", L("Porridge for Two", "둘이 먹는 호박죽"), L("Cook Pumpkin Porridge.", "호박죽을 쒀요."), "craft", "Pumpkin Porridge", "Items/pumpkin_porridge");
     }
 
     public static List<PhotoDef> ForSeason(Season s) => All.FindAll(p => p.season == s);

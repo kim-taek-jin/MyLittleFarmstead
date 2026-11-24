@@ -28,6 +28,7 @@ public class ForestArea : MonoBehaviour
     private Material material;
 
     static DataManager Data => DataManager.instance;
+    static string ClearingLabel(int i) => Loc.Ko ? (i == 0 ? "북쪽" : i == 1 ? "서쪽" : "남쪽") : ForestState.ClearingNames[i];
 
     // ---------------------------------------------------------------- 규칙 (DataManager가 부름)
     public static bool IsOpen => Data != null && Data.story.forest != null && Data.story.forest.open;
@@ -67,7 +68,8 @@ public class ForestArea : MonoBehaviour
         headline = null;
         float delta = 0f;
         if (CheckOpen(data))
-            headline = "<color=#ffb6d0>The gray thorns on the forest path have bloomed into an arch.</color>\nThe forest west of the farm is open.";
+            headline = Loc.T("<color=#ffb6d0>The gray thorns on the forest path have bloomed into an arch.</color>\nThe forest west of the farm is open.",
+                "<color=#ffb6d0>숲길을 막던 잿빛 가시덤불이 꽃 아치로 피어났어요.</color>\n농장 서쪽 숲이 열렸어요.");
         ForestState f = data.story.forest;
         if (!f.open) return 0f;
 
@@ -75,13 +77,14 @@ public class ForestArea : MonoBehaviour
         foreach (int i in restored)
         {
             delta += RestoreHeart;
-            lines.Add($"Color came back to the {ForestState.ClearingNames[i]} clearing  <color=#9dff9d>+{RestoreHeart:0}</color>");
+            lines.Add(Loc.T($"Color came back to the {ForestState.ClearingNames[i]} clearing", $"{ClearingLabel(i)} 빈터에 빛깔이 돌아왔어요") + $"  <color=#9dff9d>+{RestoreHeart:0}</color>");
         }
         if (woke)
         {
             delta += AwakeHeart;
-            lines.Add($"The old tree woke up  <color=#9dff9d>+{AwakeHeart:0}</color>");
-            headline = "<color=#ffb6d0>Overnight, the old tree in the forest woke up.</color>\nColor is flowing back into the whole forest.";
+            lines.Add(Loc.T("The old tree woke up", "늙은 나무가 깨어났어요") + $"  <color=#9dff9d>+{AwakeHeart:0}</color>");
+            headline = Loc.T("<color=#ffb6d0>Overnight, the old tree in the forest woke up.</color>\nColor is flowing back into the whole forest.",
+                "<color=#ffb6d0>밤사이 숲의 늙은 나무가 깨어났어요.</color>\n숲 전체에 빛깔이 다시 흘러들어요.");
         }
         EnsureForage(data, day, true);
         return delta;
@@ -207,7 +210,7 @@ public class ForestArea : MonoBehaviour
         int i = area != null ? area.ClearingAt(cell) : -1;
         if (i < 0)
         {
-            if (acorn) HUD.Toast("Acorns want to grow in a forest clearing. Look for the ring of pebbles.", 3f);
+            if (acorn) HUD.Toast(Loc.T("Acorns want to grow in a forest clearing. Look for the ring of pebbles.", "도토리는 숲 빈터에서 자라고 싶어 해요. 조약돌로 두른 자리를 찾아보세요."), 3f);
             return acorn;
         }
         area.UseSpot(i, def);
@@ -218,38 +221,40 @@ public class ForestArea : MonoBehaviour
     {
         DataManager data = Data;
         int stage = state.sapling[i];
-        string clearing = ForestState.ClearingNames[i];
+        string clearing = ClearingLabel(i);
         if (stage < 0)
         {
             if (def == null || def.name != "Acorn")
             {
-                HUD.Toast($"A ring of pebbles in the {clearing} clearing. An acorn could grow here.", 3f);
+                HUD.Toast(Loc.T($"A ring of pebbles in the {clearing} clearing. An acorn could grow here.", $"{clearing} 빈터에 조약돌을 둥글게 둘러놨어요. 여기라면 도토리가 자랄 것 같아요."), 3f);
                 return;
             }
             if (!data.UseEnergy(1f)) return;
             data.RemoveItem("Acorn", 1);
             state.Plant(i);
-            HUD.Toast("You planted the acorn. Water it every day and it will grow.", 3f);
+            HUD.Toast(Loc.T("You planted the acorn. Water it every day and it will grow.", "도토리를 심었어요. 날마다 물을 주면 자랄 거예요."), 3f);
         }
         else if (stage >= ForestState.RestoredStage)
         {
-            HUD.Toast($"The young oak is doing well. The {clearing} clearing is full of color again.", 3f);
+            HUD.Toast(Loc.T($"The young oak is doing well. The {clearing} clearing is full of color again.", $"어린 참나무가 잘 크고 있어요. {clearing} 빈터에 다시 빛깔이 가득해요."), 3f);
             return;
         }
         else if (def != null && def.toolType == ToolType.WateringCan)
         {
-            if (!state.NeedsWater(i)) { HUD.Toast("It's already had water today.", 2f); return; }
-            if (data.waterCharges <= 0) { HUD.Toast("Your watering can is empty. The spring or the well can fill it.", 3f); return; }
+            if (!state.NeedsWater(i)) { HUD.Toast(Loc.T("It's already had water today.", "오늘은 벌써 물을 줬어요."), 2f); return; }
+            if (data.waterCharges <= 0) { HUD.Toast(Loc.T("Your watering can is empty. The spring or the well can fill it.", "물뿌리개가 비었어요. 옹달샘이나 우물에서 채울 수 있어요."), 3f); return; }
             if (!data.UseEnergy(2f)) return;
             data.waterCharges--;
             state.Water(i);
             data.UpdateAllUI();
-            HUD.Toast(stage == 0 ? "The soil soaks up the water." : "The sapling drinks the water.", 2f);
+            HUD.Toast(stage == 0 ? Loc.T("The soil soaks up the water.", "흙이 물을 머금어요.") : Loc.T("The sapling drinks the water.", "묘목이 물을 마셔요."), 2f);
         }
         else
         {
-            string[] looks = { "An acorn is sleeping in the soil.", "A tiny sprout is peeking out.", "The sapling is getting taller." };
-            HUD.Toast($"{looks[Mathf.Clamp(stage, 0, 2)]} ({stage}/3) Water it every day.", 3f);
+            string[] looks = Loc.Ko
+                ? new[] { "흙 속에서 도토리가 자고 있어요.", "조그만 싹이 고개를 내밀었어요.", "묘목이 쑥쑥 자라고 있어요." }
+                : new[] { "An acorn is sleeping in the soil.", "A tiny sprout is peeking out.", "The sapling is getting taller." };
+            HUD.Toast($"{looks[Mathf.Clamp(stage, 0, 2)]} ({stage}/3) " + Loc.T("Water it every day.", "날마다 물을 주세요."), 3f);
         }
         RefreshSaplings();
     }
@@ -270,17 +275,18 @@ public class ForestArea : MonoBehaviour
             int day = GameTimeManager.instance != null ? GameTimeManager.instance.day : 1;
             if (state.Rest(day))
             {
-                data.ChangeHeart(RestHeart, "You sat by the spring and listened to the forest.");
+                data.ChangeHeart(RestHeart, Loc.T("You sat by the spring and listened to the forest.", "옹달샘 곁에 앉아 숲 소리를 들었어요."));
             }
-            else HUD.Toast("You drink from the spring. It's cool and clear.", 2.5f);
+            else HUD.Toast(Loc.T("You drink from the spring. It's cool and clear.", "옹달샘 물을 마셨어요. 시원하고 맑아요."), 2.5f);
             return;
         }
         if (Vector2.Distance(p, treeBase + new Vector2(0f, 0.6f)) < 2.2f)
         {
             if (state.treeAwake)
-                HUD.Toast("The old tree hums softly. Petals drift down around you.", 3f);
+                HUD.Toast(Loc.T("The old tree hums softly. Petals drift down around you.", "늙은 나무가 나직이 웅웅거려요. 꽃잎이 주위로 흩날려요."), 3f);
             else
-                HUD.Toast($"The old tree is asleep, gray to its roots. Maybe if the clearings around it came back to life... ({state.Restored}/3)", 4f);
+                HUD.Toast(Loc.T($"The old tree is asleep, gray to its roots. Maybe if the clearings around it came back to life... ({state.Restored}/3)",
+                    $"늙은 나무가 뿌리까지 잿빛으로 잠들어 있어요. 주위 빈터들이 살아나면 혹시... ({state.Restored}/3)"), 4f);
         }
     }
 }

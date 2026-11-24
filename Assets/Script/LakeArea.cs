@@ -68,7 +68,8 @@ public class LakeArea : MonoBehaviour
     {
         headline = null;
         if (CheckOpen(data))
-            headline = "<color=#8fd0ff>The gray reeds south-east of the farm turned green and parted.</color>\nA path leads down to the lake.";
+            headline = Loc.T("<color=#8fd0ff>The gray reeds south-east of the farm turned green and parted.</color>\nA path leads down to the lake.",
+                "<color=#8fd0ff>농장 남동쪽의 잿빛 갈대가 푸르러지며 갈라졌어요.</color>\n저수지로 내려가는 길이 났어요.");
         if (data.story.lake.open) EnsureForage(data, day, true);
     }
 
@@ -173,8 +174,8 @@ public class LakeArea : MonoBehaviour
         if (Vector2.Distance(p, steps) < 1.3f) { ReleaseFish(data); return; }
         if (Vector2.Distance(p, bench) < 1.3f)
         {
-            if (state.Rest(AreaKit.Today)) data.ChangeHeart(RestHeart, "You sat under the willow and watched the water.");
-            else HUD.Toast("The willow sways. You've already rested here today.", 2.5f);
+            if (state.Rest(AreaKit.Today)) data.ChangeHeart(RestHeart, Loc.T("You sat under the willow and watched the water.", "버드나무 아래 앉아 물을 바라봤어요."));
+            else HUD.Toast(Loc.T("The willow sways. You've already rested here today.", "버드나무가 흔들려요. 오늘은 벌써 여기서 쉬었어요."), 2.5f);
         }
     }
 
@@ -187,19 +188,23 @@ public class LakeArea : MonoBehaviour
         {
             int n = data.GetCount(fish);
             if (n <= 0) continue;
-            parts.Add($"{fish} x{n}");
+            parts.Add($"{ItemNames.Display(fish)} x{n}");
             count += n;
             points += n * LakeState.Points(fish);
         }
         if (count == 0)
         {
-            HUD.Toast(state.IsClear ? "The lake is clear and calm. You can still let fish go here anytime." :
-                $"Stone steps down to the gray water. Catch some fish and let them go here. ({state.ToNextZone()} to the next part)", 3.5f);
+            HUD.Toast(state.IsClear ? Loc.T("The lake is clear and calm. You can still let fish go here anytime.", "저수지가 맑고 잔잔해요. 언제든 여기서 물고기를 놓아줄 수 있어요.") :
+                Loc.T($"Stone steps down to the gray water. Catch some fish and let them go here. ({state.ToNextZone()} to the next part)",
+                      $"잿빛 물로 내려가는 돌계단. 물고기를 낚아 여기서 놓아주세요. (다음 구역까지 {state.ToNextZone()})"), 3.5f);
             return;
         }
-        HUD.Ask("The lake", $"Let these fish go?\n{string.Join(", ", parts)}\n<size=22>(Golden Koi stays with you)</size>", null,
-            () => DoRelease(data, count, points), null, "Let them go", "Keep them");
+        HUD.Ask(Loc.T("The lake", "저수지"),
+            Loc.T("Let these fish go?", "이 물고기들을 놓아줄까요?") + $"\n{string.Join(", ", parts)}\n<size=22>" + Loc.T("(Golden Koi stays with you)", "(황금 잉어는 그대로 가지고 있어요)") + "</size>", null,
+            () => DoRelease(data, count, points), null, Loc.T("Let them go", "놓아주기"), Loc.T("Keep them", "그냥 두기"));
     }
+
+    static string ZoneLabel(int z) => Loc.Ko ? (z == 0 ? "서쪽 물굽이" : z == 1 ? "저수지 한가운데" : "동쪽 물굽이") : LakeState.ZoneNames[z];
 
     void DoRelease(DataManager data, int count, int points)
     {
@@ -209,13 +214,14 @@ public class LakeArea : MonoBehaviour
             if (n > 0) data.RemoveItem(fish, n);
         }
         List<int> zones = state.Release(count, points, out bool clear);
-        HUD.Toast($"The fish slip back into the water. The lake feels a little lighter. (+{points})", 3f);
+        HUD.Toast(Loc.T($"The fish slip back into the water. The lake feels a little lighter. (+{points})", $"물고기들이 물속으로 미끄러져 들어가요. 저수지가 조금 가벼워졌어요. (+{points})"), 3f);
         foreach (int z in zones)
-            data.ChangeHeart(ZoneHeart, $"The {LakeState.ZoneNames[z]} runs clear and blue again.");
+            data.ChangeHeart(ZoneHeart, Loc.T($"The {LakeState.ZoneNames[z]} runs clear and blue again.", $"{ZoneLabel(z)} 물이 다시 맑고 파래졌어요."));
         if (clear)
         {
-            data.ChangeHeart(ClearHeart, "The whole lake is clear.");
-            HUD.Announce("<size=42><color=#8fd0ff>The lake is clear</color></size>\n\nYou can see the pebbles on the bottom.\nWhen night falls, fireflies come out over the water.", 6f);
+            data.ChangeHeart(ClearHeart, Loc.T("The whole lake is clear.", "저수지 전체가 맑아졌어요."));
+            HUD.Announce(Loc.T("<size=42><color=#8fd0ff>The lake is clear</color></size>\n\nYou can see the pebbles on the bottom.\nWhen night falls, fireflies come out over the water.",
+                               "<size=42><color=#8fd0ff>저수지가 맑아졌어요</color></size>\n\n바닥의 조약돌이 다 보여요.\n밤이 되면 물 위로 반딧불이가 나와요."), 6f);
         }
         Refresh();
     }

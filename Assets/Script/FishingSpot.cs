@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 // 농장 연못 낚시. 낚싯대를 가지고 E → 기다렸다가 "!" 가 뜨면 바로 E.
 // 마음(Heart)이 높을수록 황금 잉어가 잘 잡힙니다.
@@ -37,7 +37,7 @@ public class FishingSpot : MonoBehaviour
             {
                 state = State.Bite;
                 timer = biteWindow + 0.2f * SpiritDB.PerkLevel(Data.story.spirit, "water");
-                HUD.Toast("<size=40><color=#ffd84a>!!</color></size>  Something's biting! Press E!", biteWindow);
+                HUD.Toast("<size=40><color=#ffd84a>!!</color></size>  " + Loc.T("Something's biting! Press E!", "입질이 왔어요! E를 누르세요!"), biteWindow);
             }
         }
         else if (state == State.Bite)
@@ -46,7 +46,7 @@ public class FishingSpot : MonoBehaviour
             if (timer <= 0f)
             {
                 state = State.Idle;
-                HUD.Toast("It got away...", 2f);
+                HUD.Toast(Loc.T("It got away...", "놓쳤어요..."), 2f);
             }
         }
 
@@ -58,7 +58,7 @@ public class FishingSpot : MonoBehaviour
             case State.Idle: Cast(); break;
             case State.Waiting:
                 state = State.Idle;
-                HUD.Toast("Too early! The fish swam away.", 2f);
+                HUD.Toast(Loc.T("Too early! The fish swam away.", "너무 일렀어요! 물고기가 달아났어요."), 2f);
                 break;
             case State.Bite: Catch(); break;
         }
@@ -68,13 +68,13 @@ public class FishingSpot : MonoBehaviour
     {
         if (!Data.HasItem("Fishing Rod"))
         {
-            HUD.Toast("You need a fishing rod. Maybe someone nearby has an old one?", 3f);
+            HUD.Toast(Loc.T("You need a fishing rod. Maybe someone nearby has an old one?", "낚싯대가 있어야 해요. 근처에 묵은 낚싯대를 가진 사람이 있지 않을까요?"), 3f);
             return;
         }
         if (!Data.UseEnergy(castEnergy)) return;
         state = State.Waiting;
         timer = Random.Range(1.5f, 4.5f);
-        HUD.Toast("You cast your line... wait for it.", 2f);
+        HUD.Toast(Loc.T("You cast your line... wait for it.", "낚싯줄을 던졌어요... 기다려 봐요."), 2f);
     }
 
     void Catch()
@@ -108,14 +108,15 @@ public class FishingSpot : MonoBehaviour
         switch (fish)
         {
             case "Golden Koi":
-                HUD.Announce("<size=42><color=#ffd84a>Golden Koi!</color></size>\n\nIt shimmers like sunlight on water.", 4f);
-                if (first) Data.ChangeHeart(5f, "A once-in-a-lifetime catch!");
+                HUD.Announce(Loc.T("<size=42><color=#ffd84a>Golden Koi!</color></size>\n\nIt shimmers like sunlight on water.",
+                                   "<size=42><color=#ffd84a>황금 잉어!</color></size>\n\n물 위의 햇살처럼 반짝여요."), 4f);
+                if (first) Data.ChangeHeart(5f, Loc.T("A once-in-a-lifetime catch!", "평생 한 번 낚을까 말까 한 대어!"));
                 break;
             case "Old Boot":
-                HUD.Toast("You caught... an Old Boot. Well, it's something.", 3f);
+                HUD.Toast(Loc.T("You caught... an Old Boot. Well, it's something.", "낚은 건... 낡은 장화. 뭐, 없는 것보단 낫죠."), 3f);
                 break;
             default:
-                HUD.Toast($"You caught a {fish}!" + (first ? "  <color=#9dff9d>(new!)</color>" : ""), 3f);
+                HUD.Toast(Loc.T($"You caught a {fish}!", $"{ItemNames.With(fish, "을", "를")} 낚았어요!") + (first ? "  <color=#9dff9d>" + Loc.T("(new!)", "(처음!)") + "</color>" : ""), 3f);
                 break;
         }
     }
@@ -124,7 +125,7 @@ public class FishingSpot : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         inRange = true;
-        if (Data != null && Data.HasItem("Fishing Rod")) HUD.Toast("Press E to fish.", 2f);
+        if (Data != null && Data.HasItem("Fishing Rod")) HUD.Toast(Loc.T("Press E to fish.", "E를 눌러 낚시하세요."), 2f);
     }
 
     void OnTriggerExit2D(Collider2D other)
@@ -134,7 +135,7 @@ public class FishingSpot : MonoBehaviour
         if (state != State.Idle)
         {
             state = State.Idle;
-            HUD.Toast("You reeled in your line.", 1.5f);
+            HUD.Toast(Loc.T("You reeled in your line.", "낚싯줄을 감았어요."), 1.5f);
         }
     }
 }

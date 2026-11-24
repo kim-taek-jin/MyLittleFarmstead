@@ -149,35 +149,38 @@ public class HillArea : MonoBehaviour
         return true;
     }
 
+    // 화면에 보이는 나무 이름 (그림 키는 HillState.KindName)
+    static string KindLabel(char k) => Loc.Ko ? (k == 'A' ? "사과" : k == 'P' ? "배" : "감") : HillState.KindName(k);
+
     void UseTree(int i, ItemDef def)
     {
         DataManager data = Data;
-        string kind = HillState.KindName(kinds[i]);
+        string kind = KindLabel(kinds[i]);
         int st = state.tree[i];
         if (st == 0)
         {
             if (def == null || def.toolType != ToolType.Scythe)
             {
-                HUD.Toast($"An old {kind} tree, gray and tangled. Prune it with a scythe first.", 3f);
+                HUD.Toast(Loc.T($"An old {kind} tree, gray and tangled. Prune it with a scythe first.", $"잿빛으로 엉클어진 늙은 {kind}나무. 먼저 낫으로 가지를 쳐 주세요."), 3f);
                 return;
             }
             if (!data.UseEnergy(PruneEnergy)) return;
             state.Prune(i);
-            HUD.Toast($"You cut back the dead branches. The {kind} tree looks lighter. (It needs Earth's Breath now.)", 3.5f);
+            HUD.Toast(Loc.T($"You cut back the dead branches. The {kind} tree looks lighter. (It needs Earth's Breath now.)", $"죽은 가지를 쳐냈어요. {kind}나무가 한결 가벼워 보여요. (이제 대지의 숨결이 필요해요.)"), 3.5f);
         }
         else if (st == 1)
         {
             if (def == null || def.name != "Earth's Breath")
             {
-                HUD.Toast($"The pruned {kind} tree is waiting. Give it Earth's Breath to wake it up.", 3f);
+                HUD.Toast(Loc.T($"The pruned {kind} tree is waiting. Give it Earth's Breath to wake it up.", $"가지를 친 {kind}나무가 기다려요. 대지의 숨결로 깨워 주세요."), 3f);
                 return;
             }
             data.RemoveItem("Earth's Breath", 1);
             state.Revive(i, Today);
-            data.ChangeHeart(ReviveHeart, $"The old {kind} tree woke up. Color spreads around it.");
+            data.ChangeHeart(ReviveHeart, Loc.T($"The old {kind} tree woke up. Color spreads around it.", $"늙은 {kind}나무가 깨어났어요. 주위로 빛깔이 번져요."));
             if (state.AllRevived)
             {
-                data.ChangeHeart(OrchardHeart, "The whole orchard is alive again.");
+                data.ChangeHeart(OrchardHeart, Loc.T("The whole orchard is alive again.", "과수원 전체가 다시 살아났어요."));
                 HUD.Announce("<size=42><color=#ffb070>The orchard is alive again</color></size>\n\nApples, pears and persimmons, all in color.\nThe hill glows in the evening light.", 6f);
             }
         }
@@ -188,10 +191,10 @@ public class HillArea : MonoBehaviour
             if (n > 0)
             {
                 data.AddItem(fruit, n);
-                HUD.Toast($"You picked {n} {fruit}." + (fruit == "Persimmon" ? " (Hang them on the drying rack!)" : ""), 2.5f);
+                HUD.Toast(Loc.T($"You picked {n} {fruit}.", $"{ItemNames.Display(fruit)} {n}개를 땄어요.") + (fruit == "Persimmon" ? Loc.T(" (Hang them on the drying rack!)", " (곶감 걸이에 걸어 보세요!)") : ""), 2.5f);
             }
-            else if (data.CurrentSeason == Season.Winter) HUD.Toast("It's resting through the cold. No fruit in winter.", 2.5f);
-            else HUD.Toast($"No fruit yet. Come back in {Mathf.Max(1, state.fruitDay[i] - Today)} day(s).", 2.5f);
+            else if (data.CurrentSeason == Season.Winter) HUD.Toast(Loc.T("It's resting through the cold. No fruit in winter.", "추위 속에 쉬고 있어요. 겨울엔 열매가 없어요."), 2.5f);
+            else HUD.Toast(Loc.T($"No fruit yet. Come back in {Mathf.Max(1, state.fruitDay[i] - Today)} day(s).", $"아직 열매가 없어요. {Mathf.Max(1, state.fruitDay[i] - Today)}일 뒤에 와 보세요."), 2.5f);
         }
         Refresh();
     }
@@ -210,7 +213,7 @@ public class HillArea : MonoBehaviour
         if (Vector2.Distance(p, bench) < 1.6f)
         {
             PixelHUD.ShowView(PanoramaLayers(data), PanoramaCaption(data));
-            if (state.Rest(Today)) data.ChangeHeart(RestHeart, "You sat on the hill and watched the sun go down over the valley.");
+            if (state.Rest(Today)) data.ChangeHeart(RestHeart, Loc.T("You sat on the hill and watched the sun go down over the valley.", "언덕에 앉아 골짜기 너머로 해가 지는 걸 바라봤어요."));
         }
     }
 
@@ -221,11 +224,11 @@ public class HillArea : MonoBehaviour
         int have = data.GetCount("Persimmon");
         int hung = state.Hang(have, Today);
         if (hung > 0) data.RemoveItem("Persimmon", hung);
-        if (ready > 0 && hung > 0) HUD.Toast($"You took down {ready} Dried Persimmon and hung up {hung} more.", 3f);
-        else if (ready > 0) HUD.Toast($"You took down {ready} Dried Persimmon. Chewy and sweet!", 3f);
-        else if (hung > 0) HUD.Toast($"You hung up {hung} persimmon(s). They'll be dried in {HillState.DryDays} days.", 3f);
-        else if (state.drying.Count > 0) HUD.Toast($"The persimmons are still drying. ({state.drying.Count} on the rack)", 2.5f);
-        else HUD.Toast("A drying rack. Hang persimmons here and wait a few days.", 2.5f);
+        if (ready > 0 && hung > 0) HUD.Toast(Loc.T($"You took down {ready} Dried Persimmon and hung up {hung} more.", $"곶감 {ready}개를 걷고 감 {hung}개를 새로 걸었어요."), 3f);
+        else if (ready > 0) HUD.Toast(Loc.T($"You took down {ready} Dried Persimmon. Chewy and sweet!", $"곶감 {ready}개를 걷었어요. 쫀득하고 달아요!"), 3f);
+        else if (hung > 0) HUD.Toast(Loc.T($"You hung up {hung} persimmon(s). They'll be dried in {HillState.DryDays} days.", $"감 {hung}개를 걸었어요. {HillState.DryDays}일이면 곶감이 돼요."), 3f);
+        else if (state.drying.Count > 0) HUD.Toast(Loc.T($"The persimmons are still drying. ({state.drying.Count} on the rack)", $"감이 아직 마르는 중이에요. (걸이에 {state.drying.Count}개)"), 2.5f);
+        else HUD.Toast(Loc.T("A drying rack. Hang persimmons here and wait a few days.", "곶감 걸이. 감을 걸고 며칠 기다리면 돼요."), 2.5f);
         Refresh();
     }
 
@@ -276,8 +279,8 @@ public class HillArea : MonoBehaviour
     {
         StoryState s = data.story;
         string Mark(bool done, string name) => done ? $"<color=#ffd84a>{name}</color>" : $"<color=#8a8a92>{name}</color>";
-        return Mark(FieldCleared(data) >= 0.75f, Loc.T("The plots", "텃밭")) + "   " + Mark(s.forest.treeAwake, "The forest") + "   " +
-               Mark(s.lake.IsClear, "The lake") + "   " + Mark(s.AllVillagersRestored, "The village") + "   " +
-               Mark(s.hill.AllRevived, "The orchard") + "   " + Mark(s.IsUnlocked("ending_seen"), "Home");
+        return Mark(FieldCleared(data) >= 0.75f, Loc.T("The plots", "텃밭")) + "   " + Mark(s.forest.treeAwake, Loc.T("The forest", "숲")) + "   " +
+               Mark(s.lake.IsClear, Loc.T("The lake", "저수지")) + "   " + Mark(s.AllVillagersRestored, Loc.T("The village", "마을")) + "   " +
+               Mark(s.hill.AllRevived, Loc.T("The orchard", "과수원")) + "   " + Mark(s.IsUnlocked("ending_seen"), Loc.T("Home", "집"));
     }
 }

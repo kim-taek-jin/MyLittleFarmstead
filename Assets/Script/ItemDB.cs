@@ -83,7 +83,7 @@ public static class ItemDB
         Register(new ItemDef { name = "Earth's Breath", category = ItemCategory.Special, sellPrice = 100, color = new Color(0.4f, 0.8f, 0.5f), description = "Use on a crop: it grows by one day instantly." });
 
         // --- 낚시 (미나의 소원으로 낚싯대를 얻음) ---
-        Register(new ItemDef { name = "Fishing Rod", category = ItemCategory.Tool, toolType = ToolType.FishingRod, color = new Color(0.7f, 0.55f, 0.35f), description = "Press E at the farm pond to fish." });
+        Register(new ItemDef { name = "Fishing Rod", category = ItemCategory.Tool, toolType = ToolType.FishingRod, color = new Color(0.7f, 0.55f, 0.35f), description = "Press E by the stream or the lake to fish." });
         Register(new ItemDef { name = "Minnow", category = ItemCategory.Fish, sellPrice = 15, color = new Color(0.6f, 0.65f, 0.75f) });
         Register(new ItemDef { name = "Carp", category = ItemCategory.Fish, sellPrice = 45, color = new Color(0.8f, 0.45f, 0.25f) });
         Register(new ItemDef { name = "Golden Koi", category = ItemCategory.Fish, sellPrice = 300, color = new Color(1f, 0.85f, 0.3f) });

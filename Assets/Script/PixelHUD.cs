@@ -338,7 +338,8 @@ public class PixelHUD : MonoBehaviour
         ItemDef def = ItemDB.Get(itemName);
         if (def == null) return;
         string price = ItemDB.CanSell(itemName) ? $"   <color=#ffd84a>{def.sellPrice}G</color>" : "";
-        string desc = string.IsNullOrEmpty(def.description) ? "" : "\n<color=#d8d0c0>" + def.description + "</color>";
+        string described = ItemNames.Description(def);
+        string desc = string.IsNullOrEmpty(described) ? "" : "\n<color=#d8d0c0>" + described + "</color>";
         string food = def.IsEdible ? "\n<color=#9dff9d>" + Loc.T("Food", "배부름") + $" +{def.hunger:0}  " + Loc.T("Water", "목마름") + $" +{def.thirst:0}"
             + (def.heart > 0 ? "  " + Loc.T("Heart", "마음") + $" +{def.heart:0}" : "") + "</color>" : "";
         bagInfo.text = $"<color=#ffd84a>{ItemNames.Display(def.name)}</color>{price}{desc}{food}";

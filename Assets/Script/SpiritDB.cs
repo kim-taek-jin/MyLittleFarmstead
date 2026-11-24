@@ -99,16 +99,16 @@ public static class SpiritDB
     {
         switch (key)
         {
-            case "spirit_gray": return "Gray Wisp";
-            case "spirit_prism": return "Prism Spirit";
-            case "spirit_sun_young": return "Sunny Sprite";
-            case "spirit_sun_grown": return "Sun Spirit";
-            case "spirit_earth_young": return "Sprout Sprite";
-            case "spirit_earth_grown": return "Grove Spirit";
-            case "spirit_water_young": return "Droplet Sprite";
-            case "spirit_water_grown": return "River Spirit";
-            case "spirit_bloom_young": return "Petal Sprite";
-            case "spirit_bloom_grown": return "Blossom Spirit";
+            case "spirit_gray": return Loc.T("Gray Wisp", "잿빛 도깨비불");
+            case "spirit_prism": return Loc.T("Prism Spirit", "무지개 정령");
+            case "spirit_sun_young": return Loc.T("Sunny Sprite", "볕 아기 정령");
+            case "spirit_sun_grown": return Loc.T("Sun Spirit", "해 정령");
+            case "spirit_earth_young": return Loc.T("Sprout Sprite", "새싹 아기 정령");
+            case "spirit_earth_grown": return Loc.T("Grove Spirit", "숲 정령");
+            case "spirit_water_young": return Loc.T("Droplet Sprite", "물방울 아기 정령");
+            case "spirit_water_grown": return Loc.T("River Spirit", "냇물 정령");
+            case "spirit_bloom_young": return Loc.T("Petal Sprite", "꽃잎 아기 정령");
+            case "spirit_bloom_grown": return Loc.T("Blossom Spirit", "꽃 정령");
             default: return key;
         }
     }
@@ -129,13 +129,13 @@ public static class SpiritDB
 
     public static string PerkText(SpiritState s)
     {
-        if (IsPrism(s)) return "A little of every color's blessing";
+        if (IsPrism(s)) return Loc.T("A little of every color's blessing", "모든 빛깔의 축복을 조금씩");
         switch (Dominant(s))
         {
-            case "sun": return Stage(s) > 0 ? $"Max energy +{10 * Stage(s)}%" : "";
-            case "earth": return Stage(s) > 0 ? $"Watered crops sometimes grow an extra day ({10 * Stage(s)}%)" : "";
-            case "water": return Stage(s) > 0 ? "Better fishing (more Golden Koi, longer bites)" : "";
-            case "bloom": return Stage(s) > 0 ? $"+{Stage(s)} Heart every morning" : "";
+            case "sun": return Stage(s) > 0 ? Loc.T($"Max energy +{10 * Stage(s)}%", $"최대 기력 +{10 * Stage(s)}%") : "";
+            case "earth": return Stage(s) > 0 ? Loc.T($"Watered crops sometimes grow an extra day ({10 * Stage(s)}%)", $"물 준 작물이 가끔 하루 더 자라요 ({10 * Stage(s)}%)") : "";
+            case "water": return Stage(s) > 0 ? Loc.T("Better fishing (more Golden Koi, longer bites)", "낚시가 수월해요 (황금 잉어가 잦고 입질이 길어요)") : "";
+            case "bloom": return Stage(s) > 0 ? Loc.T($"+{Stage(s)} Heart every morning", $"아침마다 마음 +{Stage(s)}") : "";
             default: return "";
         }
     }

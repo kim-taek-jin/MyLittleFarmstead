@@ -29,6 +29,56 @@ public static class ItemNames
         { "Sunshine Shard", "햇살 조각" }, { "Earth's Breath", "대지의 숨결" }, { "Star Fragment", "별 조각" },
     };
 
+    // 설명 (한국어). 영어 설명은 ItemDB의 description
+    static readonly Dictionary<string, string> DescKo = new Dictionary<string, string>
+    {
+        { "Hoe", "텃밭 이랑을 갈아요." },
+        { "Fertile Hoe", "한 번에 세 칸을 갈아요." },
+        { "Watering Can", "작물에 물을 줘요. 우물에서 채워요." },
+        { "Copper Watering Can", "한 번에 세 칸에 물을 줘요." },
+        { "Scythe", "주변의 다 익은 작물을 한꺼번에 거둬요." },
+        { "Rice Cake", "방앗간에서 갓 뽑은 쫄깃한 떡. 든든해요." },
+        { "Steamed Corn", "껍질째 쪄서 달고 짭짤한 옥수수. 여름 맛이에요." },
+        { "Sunshine Shard", "작물에 쓰면 황금빛으로 익고 기쁨이 더해져요." },
+        { "Earth's Breath", "작물에 쓰면 하루만큼 바로 자라요." },
+        { "Fishing Rod", "개울이나 저수지에서 E를 눌러 낚시해요." },
+        { "Carrot Pancake", "복순 할머니 비법. 가장자리는 바삭, 가운데는 따끈." },
+        { "Pumpkin Porridge", "새알심 동동 띄운 노란 호박죽. 풍년의 맛이에요." },
+        { "Compost", "더미에서 잘 삭은 퇴비. 회색으로 굳은 묵정밭에 뿌리면 되살아나요." },
+        { "Star Fragment", "떨어진 별 한 조각. 정령이 아주 좋아해요 (네 가지 색 모두)." },
+        { "Mattock", "그루터기, 바위, 쓰러진 통나무를 파내요." },
+        { "Acorn", "숲 빈터에 심고 며칠 물을 주세요." },
+        { "Spring Greens", "숲 바닥에서 갓 캔 봄나물." },
+        { "Morel Soup", "흙내 나고 따뜻한 수프. 숲길을 걷는 맛이에요." },
+        { "Moonfin", "밤에만 물어요." },
+        { "Glassfish", "속이 훤히 비쳐요. 맑은 물에서만 살아요." },
+        { "Persimmon", "달고 말랑해요. 노을 언덕의 곶감 걸이에 걸면 곶감이 돼요." },
+        { "Dried Persimmon", "가을바람에 천천히 말린 쫀득하고 달콤한 곶감." },
+        { "Campfire", "요리할 때 필요해요." },
+    };
+
+    public static string Description(ItemDef def)
+    {
+        if (def == null) return "";
+        return Loc.Ko && DescKo.TryGetValue(def.name, out string ko) ? ko : def.description;
+    }
+
+    // 한국어 조사: 마지막 글자에 받침이 있으면 withBatchim ("을", "이", "은", "과"), 없으면 without ("를", "가", "는", "와")
+    public static string Josa(string word, string withBatchim, string without)
+    {
+        if (string.IsNullOrEmpty(word)) return withBatchim;
+        char last = word[word.Length - 1];
+        if (last < 0xAC00 || last > 0xD7A3) return withBatchim;
+        return (last - 0xAC00) % 28 != 0 ? withBatchim : without;
+    }
+
+    // 아이템 이름 + 조사 (한국어용): ItemNames.With("Carrot", "을", "를") → "당근을"
+    public static string With(string id, string withBatchim, string without)
+    {
+        string name = Display(id);
+        return name + Josa(name, withBatchim, without);
+    }
+
     // 지금 언어로 보이는 이름
     public static string Display(string id)
     {

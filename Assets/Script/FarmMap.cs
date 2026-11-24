@@ -260,10 +260,10 @@ public static class FarmMap
         if (after == before) return;
         if (done >= total)
         {
-            HUD.Toast("<color=#ffe28a>The old field is completely cleared. It's all yours now!</color>", 4f);
-            data.ChangeHeart(5f, "You brought the old field back to life.");
+            HUD.Toast("<color=#ffe28a>" + Loc.T("The old field is completely cleared. It's all yours now!", "묵은 땅을 말끔히 치웠어요. 이제 전부 내 땅이에요!") + "</color>", 4f);
+            data.ChangeHeart(5f, Loc.T("You brought the old field back to life.", "묵은 땅을 다시 살려 냈어요."));
         }
-        else HUD.Toast($"The old field is {after * 25}% cleared. ({done}/{total})", 3f);
+        else HUD.Toast(Loc.T($"The old field is {after * 25}% cleared. ({done}/{total})", $"묵은 땅을 {after * 25}% 치웠어요. ({done}/{total})"), 3f);
     }
 
     // ---------------------------------------------------------------- 잡초 / 그루터기 / 바위
@@ -358,9 +358,10 @@ public static class FarmMap
     // 같은 씬 안에 만드는 지역들 (출구 이름 → 맵, 열렸는지)
     static MapData RegionMap(string to) => to == "Forest" ? ForestArea.Map : to == "Lake" ? LakeArea.Map : to == "Hill" ? HillArea.Map : null;
     static bool RegionOpen(string to) => to == "Forest" ? ForestArea.IsOpen : to == "Lake" ? LakeArea.IsOpen : to == "Hill" && HillArea.IsOpen;
-    static string ArriveLine(string to) => to == "Lake" ? "The reeds rustle as you pass. The air smells of water."
-        : to == "Hill" ? "Leaves crunch underfoot. The path climbs toward the sunset."
-        : "The air turns cool and green. You step into the forest.";
+    static string ArriveLine(string to) => to == "Lake"
+            ? Loc.T("The reeds rustle as you pass. The air smells of water.", "지나가는 걸음에 갈대가 사각거려요. 물 냄새가 나요.")
+        : to == "Hill" ? Loc.T("Leaves crunch underfoot. The path climbs toward the sunset.", "발밑에서 낙엽이 바스락거려요. 길이 노을 쪽으로 올라가요.")
+        : Loc.T("The air turns cool and green. You step into the forest.", "공기가 서늘하고 푸르러져요. 숲으로 들어섰어요.");
 
     public static readonly Vector2 DefaultCottageBase = new Vector2(-7.75f, -3.85f);
     public static Vector2 CottageBase => Anchor("cottage", DefaultCottageBase);

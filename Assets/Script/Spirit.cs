@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 색을 먹는 정령. 처음 자연의 정수를 얻으면 나타나 플레이어를 따라다닙니다.
@@ -48,11 +48,16 @@ public class Spirit : MonoBehaviour
         EnsureSpawned();
         Album.Report("spirit_found");
         HUD.Announce(
-            "<size=40>A tiny gray spirit</size>\n\n" +
+            Loc.T("<size=40>A tiny gray spirit</size>\n\n" +
             "Drawn by the light, a little gray wisp drifts out and starts following you.\n" +
             "It looks hungry for color.\n\n" +
             "<size=24><color=#ffd84a>[G]</color> Feed it the item you're holding.\n" +
-            "Sunshine/Sunflower/Corn = sun, Earth's Breath/Carrot/Potato = earth,\nFish = water, Apple/Strawberry/Jam = bloom.</size>", 9f);
+            "Sunshine/Sunflower/Corn = sun, Earth's Breath/Carrot/Potato = earth,\nFish = water, Apple/Strawberry/Jam = bloom.</size>",
+            "<size=40>조그만 잿빛 정령</size>\n\n" +
+            "불빛에 이끌려 작은 잿빛 도깨비불이 둥실 나와서 졸졸 따라와요.\n" +
+            "빛깔에 굶주린 것 같아요.\n\n" +
+            "<size=24><color=#ffd84a>[G]</color> 손에 든 걸 먹여 보세요.\n" +
+            "햇살 조각/해바라기/옥수수 = 해, 대지의 숨결/당근/감자 = 흙,\n물고기 = 물, 사과/딸기/잼 = 꽃.</size>"), 9f);
     }
 
     static void Record(string key)
@@ -112,12 +117,12 @@ public class Spirit : MonoBehaviour
     {
         if (string.IsNullOrEmpty(item) || !Data.HasItem(item))
         {
-            HUD.Toast("Hold something in your hotbar to feed your spirit.", 2f);
+            HUD.Toast(Loc.T("Hold something in your hotbar to feed your spirit.", "정령에게 먹일 걸 손에 들어 주세요."), 2f);
             return;
         }
         if (!SpiritDB.CanEat(item))
         {
-            HUD.Toast($"Your spirit sniffs the {item} and turns away.", 2f);
+            HUD.Toast(Loc.T($"Your spirit sniffs the {item} and turns away.", $"정령이 {ItemNames.Display(item)} 냄새를 맡더니 고개를 돌려요."), 2f);
             return;
         }
 
@@ -131,20 +136,21 @@ public class Spirit : MonoBehaviour
 
         int[] p = SpiritDB.PointsFor(item);
         string gained = "";
-        string[] labels = { "<color=#ffd84a>Sun</color>", "<color=#9dff9d>Earth</color>", "<color=#8fd0ff>Water</color>", "<color=#ff9fc4>Bloom</color>" };
+        string[] labels = { "<color=#ffd84a>" + Loc.T("Sun", "해") + "</color>", "<color=#9dff9d>" + Loc.T("Earth", "흙") + "</color>",
+                            "<color=#8fd0ff>" + Loc.T("Water", "물") + "</color>", "<color=#ff9fc4>" + Loc.T("Bloom", "꽃") + "</color>" };
         for (int i = 0; i < 4; i++) if (p[i] > 0) gained += $" +{p[i]} {labels[i]}";
-        HUD.Toast($"Your spirit munches the {item}!{gained}", 2.5f);
+        HUD.Toast(Loc.T($"Your spirit munches the {item}!", $"정령이 {ItemNames.With(item, "을", "를")} 냠냠 먹었어요!") + gained, 2.5f);
 
         string formAfter = SpiritDB.FormKey(st);
         if (formAfter != formBefore)
         {
             bool isNew = !st.formsSeen.Contains(formAfter);
             Record(formAfter);
-            string grew = SpiritDB.Stage(st) > stageBefore ? "Your spirit grew!" : "Your spirit changed its colors!";
+            string grew = SpiritDB.Stage(st) > stageBefore ? Loc.T("Your spirit grew!", "정령이 자랐어요!") : Loc.T("Your spirit changed its colors!", "정령의 빛깔이 바뀌었어요!");
             if (SpiritDB.Stage(st) >= 1) Album.Report("spirit_young");
-            HUD.Announce($"<size=40>{grew}</size>\n\n{SpiritDB.FormName(formAfter)}" + (isNew ? "  <color=#9dff9d>(new form!)</color>" : "") +
-                         $"\n<size=24>{SpiritDB.PerkText(st)}</size>\n\n<size=22>Forms found: {st.formsSeen.Count} / {SpiritDB.AllForms.Length}</size>", 5f);
-            if (isNew) Data.ChangeHeart(2f, "Your spirit is glowing with color.");
+            HUD.Announce($"<size=40>{grew}</size>\n\n{SpiritDB.FormName(formAfter)}" + (isNew ? "  <color=#9dff9d>" + Loc.T("(new form!)", "(새 모습!)") + "</color>" : "") +
+                         $"\n<size=24>{SpiritDB.PerkText(st)}</size>\n\n<size=22>" + Loc.T("Forms found", "찾은 모습") + $": {st.formsSeen.Count} / {SpiritDB.AllForms.Length}</size>", 5f);
+            if (isNew) Data.ChangeHeart(2f, Loc.T("Your spirit is glowing with color.", "정령이 빛깔로 반짝여요."));
         }
     }
 }
