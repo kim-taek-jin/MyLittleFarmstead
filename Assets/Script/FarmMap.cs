@@ -1,14 +1,16 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 
-// 넓어진 농장 (화면 4장, Assets/Resources/Maps/farm.json). 씬 파일은 건드리지 않고 실행 중에 만듭니다.
+// 농장 (화면 4장, Assets/Resources/Maps/farm.json): 한국 시골 집과 텃밭. 씬 파일은 건드리지 않고 실행 중에 만듭니다.
 //  - 큰 농장 그림(bg_farmmap_<계절>)을 원래 배경 자리에 깔기   (PixelArtWorld가 PlaceGround를 부름)
-//  - 빈 흙 칸과 치운 칸에 '흙' 타일 깔기 → 괭이로 갈 수 있음
-//  - 묵은 밭의 잡초/그루터기/바위(Debris), 새 나무/돌/사과(씬의 자원을 복제) 배치
+//  - 집 문, 우물, 보관 상자를 맵의 자리(anchors)로 옮기고, 예전 농장의 나무/돌/사과와 흙 타일은 치움
+//  - 지나갈 수 없는 칸(뒷산, 개울, 돌담, 집, 장독대, 논...)에 벽
+//  - 텃밭 뙈기(plots): 열린 뙈기에서만 농사. 굳은 묵정밭은 퇴비로 되살림. 쉰 땅에는 짚 (FarmPlots)
+//  - 퇴비 더미 (CompostHeap)
 //  - 출구: 시장 포털을 길 끝으로 옮기고, 잠긴 길(숲, 언덕)에는 회색 가시덤불, 호수 길에는 회색 갈대
 //  - 카메라가 플레이어를 따라가고, 플레이어는 맵 밖으로 나가지 못함
-//  - 다른 씬에서 농장으로 오는 포털의 도착 위치를 맵에 맞춤
 public static class FarmMap
 {
     public const string SceneName = "Farm";
@@ -38,9 +40,14 @@ public static class FarmMap
             LakeArea.CheckOpen(DataManager.instance);
             HillArea.CheckOpen(DataManager.instance);
         }
-        LayDirt(map);
+        MigrateOldFarm(map);
+        ClearSceneTiles(map);
+        MoveSceneObjects(map, scene);
         SpawnDebris(map, scene, mat);
         SpawnResources(map, scene);
+        BuildWalls(map, scene);
+        FarmPlots.Create(scene, mat);
+        CompostHeap.Create(scene, Anchor("compost", new Vector2(9.5f, 1.5f)), mat);
         SetupExits(map, scene, mat);
         Camera cam = Camera.main;
         CameraFollow follow = cam != null ? CameraFollow.Attach(cam, map.Bounds) : null;
@@ -55,6 +62,139 @@ public static class FarmMap
 
         // 엔딩 뒤: 회색이던 오두막에 색 (배경의 회색 오두막 위에 컬러 오두막을 겹침)
         if (StoryEvents.EndingSeen) PlaceColorCottage(scene, mat);
+        KeepPlayerSafe(map, follow);
+    }
+
+    // ---------------------------------------------------------------- 맵의 자리
+    public static Vector2 Anchor(string name, Vector2 fallback) => Map != null ? Map.Anchor(name, fallback) : fallback;
+
+    public static MapPlot[] PlotList => Map != null ? Map.plots : null;
+
+    // 지나갈 수 없는 칸
+    public static bool Blocks(char ch) => "PwWHJKBCRb|".IndexOf(ch) >= 0;
+
+    static void BuildWalls(MapData map, Scene scene)
+    {
+        var root = new GameObject("FarmWalls");
+        SceneManager.MoveGameObjectToScene(root, scene);
+        AreaKit.Walls(root.transform, map, Blocks);
+    }
+
+    // 예전 저장 파일: 뙈기 밖의 밭과 작물을 정리하고, 작물은 씨앗으로 돌려줌
+    static void MigrateOldFarm(MapData map)
+    {
+        DataManager data = DataManager.instance;
+        if (data == null || map.plots == null) return;
+        var refunds = new List<string>();
+        int removed = Plots.Migrate(data.farm, map.plots, refunds);
+        foreach (string seed in refunds) data.AddItem(seed, 1);
+        if (removed > 0)
+            HUD.Toast(Loc.T($"The farm has changed. {removed} crop(s) outside the new plots were returned to your bag as seeds.",
+                            $"농장이 바뀌었어요. 새 텃밭 밖에 있던 작물 {removed}개를 씨앗으로 돌려받았어요."), 5f);
+    }
+
+    // 씬에 칠해져 있던 예전 흙 타일을 지움 (갈아 둔 밭은 CropManager가 데이터대로 다시 그림)
+    static void ClearSceneTiles(MapData map)
+    {
+        Tilemap tilemap = FindTilemap();
+        if (tilemap == null) return;
+        DataManager data = DataManager.instance;
+        BoundsInt b = tilemap.cellBounds;
+        foreach (Vector3Int cell in b.allPositionsWithin)
+        {
+            if (tilemap.GetTile(cell) == null) continue;
+            if (data != null && data.farm.IsTilled(cell.x, cell.y)) continue;
+            tilemap.SetTile(cell, null);
+        }
+    }
+
+    // 씬에 원래 있던 집 문, 우물, 보관 상자를 새 자리로. 예전 농장의 장식 사각형은 숨김
+    static void MoveSceneObjects(MapData map, Scene scene)
+    {
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            string n = root.name;
+            if (n == "well_0") MoveTo(root, map.Anchor("well", root.transform.position));
+            else if (n == "Storage") MoveTo(root, map.Anchor("storage", root.transform.position));
+            else if (n.StartsWith("Square")) root.SetActive(false);
+            else
+            {
+                Portal portal = root.GetComponent<Portal>();
+                if (portal != null && portal.destinationSceneName == "Home")
+                {
+                    MoveTo(root, map.Anchor("door", root.transform.position));
+                    if (root.GetComponent<HideArt>() == null) root.AddComponent<HideArt>();   // 문은 집 그림에 있으므로 표지판은 숨김
+                }
+            }
+        }
+    }
+
+    static void MoveTo(GameObject go, Vector2 at)
+    {
+        go.transform.position = new Vector3(at.x, at.y, go.transform.position.z);
+    }
+
+    // 새 게임이나 예전 저장에서 벽 안이나 맵 밖에 서 있으면 마당으로
+    static void KeepPlayerSafe(MapData map, CameraFollow follow)
+    {
+        PlayerAction player = PlayerAction.instance;
+        if (player == null) return;
+        Vector2 p = player.transform.position;
+        bool inFarm = map.Bounds.Contains(p);
+        bool inRegion = (ForestArea.Map != null && ForestArea.Map.Bounds.Contains(p))
+                     || (LakeArea.Map != null && LakeArea.Map.Bounds.Contains(p))
+                     || (HillArea.Map != null && HillArea.Map.Bounds.Contains(p))
+                     || p.y > 50f;                                  // 별의 언덕
+        bool blocked = inFarm && Blocks(map.At(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y)));
+        if ((inFarm && !blocked) || (!inFarm && inRegion)) return;
+        Vector2 start = map.Anchor("start", map.Center);
+        player.transform.position = new Vector3(start.x, start.y, player.transform.position.z);
+    }
+
+    // ---------------------------------------------------------------- 텃밭
+    // 이 칸이 열린 텃밭 뙈기 안인지 (농사를 지을 수 있는지)
+    public static bool CanFarmCell(Vector3Int cell)
+    {
+        DataManager data = DataManager.instance;
+        return data != null && Map != null && Plots.CanFarm(data.farm, Map.plots, cell.x, cell.y);
+    }
+
+    public static MapPlot PlotAt(Vector3Int cell) => Map != null ? Plots.At(Map.plots, cell.x, cell.y) : null;
+
+    public static bool IsRestedCell(Vector3Int cell)
+    {
+        DataManager data = DataManager.instance;
+        MapPlot plot = PlotAt(cell);
+        return data != null && plot != null && Plots.IsOpen(data.farm, plot) && Plots.IsRested(data.farm, plot);
+    }
+
+    // 굳은 묵정밭을 누르면: 퇴비를 들고 있으면 되살리고, 아니면 안내. 묵정밭이 아니면 false
+    public static bool TryUseHardPlot(Vector3Int cell, ItemDef held)
+    {
+        DataManager data = DataManager.instance;
+        MapPlot plot = PlotAt(cell);
+        if (data == null || plot == null || Plots.IsOpen(data.farm, plot)) return false;
+        int have = data.GetCount("Compost");
+        if (held == null || held.name != "Compost")
+        {
+            HUD.Toast(Loc.T($"This plot has gone gray and hard. Spread {plot.RestoreCost} bags of compost on it to bring it back. (You have {have})",
+                            $"회색으로 굳은 묵정밭이에요. 퇴비 {plot.RestoreCost}포대를 뿌리면 되살아나요. (가진 퇴비 {have})"), 3.5f);
+            return true;
+        }
+        int used = Plots.Restore(data.farm, plot, have);
+        if (used <= 0)
+        {
+            HUD.Toast(Loc.T($"Not enough compost. This plot needs {plot.RestoreCost} bags. (You have {have})",
+                            $"퇴비가 모자라요. 이 뙈기에는 {plot.RestoreCost}포대가 필요해요. (가진 퇴비 {have})"), 3f);
+            return true;
+        }
+        data.RemoveItem("Compost", used);
+        Sfx.Play("heart", 0.9f);
+        data.ChangeHeart(2f, null);
+        HUD.Toast(Loc.T("The gray crust crumbles away. Dark, soft soil breathes again. (+2 Heart, rested soil)",
+                        "굳은 흙이 부서지고, 검고 보드라운 흙이 다시 숨을 쉬어요. (마음 +2, 쉰 땅)"), 4f);
+        FarmPlots.RefreshAll();
+        return true;
     }
 
     // ---------------------------------------------------------------- 바닥 그림
@@ -157,6 +297,12 @@ public static class FarmMap
             }
             PixelArtWorld.ApplyTo(go);
         }
+        // 예전 한 화면 농장에 놓여 있던 나무/돌/사과는 새 집과 텃밭 자리와 겹치므로 치움 (맵의 자원만 남김)
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            if (root.name.EndsWith("(map)")) continue;
+            if (root.CompareTag("Wood") || root.CompareTag("Stone") || root.CompareTag("Food")) root.SetActive(false);
+        }
     }
 
     static GameObject FindTemplate(Scene scene, string tag)
@@ -214,7 +360,8 @@ public static class FarmMap
         : to == "Hill" ? "Leaves crunch underfoot. The path climbs toward the sunset."
         : "The air turns cool and green. You step into the forest.";
 
-    public static readonly Vector2 CottageBase = new Vector2(-7.75f, -3.85f);
+    public static readonly Vector2 DefaultCottageBase = new Vector2(-7.75f, -3.85f);
+    public static Vector2 CottageBase => Anchor("cottage", DefaultCottageBase);
 
     static void PlaceColorCottage(Scene scene, Material mat)
     {

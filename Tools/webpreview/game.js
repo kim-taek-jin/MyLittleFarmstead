@@ -64,6 +64,7 @@ reg('Old Boot', 'Resource', { sell: 1 });
 reg('Sunshine Shard', 'Special', { sell: 100, desc: 'Use on a crop: it ripens golden.' });
 reg("Earth's Breath", 'Special', { sell: 100, desc: 'Use on a crop: it grows by one day.' });
 reg('Star Fragment', 'Special', { sell: 50, desc: 'Your spirit loves it (all four colors).' });
+reg('Compost', 'Special', { sell: 0, desc: 'Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life.' });
 reg('Campfire', 'Station', { sell: 20, desc: 'Needed for cooking recipes.' });
 // the forest (map stage 3)
 reg('Mattock', 'Tool', { tool: 'mattock', desc: 'Digs out stumps, boulders and fallen logs.' });
@@ -252,15 +253,20 @@ const SCENES = {
   haggle: { ww: 17.95, wh: 10.04, cx: -0.035, cy: -0.079, bg: () => 'World/bg_minigame' },
   hill: { ww: 17.92, wh: 10.24, cx: 0, cy: 0, bg: () => 'World/bg_starhill' },
 };
-const FIELD = [];
-for (let y = 0; y <= 2; y++) for (let x = -8; x <= -2; x++) FIELD.push(x + ',' + y);
-for (let y = -3; y <= -1; y++) for (let x = -6; x <= -1; x++) FIELD.push(x + ',' + y);
-const FIELDSET = new Set(FIELD);
-const TREES = [[4.78, 1.47], [2.53, 2.35], [3.41, 2.31], [5.08, 2.28], [4.21, 2.3]];
-const STONES = [[4.12, 1.44], [4.94, -4.71], [-4.72, -2.53], [2.51, 1.5], [-3.49, -4.45], [3.38, 1.46]];
-const APPLES = [[-7.29, 3.72], [3.5, -1.24], [-8.29, -1.63], [8.23, -2.72], [7.97, 4.18], [-0.44, -4.18]];
-const POND = [7.05, -0.6];
-const LADDER = [8.25, 2.9];
+// direction C: the Korean homestead (farm.json): plots, compost heap, things moved to map anchors
+const ANCHOR = (n, fx, fy) => { const a = (MAP.anchors || []).find(a => a.name === n); return a ? [a.x, a.y] : [fx, fy]; };
+const PLOTS = MAP.plots || [];
+const plotAt = (x, y) => PLOTS.find(p => x >= p.x0 && x <= p.x1 && y >= p.y0 && y <= p.y1);
+const POND = ANCHOR('pond', 7.05, -0.6);
+const LADDER = ANCHOR('starvine', 8.25, 2.9);
+const WELL = ANCHOR('well', 3.68, -0.03);
+const DOOR = ANCHOR('door', -8.38, -4.54);
+const COMPOST = ANCHOR('compost', 9.5, 1.5);
+const CHEST = ANCHOR('storage', -3.89, -1.07);
+const COTTAGE = ANCHOR('cottage', -7.75, -3.85);
+const farmBlocked = (cx, cy) => 'PwWHJKBCRb|'.includes(mapAt(cx, cy));
+{ const [mx, my] = ANCHOR('mina', 5.0, -2.4); VILLAGERS[2].x = mx; VILLAGERS[2].y = my; }
+const ORGANIC = new Set(['Carrot', 'Potato', 'Corn', 'Strawberry', 'Sunflower', 'Pumpkin', 'Apple', 'Pear', 'Persimmon', 'Wild Garlic', 'Fern Sprout', 'Morel', 'Wild Raspberry', 'Watercress', 'Acorn', 'Bread', 'Roasted Carrot', 'Baked Potato', 'Corn Soup', 'Spring Greens']);
 
 // ------------------------------------------------------------------ state
 let G;  // game state
@@ -269,11 +275,11 @@ function newLake() { return { open: false, clarity: 0, released: 0, restDay: -1,
 function newForest() { return { open: false, sapling: [-1, -1, -1], watered: [false, false, false], treeAwake: false, forageDay: -1, forage: [], restDay: -1 }; }
 function newGame() {
   G = {
-    scene: 'farm', px: 0.9, py: -2.0, dir: 'down', facingLeft: false, step: 0, stepT: 0,
+    scene: 'farm', px: ANCHOR('start', 0.9, -2.0)[0], py: ANCHOR('start', 0.9, -2.0)[1], dir: 'down', facingLeft: false, step: 0, stepT: 0,
     inv: { Hoe: 1, 'Watering Can': 1, Scythe: 1, 'Carrot Seed': 5, Apple: 3 },
     gold: 50, health: 100, hunger: 100, thirst: 100, energy: 0, heart: 20,
     day: 1, hour: 6, minute: 0, raining: false, snowing: false, water: 10,
-    tiles: {}, crops: {}, cleared: [], clearedDebris: [], debrisHits: {},
+    tiles: {}, crops: {}, cleared: [], clearedDebris: [], debrisHits: {}, openPlots: [], restedPlots: [], compostPoints: 0, compostReady: 0,
     market: { demand: 'Carrot', haggle: 0, haggled: false, sold: {} },
     log: { harvested: 0, meals: 0, exhausted: false, starved: false, drank: false },
     story: { season: 0, highest: 0, unlocks: [], photos: [], villagers: {}, kindness: 0, shareDay: -1, sharedToday: 0, donationDay: -1,
@@ -432,7 +438,10 @@ function selectedItem() { if (!has(G.selected)) { const it = hotbarItems(); G.se
 const tileAt = (x, y) => G.tiles[x + ',' + y];
 const debrisCleared = (x, y) => G.clearedDebris.includes(x + ',' + y);
 // soil you can till: the old field, open soil on the map, and plot cells you have cleared
-function tillable(x, y) { if (FIELDSET.has(x + ',' + y)) return true; const ch = mapAt(x, y); return ch === 'x' || (isDebris(ch) && debrisCleared(x, y)); }
+const plotOpen = p => p && (p.startOpen || G.openPlots.includes(p.id));
+const plotRested = p => p && G.restedPlots.includes(p.id);
+const plotCost = p => Math.max(2, Math.floor(((p.x1 - p.x0 + 1) * (p.y1 - p.y0 + 1) + 2) / 3));
+function tillable(x, y) { return plotOpen(plotAt(x, y)); }
 function debrisAt(x, y) {
   const ch = G.scene === 'forest' ? forestAt(x, y) : mapAt(x, y);
   return (isDebris(ch) || ch === 'L') && !debrisCleared(x, y) ? ch : null;
@@ -472,10 +481,10 @@ const cropAt = (x, y) => G.crops[x + ',' + y];
 const mature = c => c.days >= CROPS[c.id].days;
 function cellsFor(cx, cy, tier) { return tier >= 2 ? [[cx, cy], [cx - 1, cy], [cx + 1, cy]] : [[cx, cy]]; }
 function harvestCell(x, y) {
-  const c = cropAt(x, y); const def = CROPS[c.id]; const blessed = c.blessed; const n = 1 + (blessed ? 1 : 0);
-  if (def.regrow) { c.days = def.days - def.regrow; c.blessed = false; } else delete G.crops[x + ',' + y];
+  const c = cropAt(x, y); const def = CROPS[c.id]; const blessed = c.blessed, rich = c.rich; const n = 1 + (blessed ? 1 : 0) + (rich ? 1 : 0);
+  if (def.regrow) { c.days = def.days - def.regrow; c.blessed = false; c.rich = false; } else delete G.crops[x + ',' + y];
   add(def.harvest, n); G.log.harvested += n;
-  toast(`Harvested ${def.harvest} x${n}` + (blessed ? '  [#ffd84a](golden!)[/]' : ''));
+  toast(`Harvested ${def.harvest} x${n}` + (blessed ? '  [#ffd84a](golden!)[/]' : '') + (rich ? '  [#c9a46a](rested soil +1)[/]' : ''));
   report('harvest', def.harvest); if (blessed) { report('golden'); changeHeart(3, 'A golden harvest!'); }
   else if (G.log.harvested === n) changeHeart(1, 'Your first harvest of the day.');
   if (def.harvest === 'Sunflower') changeHeart(2 * n, 'The sunflower makes you smile.');
@@ -492,6 +501,15 @@ function worldClick(wx, wy) {
   if (spot >= 0) { useSpot(spot, item, d); return; }
   if (item === 'Acorn') { toast('Acorns want to grow in a forest clearing. Look for the ring of pebbles.'); return; }
   const deb = debrisAt(cx, cy); if (deb) { hitDebris(cx, cy, deb, d); return; }
+  const plot = G.scene === 'farm' ? plotAt(cx, cy) : null;
+  if (plot && !plotOpen(plot)) {
+    const have = G.inv.Compost || 0, cost = plotCost(plot);
+    if (item !== 'Compost') { toast(`This plot has gone gray and hard. Spread ${cost} bags of compost on it to bring it back. (You have ${have})`, 3.5); return; }
+    if (have < cost) { toast(`Not enough compost. This plot needs ${cost} bags. (You have ${have})`, 3); return; }
+    remove('Compost', cost); G.openPlots.push(plot.id); if (!G.restedPlots.includes(plot.id)) G.restedPlots.push(plot.id);
+    changeHeart(2); toast('The gray crust crumbles away. Dark, soft soil breathes again. (+2 Heart, rested soil)', 4); return;
+  }
+  if (item === 'Compost') { toast('Spread compost on a gray, hardened plot to bring it back.', 2.5); return; }
   if (d.tool === 'scythe') {
     const ripe = []; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const c = cropAt(cx + dx, cy + dy); if (c && mature(c)) ripe.push([cx + dx, cy + dy]); }
     if (!ripe.length) { toast('Nothing is ripe here yet.'); return; }
@@ -501,7 +519,7 @@ function worldClick(wx, wy) {
   if (crop && mature(crop)) { harvestCell(cx, cy); return; }
   if (d.tool === 'hoe') {
     const t = cellsFor(cx, cy, d.tier).filter(([x, y]) => tillable(x, y) && !debrisAt(x, y) && !tileAt(x, y));
-    if (!t.length) { toast(tileAt(cx, cy) ? 'This soil is already tilled. Plant a seed here!' : 'You can only till the dirt field.'); return; }
+    if (!t.length) { toast(tileAt(cx, cy) ? 'This ridge is already tilled. Plant a seed here!' : 'You can only farm on the ridges of an open plot.'); return; }
     if (!useEnergy(d.tier >= 2 ? 6 : 4)) return; t.forEach(([x, y]) => G.tiles[x + ',' + y] = { wet: false });
   } else if (d.tool === 'can') {
     if (G.water <= 0) { toast('Your watering can is empty. Refill it at the well (E).'); return; }
@@ -515,7 +533,8 @@ function worldClick(wx, wy) {
     if (crop) { toast('Something is already growing here.'); return; }
     const def = CROPS[d.crop];
     if (G.story.season < def.season) { toast(`It's still ${SEASONS[G.story.season]} in your heart. ${def.harvest} needs ${SEASONS[def.season]}.`); return; }
-    if (!useEnergy(1)) return; remove(item); G.crops[cx + ',' + cy] = { id: d.crop, days: 0, watered: tileAt(cx, cy).wet, blessed: false };
+    if (!useEnergy(1)) return; remove(item); const rich = plotRested(plotAt(cx, cy)); G.crops[cx + ',' + cy] = { id: d.crop, days: 0, watered: tileAt(cx, cy).wet, blessed: false, rich };
+    if (rich && !G.richHint) { G.richHint = true; toast('This plot rested overnight. The soil is rich: crops planted today give +1 on their first harvest.', 4); }
   } else if (d.cat === 'Special' && item !== 'Star Fragment') {
     if (!crop) { toast('Use it on a growing crop.'); return; }
     if (item === "Earth's Breath") { crop.days++; toast("The crop breathes in the earth's energy and grows!"); }
@@ -741,6 +760,12 @@ function endDay(passedOut) {
     c.watered = G.raining;
   }
   for (const k in G.tiles) G.tiles[k].wet = G.raining;
+  // plots: an open plot left empty overnight rests (rich soil); the compost heap turns every two things into a bag
+  let rested = 0;
+  for (const p of PLOTS) { if (!plotOpen(p)) continue; const has = Object.keys(G.crops).some(k => { const [x, y] = k.split(',').map(Number); return plotAt(x, y) === p; });
+    if (has) G.restedPlots = G.restedPlots.filter(id => id !== p.id); else if (!G.restedPlots.includes(p.id)) { G.restedPlots.push(p.id); rested++; } }
+  if (rested) lines.push(`${rested} plot(s) rested overnight (rich soil for the next crop)`);
+  const made = Math.floor(G.compostPoints / 2); if (made) { G.compostPoints -= made * 2; G.compostReady = Math.min(20, G.compostReady + made); lines.push(`The compost heap made ${made} bag(s) of compost`); }
   const bloom = perk('bloom'); if (bloom) { delta += bloom; lines.push(`Your spirit hummed you to sleep  [#9dff9d]+${bloom}[/]`); changeHeart(bloom); }
   // market + resources + log
   const cands = Object.values(CROPS).filter(c => c.season <= after).map(c => c.harvest);
@@ -804,9 +829,6 @@ function go(scene, x, y) {
 function objectsFor(scene) {
   if (scene !== 'farm') return [];
   const o = [];
-  TREES.forEach(([x, y], i) => o.push({ kind: 'tree', x, y, key: 't' + i }));
-  STONES.forEach(([x, y], i) => o.push({ kind: 'rock', x, y, key: 's' + i }));
-  APPLES.forEach(([x, y], i) => o.push({ kind: 'apple', x, y, key: 'a' + i }));
   for (const [x, y, ch] of MAPCELLS) {
     const kind = ch === 'T' ? 'tree' : ch === 'r' ? 'rock' : ch === 'a' ? 'apple' : null;
     if (kind) o.push({ kind, x: x + 0.5, y: y + 0.5, key: 'm' + x + ',' + y });
@@ -853,7 +875,8 @@ function interact() {
   }
   if (G.scene === 'farm') {
     const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.0)) { talk(mina); return; }
-    if (near(3.68, -0.4, 1.2)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
+    if (near(COMPOST[0], COMPOST[1], 1.4)) { useHeap(); return; }
+    if (near(WELL[0], WELL[1] - 0.4, 1.3)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) { go('hill', 0, -3.1); return; }
     if (near(POND[0], POND[1], 1.9)) { fish(); return; }
   } else if (G.scene === 'home') {
@@ -866,6 +889,12 @@ function interact() {
     if (near(0, -4.4, 1.4)) { go('farm', LADDER[0] - 0.6, LADDER[1] - 1.0); return; }
     if (near(5.1, -2.0, 1.5)) { if (S().benchDay === G.day) toast('You already watched the stars tonight.'); else { S().benchDay = G.day; changeHeart(3, 'You sat on the bench and watched the stars.'); } }
   }
+}
+function useHeap() {
+  if (G.compostReady > 0) { const n = G.compostReady; G.compostReady = 0; add('Compost', n); toast(`You dig out ${n} bag(s) of dark, crumbly compost.`, 3); return; }
+  const item = selectedItem();
+  if (ORGANIC.has(item)) { const n = keys.ShiftLeft || keys.ShiftRight ? G.inv[item] : 1; remove(item, n); G.compostPoints += n; toast(`Into the heap: ${item} x${n}. Every two become a bag of compost by morning. (In the heap: ${G.compostPoints})`, 3.5); return; }
+  toast(G.compostPoints ? `The heap is warm and quietly working. (${G.compostPoints} inside, ready by morning)` : 'A compost heap. Hold a crop, fruit, greens or food and press E to add it. (Shift+E: all of it)', 3.5);
 }
 function share() {
   const item = selectedItem(); const d = ITEMS[item];
@@ -1046,7 +1075,7 @@ function update(dt) {
   if (moving) {
     const l = Math.hypot(mx, my); let sp = 5 * (G.hunger <= 0 || G.thirst <= 0 ? 0.6 : 1);
     const ox = G.px, oy = G.py;
-    const tiles = G.scene === 'forest' || G.scene === 'lake' || G.scene === 'sunset';
+    const tiles = G.scene === 'forest' || G.scene === 'lake' || G.scene === 'sunset' || G.scene === 'farm';
     G.px += mx / l * sp * dt; if (tiles && feetBlocked()) G.px = ox;   // trees, water, the old tree, logs, reeds
     G.py += my / l * sp * dt; if (tiles && feetBlocked()) G.py = oy;
     if (Math.abs(mx) > Math.abs(my)) { G.dir = 'side'; G.facingLeft = mx < 0; } else G.dir = my > 0 ? 'up' : 'down';
@@ -1057,7 +1086,7 @@ function update(dt) {
   // portals
   if (G.scene === 'farm') {
     const open = MAP.exits.find(e => !e.locked && inRect(exitRect(e), G.px, G.py));
-    if (near(-8.38, -4.54, 0.7)) go('home', 0, -3.5);
+    if (near(DOOR[0], DOOR[1], 0.7)) go('home', 0, -3.5);
     else if (open) go(open.to.toLowerCase(), open.spawnX, open.spawnY);          // the end of the road is the way to the market
     else if (G.py > 4.35 && Math.abs(G.px) < 0.7) go('haggle', 0, 0);
     const gate = MAP.exits.find(e => areaOpen(e.to) && inRect(exitRect(e), G.px, G.py));
@@ -1120,13 +1149,13 @@ function update(dt) {
   clearPressed();
 }
 function feetBlocked() {
-  const blocked = G.scene === 'lake' ? lakeBlocked : G.scene === 'sunset' ? hillBlocked : forestBlocked;
+  const blocked = G.scene === 'lake' ? lakeBlocked : G.scene === 'sunset' ? hillBlocked : G.scene === 'farm' ? farmBlocked : forestBlocked;
   for (const [dx, dy] of [[-0.2, -0.5], [0.2, -0.5], [-0.2, -0.28], [0.2, -0.28]]) if (blocked(Math.floor(G.px + dx), Math.floor(G.py + dy))) return true;
   return false;
 }
 function clampPlayer() {
   const s = sc(); let minX = s.cx - s.ww / 2 + 0.4, maxX = s.cx + s.ww / 2 - 0.4, minY = s.cy - s.wh / 2 + 0.6, maxY = s.cy + s.wh / 2 - 0.9;
-  if (G.scene === 'farm') { minX = MAPB.x0 + 0.3; maxX = MAPB.x1 - 0.3; minY = MAPB.y0 + 0.5; maxY = Math.abs(G.px) > 0.7 ? MAPB.y1 - 0.8 : MAPB.y1 - 0.35; }
+  if (G.scene === 'farm') { minX = MAPB.x0 + 0.3; maxX = MAPB.x1 - 0.3; minY = MAPB.y0 + 0.5; maxY = Math.abs(G.px + 0.5) > 1.2 ? MAPB.y1 - 0.8 : MAPB.y1 - 0.35; }
   if (G.scene === 'forest') { minX = FORB.x0 + 0.3; maxX = FORB.x1 - 0.3; minY = FORB.y0 + 0.5; maxY = FORB.y1 - 0.8; }
   if (G.scene === 'lake') { minX = LAKB.x0 + 0.3; maxX = LAKB.x1 - 0.3; minY = LAKB.y0 + 0.5; maxY = LAKB.y1 - 0.8; }
   if (G.scene === 'sunset') { minX = HILB.x0 + 0.3; maxX = HILB.x1 - 0.3; minY = HILB.y0 + 0.5; maxY = HILB.y1 - 0.8; }
@@ -1136,7 +1165,7 @@ function clampPlayer() {
   G.px = Math.max(minX, Math.min(maxX, G.px)); G.py = Math.max(minY, Math.min(maxY, G.py));
   const solids = [];
   if (G.scene === 'farm') {
-    solids.push([3.68, -0.45, 0.55]); solids.push([VILLAGERS[2].x, VILLAGERS[2].y - 0.4, 0.25]);
+    solids.push([WELL[0], WELL[1] - 0.45, 0.55]); solids.push([VILLAGERS[2].x, VILLAGERS[2].y - 0.4, 0.25]);
     // stumps and boulders near the player block the way (weeds don't)
     const pcx = Math.floor(G.px), pcy = Math.floor(G.py - 0.4);
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const ch = debrisAt(pcx + dx, pcy + dy); if (ch === 'k' || ch === 'o') solids.push([pcx + dx + 0.5, pcy + dy + 0.3, 0.45]); }
@@ -1225,10 +1254,16 @@ function renderWorld() {
   } else { const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH); }
   const draws = [];  // [sortY, fn]
   if (G.scene === 'farm') {
-    const soil = FIELD.slice();
-    for (const [x, y, ch] of MAPCELLS) if (ch === 'x' || (isDebris(ch) && debrisCleared(x, y))) soil.push(x + ',' + y);
-    for (const k of soil) { const [x, y] = k.split(',').map(Number); const t = G.tiles[k]; const key = t ? (t.wet ? 'Tiles/tilled_wet' : 'Tiles/tilled') : 'Tiles/dirt';
+    for (const k in G.tiles) { const [x, y] = k.split(',').map(Number); const key = G.tiles[k].wet ? 'Tiles/tilled_wet' : 'Tiles/tilled';
       const [sx, sy] = toScreen(x, y + 1); if (sx < -64 || sy < -64 || sx > CW || sy > CH) continue; c.drawImage(IMG[key], Math.round(sx), Math.round(sy), 64, 64); }
+    for (const p of PLOTS) {                     // hardened plots (gray crust), resting plots (straw on empty ridges)
+      const open = plotOpen(p), rest = open && plotRested(p); if (open && !rest) continue;
+      for (let x = p.x0; x <= p.x1; x++) for (let y = p.y0; y <= p.y1; y++) {
+        if (rest && cropAt(x, y)) continue;
+        const key = open ? 'World/plot_straw_' + (((x * 5 + y * 11) % 3 + 3) % 3) : 'World/plot_hard_' + (((x * 7 + y * 13) % 3 + 3) % 3);
+        const [sx, sy] = toScreen(x, y + 1); if (sx < -64 || sy < -64 || sx > CW || sy > CH) continue; c.drawImage(IMG[key], Math.round(sx), Math.round(sy), 64, 64);
+      }
+    }
     for (const [x, y, ch] of MAPCELLS) {
       if (!isDebris(ch) || debrisCleared(x, y)) continue;
       const k = x + ',' + y, p = debrisPunch[k] || 0;
@@ -1252,7 +1287,9 @@ function renderWorld() {
       if (ob.kind === 'rock') draws.push([ob.y, () => sprite(c, G.story.season === 0 ? 'World/rock_winter' : 'World/rock', ob.x, ob.y)]);
       if (ob.kind === 'apple') draws.push([ob.y, () => sprite(c, 'World/apple_ground', ob.x, ob.y)]);
     }
-    draws.push([-0.03 - 0.6, () => sprite(c, G.story.season === 0 ? 'World/well_winter' : 'World/well', 3.68, -0.03)]);
+    draws.push([WELL[1] - 0.6, () => sprite(c, G.story.season === 0 ? 'World/well_winter' : 'World/well', WELL[0], WELL[1])]);
+    draws.push([CHEST[1] - 0.4, () => sprite(c, G.story.season === 0 ? 'World/storage_box_winter' : 'World/storage_box', CHEST[0], CHEST[1])]);
+    draws.push([COMPOST[1] - 0.5, () => sprite(c, 'World/compost_heap', COMPOST[0], COMPOST[1] - 0.5, 1, 'bottom')]);
     if (starVineOpen()) draws.push([LADDER[1] - 1.1, () => sprite(c, 'World/star_ladder', LADDER[0], LADDER[1])]);
   }
   if (G.scene === 'lake') {
@@ -1280,7 +1317,7 @@ function renderWorld() {
     const rk = h.drying.length === 0 ? 'drying_rack_empty' : h.drying.some(d => G.day >= d) ? 'drying_rack_dried' : 'drying_rack_hung';
     draws.push([HRACK[1] - 0.5, () => sprite(c, 'World/' + rk, HRACK[0], HRACK[1] - 0.45, 1, 'bottom')]);
   }
-  if (G.scene === 'farm' && unlocked('ending_seen')) draws.push([-3.85, () => sprite(c, seasonal('cottage_color'), -7.75, -3.85, 1, 'bottom')]);
+  if (G.scene === 'farm' && unlocked('ending_seen')) draws.push([COTTAGE[1], () => sprite(c, seasonal('cottage_color'), COTTAGE[0], COTTAGE[1], 1, 'bottom')]);
   if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
   if (G.scene === 'market') {
     draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
@@ -1397,7 +1434,8 @@ function promptText() {
     if (near(3.68, -0.4, 1.2)) return '[E] Drink and refill your watering can';
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
     if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The pond is full of fish');
-    if (near(-8.38, -4.54, 1.6)) return 'Home';
+    if (near(DOOR[0], DOOR[1], 1.6)) return 'Home';
+    if (near(COMPOST[0], COMPOST[1], 1.4)) return G.compostReady ? `[E] Take ${G.compostReady} bag(s) of compost` : ORGANIC.has(selectedItem()) ? `[E] Put ${selectedItem()} in the heap  (Shift+E: all)` : `Compost heap (${G.compostPoints} inside)`;
     if (G.px < MAPB.x0 + 2.2 && Math.abs(G.py + 9.1) < 1.4) return F().open ? '← To the forest' : 'Gray thorns block the forest path';
     if (G.px > MAPB.x1 - 2.4 && Math.abs(G.py + 10.6) < 1.4) return Lk().open ? 'To the lake →' : 'Tall gray reeds block the path to the lake';
     if (G.px > MAPB.x1 - 2.2 && Math.abs(G.py + 4.5) < 1.3) return 'To the market →';
@@ -1492,7 +1530,7 @@ $('t-speed').onclick = e => { speed = speed === 1 ? 4 : 1; e.currentTarget.class
 $('t-new').onclick = () => { newGame(); toasts = []; dialogue = null; panel = null; announce = null; G.spirit = null; save(); introAnnounce(); uiCanvas.focus(); };
 
 function introAnnounce() {
-  showAnnounce('[#ff8fb1]A new life begins[/]\n\n"Day after day in the gray city felt endless. So I left it all behind and set out for a quiet village. I wonder... can I build my happiness again?"\n\nThe world is gray. It is winter in your heart.\nEat, drink, rest and go to bed on time: spring will come.\n\n[#c8c0b0]Till the dirt (Hoe) → plant (Carrot Seed) → water → sleep. Walk into trees and rocks to gather.\nEast of the road, an old overgrown field is waiting to be cleared.[/]', 14);
+  showAnnounce('[#ff8fb1]A new life begins[/]\n\n"Day after day in the gray city felt endless. So I left it all behind and set out for a quiet village. I wonder... can I build my happiness again?"\n\nThe world is gray. It is winter in your heart.\nEat, drink, rest and go to bed on time: spring will come.\n\n[#c8c0b0]Till the dirt (Hoe) → plant (Carrot Seed) → water → sleep. Walk into trees and rocks to gather.\nEast of the yard, the vegetable plots wait. Only one is soft enough to farm; the others have gone gray and hard. A compost heap can bring them back.[/]', 14);
 }
 
 // ------------------------------------------------------------------ boot
@@ -1505,6 +1543,7 @@ newGame();
 const resumed = load();
 if (G.scene === 'haggle' || G.scene === 'hill') { G.scene = 'farm'; G.px = 0.9; G.py = -2.0; }
 G.clearedDebris = G.clearedDebris || []; G.debrisHits = G.debrisHits || {};   // saves from before the bigger farm
+G.openPlots = G.openPlots || []; G.restedPlots = G.restedPlots || []; G.compostPoints = G.compostPoints || 0; G.compostReady = G.compostReady || 0;   // before the homestead
 G.story.forest = Object.assign(newForest(), G.story.forest || {});             // saves from before the forest
 G.story.lake = Object.assign(newLake(), G.story.lake || {});                   // saves from before the lake
 G.story.hill = Object.assign(newHill(), G.story.hill || {});                   // saves from before Sunset Hill

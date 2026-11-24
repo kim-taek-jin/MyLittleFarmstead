@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.UI;
@@ -688,6 +688,11 @@ public class DataManager : MonoBehaviour
         // 새로운 날
         int earthLevel = SpiritDB.PerkLevel(story.spirit, "earth");
         int matured = farm.AdvanceDay(raining, 0.1f * earthLevel, rng, after);
+        // 텃밭: 작물 없이 밤을 보낸 뙈기는 쉰 땅, 퇴비 더미는 두 개마다 퇴비 한 포대
+        int compostBefore = farm.compostReady;
+        int rested = Plots.AdvanceNight(farm, FarmMap.PlotList);
+        if (rested > 0) lines.Add(Loc.T($"{rested} plot(s) rested overnight (rich soil for the next crop)", $"텃밭 {rested}뙈기가 하룻밤 쉬었어요 (다음 작물은 땅심 보너스)"));
+        if (farm.compostReady > compostBefore) lines.Add(Loc.T($"The compost heap made {farm.compostReady - compostBefore} bag(s) of compost", $"퇴비 더미에서 퇴비 {farm.compostReady - compostBefore}포대가 다 됐어요"));
         int bloomLevel = SpiritDB.PerkLevel(story.spirit, "bloom");
         if (bloomLevel > 0)
         {

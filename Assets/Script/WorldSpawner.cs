@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 씬이 열릴 때 코드로 주민과 낚시터를 배치합니다. (씬 파일 수정 없음)
@@ -27,7 +27,7 @@ public static class WorldSpawner
 
         if (scene.name == "Farm")
         {
-            FishingSpot spot = FishingSpot.Create(FarmPond, 1.4f);
+            FishingSpot spot = FishingSpot.Create(FarmMap.Active ? FarmMap.Anchor("pond", FarmPond) : FarmPond, 1.4f);
             SceneManager.MoveGameObjectToScene(spot.gameObject, scene);
             StarHill hill = StarHill.Create(mat, PixelArt.CharacterScale);
             SceneManager.MoveGameObjectToScene(hill.gameObject, scene);

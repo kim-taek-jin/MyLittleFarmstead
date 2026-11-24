@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 // 회색 주민. E키로 대화하고, 소원(필요한 아이템)을 가져다주면 색이 1/3씩 돌아옵니다.
 // WorldSpawner가 씬이 열릴 때 코드로 생성하므로 씬에 따로 배치할 필요가 없습니다.
@@ -19,7 +19,8 @@ public class Villager : MonoBehaviour
     public static Villager Create(VillagerDef def, Material material, float characterScale)
     {
         GameObject go = new GameObject("Villager_" + def.id);
-        go.transform.position = new Vector3(def.position.x, def.position.y, 0f);
+        Vector2 at = def.scene == "Farm" && FarmMap.Active ? FarmMap.Anchor(def.id, def.position) : def.position;
+        go.transform.position = new Vector3(at.x, at.y, 0f);
 
         CircleCollider2D talkRange = go.AddComponent<CircleCollider2D>();
         talkRange.isTrigger = true;

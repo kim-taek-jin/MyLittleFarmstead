@@ -27,6 +27,8 @@ public class PauseMenu : MonoBehaviour
     private bool otherUIOpenAtFrameStart;
     private float statusUntil;
     private readonly List<GameObject> scenePanels = new List<GameObject>();
+    // 언어가 바뀌면 다시 쓰는 글자들
+    private readonly List<KeyValuePair<TextMeshProUGUI, System.Func<string>>> localized = new List<KeyValuePair<TextMeshProUGUI, System.Func<string>>>();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Init()
@@ -44,10 +46,23 @@ public class PauseMenu : MonoBehaviour
         Build();
         panel.SetActive(false);
         SceneManager.sceneLoaded += OnSceneLoaded;
+        Loc.Changed += Relabel;
         FindScenePanels();
     }
 
-    void OnDestroy() { SceneManager.sceneLoaded -= OnSceneLoaded; }
+    void OnDestroy() { SceneManager.sceneLoaded -= OnSceneLoaded; Loc.Changed -= Relabel; }
+
+    void Bind(TextMeshProUGUI t, System.Func<string> text)
+    {
+        t.text = text();
+        localized.Add(new KeyValuePair<TextMeshProUGUI, System.Func<string>>(t, text));
+    }
+
+    void Relabel()
+    {
+        foreach (var pair in localized) if (pair.Key != null) pair.Key.text = pair.Value();
+        RefreshFullscreenLabel();
+    }
 
     void OnSceneLoaded(Scene s, LoadSceneMode m)
     {
@@ -110,9 +125,9 @@ public class PauseMenu : MonoBehaviour
     void SaveNow()
     {
         DataManager data = DataManager.instance;
-        if (data == null || data.IsGameOver) { SetStatus("Can't save right now."); return; }
+        if (data == null || data.IsGameOver) { SetStatus(Loc.T("Can't save right now.", "지금은 저장할 수 없어요.")); return; }
         data.SaveGame();
-        SetStatus("Saved.");
+        SetStatus(Loc.T("Saved.", "저장했어요."));
     }
 
     void SaveAndQuit()
@@ -138,10 +153,11 @@ public class PauseMenu : MonoBehaviour
         {
             Screen.SetResolution(1600, 900, FullScreenMode.Windowed);
         }
-        fullscreenLabel.text = goFull ? "Fullscreen: On" : "Fullscreen: Off";
+        fullscreenLabel.text = FullscreenText(goFull);
     }
 
-    void RefreshFullscreenLabel() { fullscreenLabel.text = Screen.fullScreen ? "Fullscreen: On" : "Fullscreen: Off"; }
+    static string FullscreenText(bool on) => on ? Loc.T("Fullscreen: On", "전체 화면: 켬") : Loc.T("Fullscreen: Off", "전체 화면: 끔");
+    void RefreshFullscreenLabel() { if (fullscreenLabel != null) fullscreenLabel.text = FullscreenText(Screen.fullScreen); }
 
     void SetStatus(string s) { status.text = s; statusUntil = Time.unscaledTime + 2f; }
 
@@ -169,7 +185,7 @@ public class PauseMenu : MonoBehaviour
         shade.anchorMin = Vector2.zero; shade.anchorMax = Vector2.one;
         shade.offsetMin = shade.offsetMax = Vector2.zero;
 
-        const float W = 620f, H = 700f;
+        const float W = 620f, H = 770f;
         RectTransform frame = Rect("Frame", panel.transform, Border);
         frame.anchorMin = frame.anchorMax = frame.pivot = new Vector2(0.5f, 0.5f);
         frame.sizeDelta = new Vector2(W, H);
@@ -178,30 +194,31 @@ public class PauseMenu : MonoBehaviour
         inner.offsetMin = new Vector2(6f, 6f); inner.offsetMax = new Vector2(-6f, -6f);
 
         TextMeshProUGUI title = Label("Title", frame, 48f, TextAlignmentOptions.Center, Gold);
-        title.text = "Paused";
+        Bind(title, () => Loc.T("Paused", "일시정지"));
         Place(title.rectTransform, 0f, -26f, W, 60f);
 
         float y = -104f;
-        AddButton(frame, "Resume", ref y, Close);
-        AddButton(frame, "Save", ref y, SaveNow);
+        AddButton(frame, () => Loc.T("Resume", "계속하기"), ref y, Close);
+        AddButton(frame, () => Loc.T("Save", "저장하기"), ref y, SaveNow);
         y -= 8f;
-        AddSlider(frame, "Master", Sfx.Master, Sfx.SetMaster, ref y);
-        AddSlider(frame, "Music", Sfx.Music, Sfx.SetMusic, ref y);
-        AddSlider(frame, "Sound", Sfx.Effects, v => { Sfx.SetEffects(v); Sfx.Play("pickup", 1f, 0.15f); }, ref y);
+        AddSlider(frame, () => Loc.T("Master", "전체"), Sfx.Master, Sfx.SetMaster, ref y);
+        AddSlider(frame, () => Loc.T("Music", "음악"), Sfx.Music, Sfx.SetMusic, ref y);
+        AddSlider(frame, () => Loc.T("Sound", "효과음"), Sfx.Effects, v => { Sfx.SetEffects(v); Sfx.Play("pickup", 1f, 0.15f); }, ref y);
         y -= 8f;
-        fullscreenLabel = AddButton(frame, "Fullscreen: On", ref y, ToggleFullscreen);
-        AddButton(frame, "Save & Quit", ref y, SaveAndQuit);
+        fullscreenLabel = AddButton(frame, () => FullscreenText(Screen.fullScreen), ref y, ToggleFullscreen);
+        AddButton(frame, () => Loc.T("Language: English", "언어: 한국어"), ref y, Loc.Toggle);
+        AddButton(frame, () => Loc.T("Save & Quit", "저장하고 끝내기"), ref y, SaveAndQuit);
 
         status = Label("Status", frame, 24f, TextAlignmentOptions.Center, Gold);
         Place(status.rectTransform, 0f, y - 4f, W, 32f);
         TextMeshProUGUI hint = Label("Hint", frame, 20f, TextAlignmentOptions.Center, new Color(Text.r, Text.g, Text.b, 0.6f));
-        hint.text = "ESC: back to game";
+        Bind(hint, () => Loc.T("ESC: back to game", "ESC: 게임으로 돌아가기"));
         Place(hint.rectTransform, 0f, -H + 44f, W, 28f);
     }
 
-    TextMeshProUGUI AddButton(RectTransform parent, string text, ref float y, UnityEngine.Events.UnityAction onClick)
+    TextMeshProUGUI AddButton(RectTransform parent, System.Func<string> text, ref float y, UnityEngine.Events.UnityAction onClick)
     {
-        RectTransform border = Rect(text, parent, Border);
+        RectTransform border = Rect("Button", parent, Border);
         Place(border, 110f, y, 400f, 58f);
         Image fill = Rect("Fill", border, ButtonFill).GetComponent<Image>();
         RectTransform frt = (RectTransform)fill.transform;
@@ -216,17 +233,18 @@ public class PauseMenu : MonoBehaviour
         b.colors = cb;
         b.onClick.AddListener(onClick);
         TextMeshProUGUI label = Label("Text", border, 30f, TextAlignmentOptions.Center, Text);
-        label.text = text;
+        Bind(label, text);
         label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
         label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
         y -= 70f;
         return label;
     }
 
-    void AddSlider(RectTransform parent, string name, float value, System.Action<float> onChange, ref float y)
+    void AddSlider(RectTransform parent, System.Func<string> text, float value, System.Action<float> onChange, ref float y)
     {
+        string name = "Volume" + localized.Count;
         TextMeshProUGUI label = Label(name, parent, 26f, TextAlignmentOptions.Left, Text);
-        label.text = name;
+        Bind(label, text);
         Place(label.rectTransform, 70f, y - 4f, 160f, 36f);
 
         RectTransform root = new GameObject(name + "Slider", typeof(RectTransform)).GetComponent<RectTransform>();

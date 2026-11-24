@@ -96,6 +96,7 @@ public static class ItemDB
         Register(new ItemDef { name = "Pumpkin Pie", category = ItemCategory.Food, sellPrice = 320, hunger = 45f, heart = 4f, color = new Color(0.9f, 0.55f, 0.25f), description = "A golden autumn pie. Tastes like a good year." });
 
         // --- 별의 언덕 ---
+        Register(new ItemDef { name = "Compost", category = ItemCategory.Special, sellPrice = 0, color = new Color(0.4f, 0.3f, 0.2f), description = "Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life." });
         Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. Your spirit loves it (all four colors)." });
 
         // --- 설치/작업대 ---

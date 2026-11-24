@@ -105,12 +105,14 @@ public class PixelHUD : MonoBehaviour
 
         // 오른쪽 위 막대 상자
         RectTransform bars = Box("Bars", root, new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(400f, 160f));
-        string[] names = { "HP", "Food", "Water", "Energy" };
+        string[][] names = { new[] { "HP", "체력" }, new[] { "Food", "배부름" }, new[] { "Water", "목마름" }, new[] { "Energy", "기력" } };
         Color[] colors = { new Color(0.88f, 0.28f, 0.28f), new Color(0.88f, 0.63f, 0.25f), new Color(0.35f, 0.64f, 0.89f), new Color(0.47f, 0.82f, 0.38f) };
         for (int i = 0; i < 4; i++)
         {
-            TextMeshProUGUI label = Label(names[i], bars, 24f, TextAlignmentOptions.Left);
-            label.text = names[i];
+            TextMeshProUGUI label = Label("Bar" + i, bars, 24f, TextAlignmentOptions.Left);
+            string[] pair = names[i];
+            label.text = Loc.T(pair[0], pair[1]);
+            Loc.Changed += () => { if (label != null) label.text = Loc.T(pair[0], pair[1]); };
             Place(label.rectTransform, 20f, -14f - i * 34f, 110f, 30f);
             RectTransform back = Rect("Back", bars, new Color(0.1f, 0.08f, 0.07f, 1f));
             Place(back, 130f, -18f - i * 34f, 250f, 22f);
@@ -218,7 +220,8 @@ public class PixelHUD : MonoBehaviour
         RectTransform frame = Box("Frame", rt, new Vector2(0.5f, 0.5f), Vector2.zero, rt.sizeDelta);
         frame.pivot = new Vector2(0.5f, 0.5f);
         TextMeshProUGUI title = Label("Title", frame, 36f, TextAlignmentOptions.Center);
-        title.text = "<color=#ffd84a>Bag</color>";
+        title.text = "<color=#ffd84a>" + Loc.T("Bag", "가방") + "</color>";
+        Loc.Changed += () => { if (title != null) title.text = "<color=#ffd84a>" + Loc.T("Bag", "가방") + "</color>"; };
         Place(title.rectTransform, 0f, -14f, 920f, 46f);
         bagGrid = new GameObject("Grid", typeof(RectTransform)).GetComponent<RectTransform>();
         bagGrid.SetParent(frame, false);
@@ -226,7 +229,8 @@ public class PixelHUD : MonoBehaviour
         bagInfo = Label("Info", frame, 24f, TextAlignmentOptions.TopLeft);
         Place(bagInfo.rectTransform, 34f, -440f, 852f, 80f);
         TextMeshProUGUI hint = Label("Hint", frame, 20f, TextAlignmentOptions.Right);
-        hint.text = "[I] or [Esc] Close";
+        hint.text = Loc.T("[I] or [Esc] Close", "[I] 또는 [Esc] 닫기");
+        Loc.Changed += () => { if (hint != null) hint.text = Loc.T("[I] or [Esc] Close", "[I] 또는 [Esc] 닫기"); };
         hint.color = new Color(0.78f, 0.75f, 0.69f);
         Place(hint.rectTransform, 30f, -520f, 860f, 30f);
         bag = go;
@@ -245,9 +249,11 @@ public class PixelHUD : MonoBehaviour
             Season s = data.CurrentSeason;
             string clock = time != null ? time.FormattedTime : "";
             int day = time != null ? time.day : 1;
-            infoLine1.text = $"<color={SeasonSystem.Color(s)}>{SeasonSystem.Name(s)}</color> Day {day}  {clock}";
-            string weather = data.snowing ? "<color=#dfe8ff>Snow</color>" : data.raining ? "<color=#8fd0ff>Rain</color>" : "<color=#ffd84a>Sunny</color>";
-            infoLine2.text = $"{weather}   <color=#ffd84a>{data.gold}G</color>   <color=#ff8fb1>Heart</color> {data.heart:0}";
+            infoLine1.text = $"<color={SeasonSystem.Color(s)}>{SeasonSystem.Name(s)}</color> " + Loc.T($"Day {day}", $"{day}일째") + $"  {clock}";
+            string weather = data.snowing ? "<color=#dfe8ff>" + Loc.T("Snow", "눈") + "</color>"
+                : data.raining ? "<color=#8fd0ff>" + Loc.T("Rain", "비") + "</color>"
+                : "<color=#ffd84a>" + Loc.T("Sunny", "맑음") + "</color>";
+            infoLine2.text = $"{weather}   <color=#ffd84a>{data.gold}G</color>   <color=#ff8fb1>" + Loc.T("Heart", "마음") + $"</color> {data.heart:0}";
             SetBar(0, data.health / Mathf.Max(1f, data.maxHealth));
             SetBar(1, data.hunger / Mathf.Max(1f, data.maxHunger));
             SetBar(2, data.thirst / Mathf.Max(1f, data.maxThirst));
@@ -259,7 +265,7 @@ public class PixelHUD : MonoBehaviour
         if (hasHotbar)
         {
             string held = Hotbar.SelectedItem;
-            heldName.text = string.IsNullOrEmpty(held) ? "" : held;
+            heldName.text = string.IsNullOrEmpty(held) ? "" : ItemNames.Display(held);
         }
 
         // 상점·상자·제작 창처럼 나중에 생기는 글자도 픽셀 글꼴로 (1초에 한 번 가볍게 확인)
@@ -323,7 +329,7 @@ public class PixelHUD : MonoBehaviour
             b.hud = this;
             bagSlots.Add(b);
         }
-        if (items.Count == 0) bagInfo.text = "Your bag is empty.";
+        if (items.Count == 0) bagInfo.text = Loc.T("Your bag is empty.", "가방이 비어 있어요.");
     }
 
     public void ShowItem(string itemName)
@@ -332,8 +338,9 @@ public class PixelHUD : MonoBehaviour
         if (def == null) return;
         string price = ItemDB.CanSell(itemName) ? $"   <color=#ffd84a>{def.sellPrice}G</color>" : "";
         string desc = string.IsNullOrEmpty(def.description) ? "" : "\n<color=#d8d0c0>" + def.description + "</color>";
-        string food = def.IsEdible ? $"\n<color=#9dff9d>Food +{def.hunger:0}  Water +{def.thirst:0}" + (def.heart > 0 ? $"  Heart +{def.heart:0}" : "") + "</color>" : "";
-        bagInfo.text = $"<color=#ffd84a>{def.name}</color>{price}{desc}{food}";
+        string food = def.IsEdible ? "\n<color=#9dff9d>" + Loc.T("Food", "배부름") + $" +{def.hunger:0}  " + Loc.T("Water", "목마름") + $" +{def.thirst:0}"
+            + (def.heart > 0 ? "  " + Loc.T("Heart", "마음") + $" +{def.heart:0}" : "") + "</color>" : "";
+        bagInfo.text = $"<color=#ffd84a>{ItemNames.Display(def.name)}</color>{price}{desc}{food}";
     }
 
     // ---------------------------------------------------------------- 그리기 도구

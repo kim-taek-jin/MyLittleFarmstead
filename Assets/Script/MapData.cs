@@ -39,6 +39,13 @@ public class MapArrival
 }
 
 [Serializable]
+public class MapAnchor
+{
+    public string name;
+    public float x, y;
+}
+
+[Serializable]
 public class MapData
 {
     public string name;
@@ -47,6 +54,16 @@ public class MapData
     public MapExit[] exits;
     public MapSign[] signs;
     public MapArrival[] arrivals;
+    public MapPlot[] plots;        // 텃밭 뙈기 (농장)
+    public MapAnchor[] anchors;    // 씬에 있던 물건(집 문, 우물, 상자 등)을 옮겨 놓을 자리
+
+    public Vector2 Anchor(string anchorName, Vector2 fallback)
+    {
+        if (anchors != null)
+            foreach (MapAnchor a in anchors)
+                if (a.name == anchorName) return new Vector2(a.x, a.y);
+        return fallback;
+    }
 
     private static readonly Dictionary<string, MapData> cache = new Dictionary<string, MapData>();
 

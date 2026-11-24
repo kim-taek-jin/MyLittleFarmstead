@@ -235,6 +235,17 @@ public class HillArea : MonoBehaviour
         MapData farm = FarmMap.Map;
         if (farm == null) return 0f;
         int total = 0, done = 0;
+        // 새 농장: 굳은 묵정밭 뙈기를 퇴비로 되살린 비율
+        if (farm.plots != null && farm.plots.Length > 0)
+        {
+            foreach (MapPlot p in farm.plots)
+            {
+                if (p.startOpen) continue;
+                total++;
+                if (Plots.IsOpen(data.farm, p)) done++;
+            }
+            return total > 0 ? done / (float)total : 1f;
+        }
         foreach (var cell in farm.Cells())
         {
             if (!MapData.IsDebris(cell.Value)) continue;
@@ -265,7 +276,7 @@ public class HillArea : MonoBehaviour
     {
         StoryState s = data.story;
         string Mark(bool done, string name) => done ? $"<color=#ffd84a>{name}</color>" : $"<color=#8a8a92>{name}</color>";
-        return Mark(FieldCleared(data) >= 0.75f, "The old field") + "   " + Mark(s.forest.treeAwake, "The forest") + "   " +
+        return Mark(FieldCleared(data) >= 0.75f, Loc.T("The plots", "텃밭")) + "   " + Mark(s.forest.treeAwake, "The forest") + "   " +
                Mark(s.lake.IsClear, "The lake") + "   " + Mark(s.AllVillagersRestored, "The village") + "   " +
                Mark(s.hill.AllRevived, "The orchard") + "   " + Mark(s.IsUnlocked("ending_seen"), "Home");
     }

@@ -5,26 +5,107 @@
  "width": 36,
  "height": 20,
  "rows": [
-  "~~~~~~~~~~~~~~~~~~..................",
-  "~~~~~~~~~~~~~~~~~~..T....T......T...",
-  "~~~~~~~~~~~~~~~~~~....T...*..T......",
-  "~~~~~~~~~~~~~~~~~~.a..............r.",
-  "~~~~~~~~~~~~~~~~~~.....*...T........",
-  "~~~~~~~~~~~~~~~~~~...r........r..*..",
-  "~~~~~~~~~~~~~~~~~~......a...*..a....",
-  "~~~~~~~~~~~~~~~~~~..................",
-  "~~~~~~~~~~~~~~~~~~==================",
-  "~~~~~~~~~~~~~~~~~~==================",
-  ".........==.....................==T.",
-  "..T....T.==..xxxgogkooxgoxkgxxg.==..",
-  "......r..==..xxxkggxxgggoxgggkg.==..",
-  "===========..goxgxggogggxgkxgkx.==..",
-  "===========..kgxkgogxggxgxggkxg.==..",
-  "...a.....==..ggggxgggggokgxgxgk.====",
-  "..*..T..*==..gkgxggxgxgggxggxkx.====",
-  "....r.*..==..xxgkgkoggggggggxgx.....",
-  ".T.......==.....*.....a.....*...r.T.",
-  ".........==........................."
+  "PwwPPPPP==PPPPPPPPPPPPPPPPPPPPPPPPPP",
+  "PwwPPPPP==PPPPPPPPPPPPPPPPPPPPPPPPPP",
+  "..wwWWWWyyHHHHHWWW.pppppp.ppppppp...",
+  "T.wwWKyyyyHHHHHJJWCpppppp.ppppppp...",
+  "..wwWKyyyyHHHHHJJW.pppppp.ppppppp..T",
+  ".ww.yyyyyyyyyyyyyW........ppppppp...",
+  ".ww*WyBByyyyyyyyyW..pppppp.......*..",
+  ".ww.WWWWWWyyWWWWWW|.pppppp..ppppp.|.",
+  "..ww.....===========================",
+  "r.ww.T...===========================",
+  "..ww*....==..T.....*....T..a...r.==.",
+  "a.ww...r.==.*.Ta.T...r....*..T...==*",
+  "..ww..a..==RRRRRRRRRR.SSSSSbSSSSS==.",
+  "==ss=======RRRRRRRRRR.SSbSSSSSSbS==.",
+  "==ss=======RRRRRRRRRR.SSSSSSSbSSS==.",
+  "r.wwRRRRR==RRRRRRRRRR.SSSSSSSSSSS===",
+  "..wwRRRRR==RRRRRRRRRR............===",
+  "T.wwRRRRR==RRRRRRRRRR.RRRRRRRRRRR...",
+  "..wwRRRRR==RRRRRRRRRR.RRRRRRRRRRR...",
+  "*.wwRRRRR==RRRRRRRRRR.RRRRRRRRRRR..."
+ ],
+ "plots": [
+  {
+   "id": "front",
+   "x0": 10,
+   "x1": 15,
+   "y1": 2,
+   "y0": 0,
+   "startOpen": true
+  },
+  {
+   "id": "long",
+   "x0": 17,
+   "x1": 23,
+   "y1": 2,
+   "y0": -1,
+   "startOpen": false
+  },
+  {
+   "id": "small",
+   "x0": 11,
+   "x1": 16,
+   "y1": -2,
+   "y0": -3,
+   "startOpen": false
+  },
+  {
+   "id": "corner",
+   "x0": 19,
+   "x1": 23,
+   "y1": -3,
+   "y0": -3,
+   "startOpen": false
+  }
+ ],
+ "anchors": [
+  {
+   "name": "door",
+   "x": 3.5,
+   "y": -0.15
+  },
+  {
+   "name": "well",
+   "x": 6.9,
+   "y": -1.4
+  },
+  {
+   "name": "storage",
+   "x": 0.4,
+   "y": 0.5
+  },
+  {
+   "name": "compost",
+   "x": 9.5,
+   "y": 1.5
+  },
+  {
+   "name": "pond",
+   "x": -6.6,
+   "y": -1.5
+  },
+  {
+   "name": "mina",
+   "x": -3.6,
+   "y": -0.6
+  },
+  {
+   "name": "starvine",
+   "x": 19.5,
+   "y": -6.4
+  },
+  {
+   "name": "start",
+   "x": 2.0,
+   "y": -1.8
+  },
+  {
+   "name": "cottage",
+   "x": 3.5,
+   "y": 0.0
+  }
  ],
  "exits": [
   {
@@ -48,7 +129,7 @@
    "locked": "Spring",
    "art": "thorns",
    "openArt": "flower_arch",
-   "sign": "The forest path is overgrown with gray thorns. Maybe when spring comes in your heart..."
+   "sign": "The path up the back hill is overgrown with gray thorns. Maybe when spring comes in your heart..."
   },
   {
    "to": "Lake",
@@ -61,7 +142,7 @@
    "locked": "Summer",
    "art": "reeds_gray",
    "openArt": "reeds_open",
-   "sign": "Tall gray reeds have closed over the path to the lake. They'll wake when summer comes to your heart."
+   "sign": "Tall gray reeds have closed over the path to the reservoir. They'll wake when summer comes to your heart."
   },
   {
    "to": "Hill",
@@ -102,8 +183,8 @@
  "arrivals": [
   {
    "from": "Home",
-   "x": -7.2,
-   "y": -4.9
+   "x": 3.5,
+   "y": -1.0
   },
   {
    "from": "Market",
@@ -113,7 +194,7 @@
   {
    "from": "MiniGame",
    "x": 0.0,
-   "y": 3.8
+   "y": 2.9
   },
   {
    "from": "Forest",

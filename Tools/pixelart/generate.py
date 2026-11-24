@@ -19,6 +19,7 @@ import world  # noqa: E402
 import preview  # noqa: E402
 import backgrounds  # noqa: E402
 import farmmap  # noqa: E402
+import kfarm  # noqa: E402
 import forest  # noqa: E402
 import lake  # noqa: E402
 import hill  # noqa: E402
@@ -208,7 +209,13 @@ def main():
         exported['World'].append(export('World', f'{name}_winter', backgrounds.snow_cap(world.WORLD[name]())))
     # ---- expanded farm map (drawn from Assets/Resources/Maps/farm.json) and the things you clear on it ----
     for season in backgrounds.SEASONS:
-        bgs.append(export_image('World', f'bg_farmmap_{season}', farmmap.farmmap(season)))
+        bgs.append(export_image('World', f'bg_farmmap_{season}', kfarm.farmmap(season)))
+    # ---- the Korean homestead (direction C): plot overlays, compost heap ----
+    for v in range(3):
+        exported['World'].append(export('World', f'plot_hard_{v}', kfarm.plot_hard(v)))
+        exported['World'].append(export('World', f'plot_straw_{v}', kfarm.plot_straw(v)))
+    exported['World'].append(export('World', 'compost_heap', kfarm.compost_heap()))
+    exported['Items'].append(export('Items', 'compost', kfarm.compost_icon()))
     for name, fn in farmmap.DEBRIS.items():
         exported['World'].append(export('World', name, fn()))
     for name, canvas in farmmap.debris_variants().items():
@@ -251,8 +258,8 @@ def main():
     for name, img in hill.panorama().items():
         export_image('World', name, img)
     # ---- ending A: your house stays gray until the end ----
-    exported['World'].append(export('World', 'cottage_color', farmmap.cottage_color('spring')))
-    exported['World'].append(export('World', 'cottage_color_winter', farmmap.cottage_color('winter')))
+    exported['World'].append(export('World', 'cottage_color', kfarm.cottage_color('spring')))
+    exported['World'].append(export('World', 'cottage_color_winter', kfarm.cottage_color('winter')))
     export_image('World', 'bg_home_gray', forest.gray(backgrounds.home()))
     for name, fn in backgrounds.BACKGROUNDS.items():
         bgs.append(export_image('World', name, fn()))

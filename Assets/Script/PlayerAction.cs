@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.EventSystems;
@@ -121,7 +121,10 @@ public class PlayerAction : MonoBehaviour
         // 노을 언덕의 과일나무 (가지치기, 대지의 숨결, 열매 따기)
         if (HillArea.TryUse(cell, def)) return;
 
-        // 치울 것 (묵은 밭의 잡초/그루터기/바위, 숲의 통나무)이 있으면 먼저 치움
+        // 굳은 묵정밭: 퇴비를 들고 있으면 되살리고, 아니면 안내
+        if (FarmMap.Active && FarmMap.TryUseHardPlot(cell, def)) return;
+
+        // 치울 것 (숲의 통나무 등)이 있으면 먼저 치움
         Debris debris = Debris.At(cell);
         if (debris != null)
         {
@@ -158,7 +161,8 @@ public class PlayerAction : MonoBehaviour
                 if (farm.TryPlant(cell, def.name)) Sfx.Play("plant");
                 break;
             case ItemCategory.Special:
-                farm.TryUseEssence(cell, def.name);
+                if (def.name == "Compost") HUD.Toast(Loc.T("Spread compost on a gray, hardened plot to bring it back.", "퇴비는 회색으로 굳은 묵정밭에 뿌려 주세요."), 2.5f);
+                else farm.TryUseEssence(cell, def.name);
                 break;
             case ItemCategory.Food:
             case ItemCategory.Crop:

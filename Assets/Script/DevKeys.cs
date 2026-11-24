@@ -71,7 +71,7 @@ public class DevKeys : MonoBehaviour
     {
         PlayerAction player = PlayerAction.instance;
         if (player == null || SceneManager.GetActiveScene().name != FarmMap.SceneName) { HUD.Toast("[DEV] Teleport works on the farm."); return; }
-        var stops = new System.Collections.Generic.List<Vector2> { new Vector2(0.9f, -2f) };
+        var stops = new System.Collections.Generic.List<Vector2> { FarmMap.Active ? FarmMap.Anchor("start", new Vector2(0.9f, -2f)) : new Vector2(0.9f, -2f) };
         if (ForestArea.IsOpen && ForestArea.Map != null && ForestArea.Map.TryArrival("Farm", out Vector2 f)) stops.Add(f);
         if (LakeArea.IsOpen && LakeArea.Map != null && LakeArea.Map.TryArrival("Farm", out Vector2 l)) stops.Add(l);
         if (HillArea.IsOpen && HillArea.Map != null && HillArea.Map.TryArrival("Farm", out Vector2 h)) stops.Add(h);

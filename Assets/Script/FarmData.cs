@@ -15,8 +15,13 @@ public class FarmData
 {
     public List<FarmTileData> tilledTiles = new List<FarmTileData>();
     public List<CropData> crops = new List<CropData>();
-    // 넓어진 농장에서 치운 잡초/그루터기/바위 칸 ("x,y"). 한 번 치우면 다시 생기지 않습니다.
+    // 넓어진 농장에서 치운 잡초/그루터기/바위 칸 ("x,y"). 한 번 치우면 다시 생기지 않습니다. (예전 맵, 이제 쓰지 않음)
     public List<string> clearedDebris = new List<string>();
+    // 텃밭 뙈기 (Plots.cs): 퇴비로 되살린 뙈기, 쉰 땅(휴경) 뙈기, 퇴비 더미
+    public List<string> openPlots = new List<string>();
+    public List<string> restedPlots = new List<string>();
+    public int compostPoints;      // 더미에 넣은 것 (두 개마다 다음 날 아침 퇴비 한 포대)
+    public int compostReady;       // 다 된 퇴비 (더미에서 E로 꺼냄)
 
     public static string CellKey(int x, int y) => x + "," + y;
     public bool IsDebrisCleared(int x, int y) => clearedDebris != null && clearedDebris.Contains(CellKey(x, y));
@@ -52,10 +57,11 @@ public class FarmData
         return null;
     }
 
-    public CropData Plant(int x, int y, string cropId)
+    public CropData Plant(int x, int y, string cropId, bool rich = false)
     {
         if (!IsTilled(x, y) || GetCrop(x, y) != null) return null;
         CropData crop = new CropData(x, y, cropId);
+        crop.rich = rich;
         crop.isWatered = GetTile(x, y).wet;
         crops.Add(crop);
         return crop;
@@ -107,12 +113,13 @@ public class FarmData
     {
         if (crop == null || !crop.IsMature) return 0;
         CropDef def = crop.Def;
-        int amount = def.harvestAmount + (crop.blessed ? 1 : 0);
+        int amount = def.harvestAmount + (crop.blessed ? 1 : 0) + (crop.rich ? 1 : 0);
 
         if (def.regrowDays > 0)
         {
             crop.daysGrown = def.daysToMature - def.regrowDays;
             crop.blessed = false;
+            crop.rich = false;
         }
         else
         {

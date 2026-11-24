@@ -10,6 +10,7 @@ public class CropData
     public int daysGrown;      // 물을 받고 지난 날 수
     public bool isWatered;     // 오늘 물을 받았는지
     public bool blessed;       // Sunshine Shard 축복 (수확량 +1, 마음 +)
+    public bool rich;          // 쉰 땅(휴경)에 심은 작물: 첫 수확 +1
 
     // 예전 버전 호환용 필드 (사용하지 않음)
     public Vector3 position;

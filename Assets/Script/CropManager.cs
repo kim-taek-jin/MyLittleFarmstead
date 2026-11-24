@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 
@@ -156,15 +156,16 @@ public class CropManager : MonoBehaviour
         var targets = new List<Vector3Int>();
         foreach (var cell in GetLine(center, tier))
         {
-            if (GetTile(cell) == Player.dirtTile && !Farm.IsTilled(cell.x, cell.y) && Farm.GetCrop(cell.x, cell.y) == null)
+            if (CanTill(cell) && !Farm.IsTilled(cell.x, cell.y) && Farm.GetCrop(cell.x, cell.y) == null)
                 targets.Add(cell);
         }
 
         if (targets.Count == 0)
         {
             EnsureTracked(center);
-            if (Farm.IsTilled(center.x, center.y)) HUD.Toast("This soil is already tilled. Plant a seed here!");
-            else HUD.Toast("You can only till dirt.");
+            if (Farm.IsTilled(center.x, center.y)) HUD.Toast(Loc.T("This ridge is already tilled. Plant a seed here!", "이미 갈아 둔 이랑이에요. 씨앗을 심어 보세요!"));
+            else HUD.Toast(FarmMap.Active ? Loc.T("You can only farm on the ridges of an open plot.", "텃밭 뙈기의 이랑에서만 농사를 지을 수 있어요.")
+                                          : Loc.T("You can only till dirt.", "흙에서만 갈 수 있어요."));
             return false;
         }
 
@@ -177,12 +178,15 @@ public class CropManager : MonoBehaviour
         return true;
     }
 
+    // 갈 수 있는 칸: 새 농장에서는 열린 텃밭 뙈기 안, 예전 농장에서는 흙 타일
+    bool CanTill(Vector3Int cell) => FarmMap.Active && FarmMap.PlotList != null ? FarmMap.CanFarmCell(cell) : GetTile(cell) == Player.dirtTile;
+
     public bool TryWater(Vector3Int center, int tier)
     {
         if (!IsReady) return false;
         if (Data.waterCharges <= 0)
         {
-            HUD.Toast("Your watering can is empty. Refill it at the well (E).");
+            HUD.Toast(Loc.T("Your watering can is empty. Refill it at the well (E).", "물뿌리개가 비었어요. 우물에서 채우세요 (E)."));
             return false;
         }
 
@@ -198,7 +202,7 @@ public class CropManager : MonoBehaviour
 
         if (targets.Count == 0)
         {
-            HUD.Toast(Farm.IsTilled(center.x, center.y) ? "This spot is already watered." : "Water tilled soil or crops.");
+            HUD.Toast(Farm.IsTilled(center.x, center.y) ? Loc.T("This spot is already watered.", "여기는 이미 물을 줬어요.") : Loc.T("Water tilled soil or crops.", "갈아 둔 흙이나 작물에 물을 주세요."));
             return false;
         }
 
@@ -209,7 +213,7 @@ public class CropManager : MonoBehaviour
             Farm.Water(cell.x, cell.y);
             RefreshCell(cell);
         }
-        if (Data.waterCharges == 0) HUD.Toast("The watering can is empty now.");
+        if (Data.waterCharges == 0) HUD.Toast(Loc.T("The watering can is empty now.", "물뿌리개가 이제 비었어요."));
         Data.UpdateAllUI();
         return true;
     }
@@ -221,12 +225,12 @@ public class CropManager : MonoBehaviour
 
         if (!Farm.IsTilled(cell.x, cell.y))
         {
-            HUD.Toast("Till the soil with a hoe first.");
+            HUD.Toast(Loc.T("Till the ridge with a hoe first.", "먼저 괭이로 이랑을 갈아 주세요."));
             return false;
         }
         if (Farm.GetCrop(cell.x, cell.y) != null)
         {
-            HUD.Toast("Something is already growing here.");
+            HUD.Toast(Loc.T("Something is already growing here.", "여기는 이미 뭔가 자라고 있어요."));
             return false;
         }
 
@@ -234,15 +238,35 @@ public class CropManager : MonoBehaviour
         if (def == null || !Data.HasItem(seedName)) return false;
         if (!def.GrowsIn(Data.CurrentSeason))
         {
-            HUD.Toast($"It's still {SeasonSystem.Name(Data.CurrentSeason)} in your heart. {def.harvestItem} needs {SeasonSystem.Name(def.minSeason)}.", 3f);
+            HUD.Toast(Loc.T($"It's still {SeasonSystem.Name(Data.CurrentSeason)} in your heart. {def.harvestItem} needs {SeasonSystem.Name(def.minSeason)}.",
+                            $"마음은 아직 {SeasonSystem.Name(Data.CurrentSeason)}이에요. {ItemNames.Display(def.harvestItem)}{Josa(def.harvestItem)} {SeasonSystem.Name(def.minSeason)}에 심을 수 있어요."), 3f);
             return false;
         }
         if (!Data.UseEnergy(plantEnergy)) return false;
 
         Data.RemoveItem(seedName, 1);
-        Farm.Plant(cell.x, cell.y, def.id);
+        bool rich = FarmMap.Active && FarmMap.IsRestedCell(cell);
+        Farm.Plant(cell.x, cell.y, def.id, rich);
         RefreshCell(cell);
+        if (rich && !richHintShown)
+        {
+            richHintShown = true;
+            HUD.Toast(Loc.T("This plot rested overnight. The soil is rich: crops planted today give +1 on their first harvest.",
+                            "이 뙈기는 하룻밤 쉬었어요. 땅심이 좋아서 오늘 심은 작물은 첫 수확 때 하나 더 열려요."), 4f);
+        }
         return true;
+    }
+
+    private bool richHintShown;
+
+    // 받침 (을/를): 한국어 이름의 마지막 글자에 받침이 있으면 "은", 없으면 "는"
+    static string Josa(string item)
+    {
+        string name = ItemNames.Display(item);
+        if (string.IsNullOrEmpty(name)) return "은";
+        char last = name[name.Length - 1];
+        if (last < 0xAC00 || last > 0xD7A3) return "은";
+        return (last - 0xAC00) % 28 != 0 ? "은" : "는";
     }
 
     // 손으로 한 칸 수확 (에너지 소모 없음)
@@ -284,11 +308,15 @@ public class CropManager : MonoBehaviour
     {
         CropDef def = crop.Def;
         bool blessed = crop.blessed;
+        bool rich = crop.rich;
         int amount = Farm.Harvest(crop);
         if (amount <= 0) return;
 
         Data.AddItem(def.harvestItem, amount);
-        HUD.Toast($"Harvested {def.harvestItem} x{amount}" + (blessed ? "  <color=#ffd84a>(golden!)</color>" : ""));
+        HUD.Toast(Loc.T($"Harvested {def.harvestItem} x{amount}", $"{ItemNames.Display(def.harvestItem)} x{amount} 수확!")
+            + (blessed ? Loc.T("  <color=#ffd84a>(golden!)</color>", "  <color=#ffd84a>(황금빛!)</color>") : "")
+            + (rich ? Loc.T("  <color=#c9a46a>(rested soil +1)</color>", "  <color=#c9a46a>(쉰 땅 +1)</color>") : ""));
+        FarmPlots.RefreshAll();
         Data.OnHarvest(def.harvestItem, amount, blessed);
         RefreshCell(cell);
     }

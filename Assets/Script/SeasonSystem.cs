@@ -42,10 +42,10 @@ public static class SeasonSystem
     {
         switch (s)
         {
-            case Season.Spring: return "Spring";
-            case Season.Summer: return "Summer";
-            case Season.Autumn: return "Autumn";
-            default: return "Winter";
+            case Season.Spring: return Loc.T("Spring", "봄");
+            case Season.Summer: return Loc.T("Summer", "여름");
+            case Season.Autumn: return Loc.T("Autumn", "가을");
+            default: return Loc.T("Winter", "겨울");
         }
     }
 
