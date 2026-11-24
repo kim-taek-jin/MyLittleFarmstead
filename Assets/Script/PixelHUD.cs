@@ -251,6 +251,10 @@ public class PixelHUD : MonoBehaviour
         {
             VillageMapEntry e = entries.Find(x => x.id == r.id);
             if (e == null) continue;
+            // a small paper plate behind the words, so they read over fog and paddies
+            RectTransform plate = Rect("Plate_" + r.id, hud.viewLayers, new Color(0.95f, 0.91f, 0.8f, 0.82f));
+            plate.anchorMin = plate.anchorMax = new Vector2(0.5f, 0.5f);
+            plate.pivot = new Vector2(0.5f, 1f);
             TextMeshProUGUI label = Label("Label_" + r.id, hud.viewLayers, 22f, TextAlignmentOptions.Top);
             RectTransform rt = label.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -259,6 +263,9 @@ public class PixelHUD : MonoBehaviour
             rt.sizeDelta = new Vector2(300f, 90f);
             label.color = e.open ? ink : new Color(0.38f, 0.36f, 0.38f);
             label.text = $"<b>{e.name}</b>\n<size=17>{e.status}</size>" + (string.IsNullOrEmpty(e.who) ? "" : $"\n<size=15>{e.who}</size>");
+            Vector2 size = label.GetPreferredValues(label.text, 300f, 0f);
+            plate.anchoredPosition = rt.anchoredPosition + new Vector2(0f, 3f);
+            plate.sizeDelta = new Vector2(Mathf.Min(300f, size.x) + 16f, size.y + 6f);
         }
 
         // 내가 있는 곳: 빨간 핀

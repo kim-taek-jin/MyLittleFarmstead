@@ -371,7 +371,7 @@ def fog_bank(seed=0):
                 if old is not None and old[3] >= a:
                     continue
                 top = y < py - ry * 0.3
-                c.set(x, y, (214, 214, 222, a) if top else (182, 182, 192, a))
+                c.set(x, y, (172, 172, 182, a) if top else (140, 140, 152, a))
     return c
 
 

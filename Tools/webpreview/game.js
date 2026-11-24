@@ -436,6 +436,10 @@ const RELEASABLE = ['Minnow', 'Carp', 'Bluegill', 'Moonfin', 'Glassfish'];   // 
 const lakeBlocked = (cx, cy) => '#~RWB'.includes(lakeAt(cx, cy));
 // Sunset Hill (Assets/Resources/Maps/hill.json): opens in autumn; old fruit trees, a drying rack, the overlook
 const HILL = /*__HILL__*/null;
+// village map (M): same rules as VillageMap.cs, positions from Assets/Resources/Maps/villagemap.json
+const VMAP = /*__VMAP__*/null;
+const VMAP_IDS = ['farm', 'market', 'forest', 'hill', 'lake', 'starhill'];
+const VMAP_NAME = { farm: 'Home', market: 'Market', forest: 'Back Hill', hill: 'Sunset Hill', lake: 'Reservoir', starhill: 'Star Hill' };
 const HILB = boundsOf(HILL);
 const hillAt = (cx, cy) => { const c = cx - HILL.originX, r = HILL.originY - 1 - cy; return r >= 0 && r < HILL.height && c >= 0 && c < HILL.width ? HILL.rows[r][c] : '#'; };
 const HCELLS = [];
@@ -764,6 +768,27 @@ const REGIONS = {
   Hill: { map: HILL, open: () => Hl().open, scene: 'sunset', line: 'Leaves crunch underfoot. The path climbs toward the sunset.' },
 };
 const areaOpen = to => !!REGIONS[to] && REGIONS[to].open();
+function vmapOpen(id) {
+  if (id === 'forest') return F().open; if (id === 'lake') return Lk().open; if (id === 'hill') return Hl().open;
+  if (id === 'starhill') return unlocked('starhill'); return true;
+}
+function vmapStatus(id) {
+  const open = vmapOpen(id);
+  if (id === 'farm') { const plots = MAP.plots || []; return `Plots ${plots.filter(p => p.startOpen || G.openPlots.includes(p.id)).length}/${plots.length} open`; }
+  if (id === 'market') { if (isMarketDay(G.day)) return 'Market day today!'; const n = daysUntilMarket(G.day); return n === 1 ? 'Market day tomorrow' : `Market day in ${n} days`; }
+  if (id === 'forest') return open ? `Clearings ${forestRestored()}/3` + (F().treeAwake ? ' · the zelkova is awake' : '') : 'When spring comes to your heart';
+  if (id === 'lake') return open ? (lakeClear() ? 'Clear all the way down' : `Clear parts ${lakeZonesClear()}/${LAKE_THRESH.length}`) : 'When summer comes to your heart';
+  if (id === 'hill') return open ? `Fruit trees ${hillRevived()}/6` : 'When autumn comes to your heart';
+  if (id === 'starhill') return open ? 'Clear nights after 20:00' : `Keep sharing (kindness ${S().kindness}/60)`;
+  return '';
+}
+const vmapWho = id => id === 'market' ? VILLAGERS.filter(v => v.scene === 'market').map(v => v.name).join(' · ') : id === 'farm' ? VILLAGERS.filter(v => v.scene === 'farm').map(v => v.name).join(' · ') : '';
+function vmapHere() {
+  const sc = G.scene;
+  if (sc === 'market' || sc === 'haggle') return 'market';
+  if (sc === 'forest') return 'forest'; if (sc === 'lake') return 'lake'; if (sc === 'sunset') return 'hill'; if (sc === 'hill') return 'starhill';
+  return 'farm';
+}
 const forestRestored = () => F().sapling.filter(s => s >= 3).length;
 function forestCheckOpen() { if (F().open || S().season < 1) return false; F().open = true; unlock('forest_open'); return true; }
 function forageCount() { return S().season === 0 ? 2 : Math.min(7, 3 + Math.floor(G.heart / 25)); }
@@ -808,6 +833,7 @@ function useSpot(i, item, d) {
 const Lk = () => S().lake;
 const lakeZones = () => LAKE_THRESH.filter(t => Lk().clarity >= t).length;
 const lakeClear = () => Lk().clarity >= LAKE_THRESH[2];
+const lakeZonesClear = () => LAKE_THRESH.filter(t => Lk().clarity >= t).length;
 function lakeCheckOpen() { if (Lk().open || S().season < 2) return false; Lk().open = true; unlock('lake_open'); return true; }
 function rollLakeForage() {
   const l = Lk(); l.forageDay = G.day; l.forage = [];
@@ -1218,6 +1244,27 @@ function drawPanel() {
     for (const key of panel.layers) { const im = IMG['World/' + key]; if (im) ctx.drawImage(im, vx, vy, vw, vh); }
     drawRich(panel.caption, CW / 2, vy + vh + 18, 18, 1100, 'center');
     drawRich('[E] or [Esc] Close', CW / 2, vy + vh + 44, 15, 600, 'center', '#c8c0b0');
+  } else if (panel.kind === 'map') {
+    ctx.fillStyle = 'rgba(10,8,12,0.94)'; ctx.fillRect(0, 0, CW, CH);
+    const vw = 1024, vh = 576, vx = (CW - vw) / 2, vy = 14, k = vw / VMAP.width;
+    ctx.fillStyle = '#c89552'; ctx.fillRect(vx - 4, vy - 4, vw + 8, vh + 8);
+    ctx.imageSmoothingEnabled = false;
+    const fogged = VMAP_IDS.filter(id => !vmapOpen(id));
+    for (const key of ['vmap', ...fogged.map(id => 'vmap_fog_' + id)]) { const im = IMG['World/' + key]; if (im) ctx.drawImage(im, vx, vy, vw, vh); }
+    for (const r of VMAP.regions) {
+      const open = vmapOpen(r.id), who = open ? vmapWho(r.id) : '';
+      const col = open ? '#3d291a' : '#605c62';
+      ctx.font = '17px ' + FONT; const tw = Math.max(ctx.measureText(VMAP_NAME[r.id]).width, (ctx.font = '13px ' + FONT, ctx.measureText(vmapStatus(r.id)).width), who ? (ctx.font = '12px ' + FONT, ctx.measureText(who).width) : 0);
+      ctx.fillStyle = 'rgba(242,232,204,0.82)'; ctx.fillRect(vx + r.labelX * k - tw / 2 - 8, vy + r.labelY * k - 3, tw + 16, who ? 54 : 40);
+      drawRich(VMAP_NAME[r.id], vx + r.labelX * k, vy + r.labelY * k, 17, 260, 'center', col);
+      drawRich(vmapStatus(r.id), vx + r.labelX * k, vy + r.labelY * k + 20, 13, 260, 'center', col);
+      if (who) drawRich(who, vx + r.labelX * k, vy + r.labelY * k + 37, 12, 260, 'center', col);
+    }
+    const here = VMAP.regions.find(r => r.id === vmapHere()), pin = IMG['World/vmap_pin'];
+    if (here && pin) { const bob = Math.round(Math.abs(Math.sin(performance.now() / 333)) * 3) * 2; ctx.drawImage(pin, vx + here.pinX * k - pin.width, vy + here.pinY * k - pin.height * 2 - bob, pin.width * 2, pin.height * 2); }
+    const fogText = fogged.length ? `Fog still hangs over ${fogged.length} place(s). Take care of yourself and it will lift.` : 'The fog is gone. The whole valley is yours to walk.';
+    drawRich(`[#ffd84a]Village Map[/]   ${fogText}`, CW / 2, vy + vh + 18, 18, 1100, 'center');
+    drawRich('[M] or [Esc] Close', CW / 2, vy + vh + 44, 15, 600, 'center', '#c8c0b0');
   } else if (panel.kind === 'album') {
     const page = panel.page; const reached = page <= S().highest;
     const count = PHOTOS.filter(p => p.season === page && S().photos.includes(p.id)).length;
@@ -1254,7 +1301,7 @@ function update(dt) {
     clearPressed(); return;
   }
   if (panel) {
-    if (pressed.Escape || (panel.kind === 'view' && (pressed.KeyE || pressed.Space)) || (panel.kind === 'shop' && pressed.KeyE) || (panel.kind === 'craft' && pressed.KeyC) || (panel.kind === 'journal' && pressed.KeyJ) || (panel.kind === 'album' && pressed.KeyP)) panel = null;
+    if (pressed.Escape || (panel.kind === 'view' && (pressed.KeyE || pressed.Space)) || (panel.kind === 'shop' && pressed.KeyE) || (panel.kind === 'craft' && pressed.KeyC) || (panel.kind === 'journal' && pressed.KeyJ) || (panel.kind === 'album' && pressed.KeyP) || (panel.kind === 'map' && pressed.KeyM)) panel = null;
     else if (panel.kind === 'album') { if (pressed.ArrowLeft) panel.page = (panel.page + 3) % 4; if (pressed.ArrowRight) panel.page = (panel.page + 1) % 4; }
     clearPressed(); return;
   }
@@ -1362,6 +1409,7 @@ function update(dt) {
   if (pressed.KeyC) panel = { kind: 'craft' };
   if (pressed.KeyJ) panel = { kind: 'journal' };
   if (pressed.KeyP) panel = { kind: 'album', page: S().season };
+  if (pressed.KeyM) panel = { kind: 'map' };
   for (let i = 1; i <= 8; i++) if (pressed['Digit' + i]) { const it = hotbarItems(); if (hotOffset + i - 1 < it.length) selectIndex(hotOffset + i - 1); }
   clearPressed();
 }
@@ -1495,6 +1543,24 @@ function renderWorld() {
       const tx = Math.max(MAPB.x0 + w / 2 - 0.3, Math.min(MAPB.x1 - w / 2 + 0.3, (x0 + x1) / 2)), ty = Math.max(MAPB.y0 + h / 2, Math.min(MAPB.y1 - h / 2, (y0 + y1) / 2));
       const art = areaOpen(e.to) ? (e.openArt || 'flower_arch') : (e.art || 'thorns');   // the season turns thorns into an arch, gray reeds green
       draws.push([ty - h / 2, () => sprite(c, seasonal(art), tx, ty)]);
+      // gray fog past a lane that isn't open yet; once it opens, the fog lifts the first time you come near
+      if (!REGIONS[e.to]) continue;
+      const key = 'fog_lifted_' + e.to.toLowerCase(), open = areaOpen(e.to);
+      if (open && unlocked(key) && !G.fogLift?.[e.to]) continue;
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, mx = (MAPB.x0 + MAPB.x1) / 2, my = (MAPB.y0 + MAPB.y1) / 2;
+      const d = Math.hypot(cx - mx, cy - my) || 1, ox = cx + (cx - mx) / d * 0.8, oy = cy + (cy - my) / d * 0.8;
+      let lift = 0;
+      if (open) {
+        G.fogLift = G.fogLift || {};
+        if (G.fogLift[e.to] === undefined && Math.hypot(G.px - ox, G.py - oy) < 9) { G.fogLift[e.to] = 0; unlock(key); }
+        if (G.fogLift[e.to] !== undefined) { G.fogLift[e.to] += 1 / 60; lift = G.fogLift[e.to] / 3.5; if (lift >= 1) { delete G.fogLift[e.to]; continue; } }
+      }
+      const alpha = Math.round((1 - lift) * 4) / 4, t = performance.now() / 1000;
+      [[-1.3, 0.4], [1.0, -0.3], [0.1, 1.1]].forEach(([fx, fy], i) => {
+        const px = Math.max(MAPB.x0 + 1.2, Math.min(MAPB.x1 - 1.2, ox + fx)) + Math.round(Math.sin(t * 0.25 + i * 1.9) * 0.35 * 32) / 32;
+        const py = Math.max(MAPB.y0 + 0.6, Math.min(MAPB.y1 - 0.6, oy + fy)) + lift * (1.2 + i * 0.4);
+        draws.push([-999, () => sprite(c, i % 2 ? 'World/fog_bank_2' : 'World/fog_bank', px, py, 1, 'center', false, alpha)]);
+      });
     }
     for (const k in G.crops) {
       const cr = G.crops[k]; const [x, y] = k.split(',').map(Number); const def = CROPS[cr.id];
