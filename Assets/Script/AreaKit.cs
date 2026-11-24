@@ -135,7 +135,7 @@ public class ForagePickup : MonoBehaviour
         if (item != null)
         {
             data.AddItem(item);
-            HUD.Toast(item == "Acorn" ? "You found an Acorn! Plant it in a clearing." : $"You found {item}.", 2.5f);
+            HUD.Toast(item == "Acorn" ? Loc.T("You found an Acorn! Plant it in a clearing.", "도토리를 찾았어요! 빈터에 심어 보세요.") : Loc.T($"You found {item}.", $"{ItemNames.With(item, "을", "를")} 찾았어요."), 2.5f);
         }
         Destroy(gameObject);
     }

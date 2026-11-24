@@ -62,7 +62,7 @@ public class Storage : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
-            HUD.Toast("Press E to open the storage box.", 2f);
+            HUD.Toast(Loc.T("Press E to open the storage box.", "E를 눌러 궤짝을 열어요."), 2f);
         }
     }
 

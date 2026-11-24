@@ -93,17 +93,19 @@ public static class Album
         {
             story.photos.Add(p.id);
             int have = Count(story, p.season);
-            HUD.Toast($"<color=#ffd84a>New photo!</color>  \"{p.title}\"  ({SeasonSystem.Name(p.season)} {have}/{AlbumDB.PerSeason})  [P] Album", 3.5f);
+            HUD.Toast("<color=#ffd84a>" + Loc.T("New photo!", "새 사진!") + $"</color>  \"{p.title}\"  ({SeasonSystem.Name(p.season)} {have}/{AlbumDB.PerSeason})  [P] " + Loc.T("Album", "앨범"), 3.5f);
 
             if (have >= AlbumDB.PerSeason && story.Unlock("album_" + SeasonSystem.Key(p.season)))
             {
                 data.AddGold(300);
                 data.ChangeHeart(5f, null);
-                HUD.Announce($"<size=40>{SeasonSystem.Name(p.season)} page complete!</size>\n\nEvery memory of this season is in color now.\n\n<color=#9dff9d>+300G  +5 Heart</color>", 5f);
+                HUD.Announce(Loc.T($"<size=40>{SeasonSystem.Name(p.season)} page complete!</size>\n\nEvery memory of this season is in color now.\n\n<color=#9dff9d>+300G  +5 Heart</color>",
+                                   $"<size=40>{SeasonSystem.Name(p.season)} 쪽을 다 채웠어요!</size>\n\n이 계절의 추억이 모두 빛깔을 찾았어요.\n\n<color=#9dff9d>+300G  마음 +5</color>"), 5f);
             }
             if (story.photos.Count >= AlbumDB.All.Count && story.Unlock("album_all"))
             {
-                HUD.Announce("<size=42>The whole album is in color</size>\n\nWinter, spring, summer and autumn.\nA year of your new life, one photo at a time.", 7f);
+                HUD.Announce(Loc.T("<size=42>The whole album is in color</size>\n\nWinter, spring, summer and autumn.\nA year of your new life, one photo at a time.",
+                                   "<size=42>앨범 전체가 빛깔을 찾았어요</size>\n\n겨울, 봄, 여름, 그리고 가을.\n새 삶의 한 해가 사진 한 장 한 장에 담겼어요."), 7f);
             }
         }
     }

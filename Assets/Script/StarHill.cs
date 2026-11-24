@@ -120,7 +120,7 @@ public class StarHill : MonoBehaviour
             Data.story.starsDay = Data.TimeManager.day;
             Data.story.starsTonight = 0;
         }
-        HUD.Toast("You climb the glowing vine... the whole sky opens up.", 3f);
+        HUD.Toast(Loc.T("You climb the glowing vine... the whole sky opens up.", "빛나는 덩굴을 타고 올라요... 하늘이 활짝 열려요."), 3f);
         Album.Report("starhill");
     }
 
@@ -139,11 +139,11 @@ public class StarHill : MonoBehaviour
     {
         if (Data.story.benchDay == Data.TimeManager.day)
         {
-            HUD.Toast("You already watched the stars tonight. It was lovely.", 2f);
+            HUD.Toast(Loc.T("You already watched the stars tonight. It was lovely.", "오늘 밤엔 벌써 별을 봤어요. 참 좋았어요."), 2f);
             return;
         }
         Data.story.benchDay = Data.TimeManager.day;
-        Data.ChangeHeart(3f, "You sat on the bench and watched the stars.");
+        Data.ChangeHeart(3f, Loc.T("You sat on the bench and watched the stars.", "벤치에 앉아 별을 바라봤어요."));
     }
 
     void UpdateStars(PlayerAction player)
@@ -171,7 +171,8 @@ public class StarHill : MonoBehaviour
                 Data.story.starsTotal++;
                 Album.Report("star");
                 int left = StarsPerNight - Data.story.starsTonight;
-                HUD.Toast(left > 0 ? $"You caught a Star Fragment! ({Data.story.starsTonight}/{StarsPerNight} tonight)" : "That was the last falling star tonight.", 2f);
+                HUD.Toast(left > 0 ? Loc.T($"You caught a Star Fragment! ({Data.story.starsTonight}/{StarsPerNight} tonight)", $"별 조각을 받았어요! (오늘 밤 {Data.story.starsTonight}/{StarsPerNight})")
+                                  : Loc.T("That was the last falling star tonight.", "오늘 밤 마지막 별똥별이었어요."), 2f);
             }
         }
 

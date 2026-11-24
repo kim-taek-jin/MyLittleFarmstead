@@ -32,14 +32,14 @@ public class HaggleGame : MonoBehaviour
         DataManager data = DataManager.instance;
         if (data != null && data.market.haggledToday)
         {
-            resultText.text = "The merchant is busy today.\nCome back tomorrow!";
+            resultText.text = Loc.T("You've already haggled today.\nCome back next market day!", "오늘은 이미 흥정했어요.\n다음 장날에 또 와요!");
             Invoke(nameof(ReturnToFarm), 2.5f);
             return;
         }
 
         isGameActive = true;
         haggleSlider.value = 0;
-        resultText.text = "Press Space at the right time!";
+        resultText.text = Loc.T("Press Space at the right time!", "때를 맞춰 스페이스를 누르세요!");
     }
 
     void Update()
@@ -75,16 +75,16 @@ public class HaggleGame : MonoBehaviour
         if (distance <= halfWidth * perfectRatio)
         {
             bonus = perfectBonus;
-            resultText.text = $"PERFECT! Today's sell prices +{bonus * 100f:0}%";
+            resultText.text = Loc.T($"PERFECT! Today's sell prices +{bonus * 100f:0}%", $"완벽해요! 오늘 파는 값 +{bonus * 100f:0}%");
         }
         else if (result >= successZoneStart && result <= successZoneEnd)
         {
             bonus = goodBonus;
-            resultText.text = $"Deal! Today's sell prices +{bonus * 100f:0}%";
+            resultText.text = Loc.T($"Deal! Today's sell prices +{bonus * 100f:0}%", $"그 값에 해요! 오늘 파는 값 +{bonus * 100f:0}%");
         }
         else
         {
-            resultText.text = "Haggle failed... Try again tomorrow.";
+            resultText.text = Loc.T("Haggle failed... Try again next market day.", "흥정 실패... 다음 장날에 다시 해 봐요.");
         }
 
         if (DataManager.instance != null) DataManager.instance.ApplyHaggleResult(bonus);

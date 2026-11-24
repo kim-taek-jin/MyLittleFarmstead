@@ -87,7 +87,7 @@ public class PlayerAction : MonoBehaviour
         if (string.IsNullOrEmpty(selected)) return;
         if (!ItemDB.IsEdible(selected))
         {
-            HUD.Toast($"You can't eat {selected}.");
+            HUD.Toast(Loc.T($"You can't eat {selected}.", $"{ItemNames.With(selected, "은", "는")} 먹을 수 없어요."));
             return;
         }
         dataManager.Eat(selected);
@@ -109,7 +109,7 @@ public class PlayerAction : MonoBehaviour
         Vector2 cellCenter = farm.GetCellCenter(cell);
         if (Vector2.Distance(transform.position, cellCenter) > reach)
         {
-            HUD.Toast("That's too far away. Walk closer.", 1.5f);
+            HUD.Toast(Loc.T("That's too far away. Walk closer.", "너무 멀어요. 가까이 가세요."), 1.5f);
             return;
         }
 
@@ -166,7 +166,7 @@ public class PlayerAction : MonoBehaviour
                 break;
             case ItemCategory.Food:
             case ItemCategory.Crop:
-                HUD.Toast("Right-click or press F to eat.", 2f);
+                HUD.Toast(Loc.T("Right-click or press F to eat.", "오른쪽 클릭이나 F로 먹어요."), 2f);
                 break;
         }
     }

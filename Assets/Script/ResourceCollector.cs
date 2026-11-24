@@ -19,18 +19,18 @@ public class ResourceCollector : MonoBehaviour
 
         if (other.CompareTag("Wood"))
         {
-            Gather(other.gameObject, "Wood", "Sunshine Shard", "A warm Sunshine Shard was hidden in the branches!");
+            Gather(other.gameObject, "Wood", "Sunshine Shard", Loc.T("A warm Sunshine Shard was hidden in the branches!", "나뭇가지 사이에 따뜻한 햇살 조각이 숨어 있었어요!"));
         }
         else if (other.CompareTag("Stone"))
         {
-            Gather(other.gameObject, "Stone", "Earth's Breath", "You found Earth's Breath beneath the stone!");
+            Gather(other.gameObject, "Stone", "Earth's Breath", Loc.T("You found Earth's Breath beneath the stone!", "돌 밑에서 대지의 숨결을 찾았어요!"));
         }
         else if (other.CompareTag("Food"))
         {
             data.MarkResourceCleared(other.gameObject);
             Destroy(other.gameObject);
             data.AddItem("Apple", 1);
-            HUD.Toast("Picked up an Apple. (Right-click / F to eat)", 2.5f);
+            HUD.Toast(Loc.T("Picked up an Apple. (Right-click / F to eat)", "사과를 주웠어요. (오른쪽 클릭 / F로 먹기)"), 2.5f);
         }
     }
 

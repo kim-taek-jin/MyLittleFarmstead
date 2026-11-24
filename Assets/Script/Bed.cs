@@ -18,7 +18,7 @@ public class Bed : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
-            HUD.Toast("Press E to sleep and end the day.", 2.5f);
+            HUD.Toast(Loc.T("Press E to sleep and end the day.", "E를 눌러 자고 하루를 마쳐요."), 2.5f);
         }
     }
 

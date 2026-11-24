@@ -296,7 +296,7 @@ public class CropManager : MonoBehaviour
 
         if (ripe.Count == 0)
         {
-            HUD.Toast("Nothing is ripe here yet.");
+            HUD.Toast(Loc.T("Nothing is ripe here yet.", "아직 여기엔 익은 게 없어요."));
             return false;
         }
         if (!Data.UseEnergy(scytheEnergy)) return false;
@@ -328,7 +328,7 @@ public class CropManager : MonoBehaviour
         CropData crop = Farm.GetCrop(cell.x, cell.y);
         if (crop == null)
         {
-            HUD.Toast("Use it on a growing crop.");
+            HUD.Toast(Loc.T("Use it on a growing crop.", "자라는 작물에 쓰세요."));
             return false;
         }
 
@@ -336,21 +336,21 @@ public class CropManager : MonoBehaviour
         {
             if (crop.IsMature)
             {
-                HUD.Toast("This crop is already ripe.");
+                HUD.Toast(Loc.T("This crop is already ripe.", "이 작물은 벌써 익었어요."));
                 return false;
             }
             crop.daysGrown++;
-            HUD.Toast("The crop breathes in the earth's energy and grows!");
+            HUD.Toast(Loc.T("The crop breathes in the earth's energy and grows!", "작물이 땅의 기운을 들이마시고 쑥 자랐어요!"));
         }
         else if (itemName == "Sunshine Shard")
         {
             if (crop.blessed)
             {
-                HUD.Toast("This crop is already glowing with sunlight.");
+                HUD.Toast(Loc.T("This crop is already glowing with sunlight.", "이 작물은 벌써 햇살로 반짝여요."));
                 return false;
             }
             crop.blessed = true;
-            HUD.Toast("Warm sunlight wraps around the crop. It will ripen golden.");
+            HUD.Toast(Loc.T("Warm sunlight wraps around the crop. It will ripen golden.", "따스한 햇살이 작물을 감싸요. 황금빛으로 익을 거예요."));
         }
         else
         {

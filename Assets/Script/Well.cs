@@ -18,11 +18,11 @@ public class Well : MonoBehaviour
         {
             data.RefillWater();
             data.UpdateAllUI();
-            HUD.Toast($"You drink cool water and fill your watering can. ({data.waterCharges}/{capacity})");
+            HUD.Toast(Loc.T($"You drink cool water and fill your watering can. ({data.waterCharges}/{capacity})", $"시원한 물을 마시고 물뿌리개를 채웠어요. ({data.waterCharges}/{capacity})"));
         }
         else
         {
-            HUD.Toast("You drink cool, fresh water.");
+            HUD.Toast(Loc.T("You drink cool, fresh water.", "시원하고 맑은 물을 마셨어요."));
         }
     }
 
@@ -31,7 +31,7 @@ public class Well : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
-            HUD.Toast("Press E to drink and refill your watering can.", 2.5f);
+            HUD.Toast(Loc.T("Press E to drink and refill your watering can.", "E를 눌러 물을 마시고 물뿌리개를 채워요."), 2.5f);
         }
     }
 

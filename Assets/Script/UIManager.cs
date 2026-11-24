@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 
 public class UIManager : MonoBehaviour
@@ -25,8 +25,8 @@ public class UIManager : MonoBehaviour
         {
             DataManager data = DataManager.instance;
             string season = data != null ? SeasonSystem.Name(data.CurrentSeason) : "";
-            string weather = data != null && data.snowing ? "  (Snow)" : (data != null && data.raining ? "  (Rain)" : "");
-            dayText.text = $"{season} {gameTimeManager.day}{weather}";
+            string weather = data != null && data.snowing ? Loc.T("  (Snow)", "  (눈)") : (data != null && data.raining ? Loc.T("  (Rain)", "  (비)") : "");
+            dayText.text = Loc.T($"{season} {gameTimeManager.day}", $"{season} {gameTimeManager.day}일") + weather;
         }
     }
 }

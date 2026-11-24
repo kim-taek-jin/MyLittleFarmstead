@@ -48,12 +48,12 @@ public class GameTimeManager : MonoBehaviour
         if (hour >= 24 && !warnedMidnight)
         {
             warnedMidnight = true;
-            HUD.Toast("It's midnight. You should go to bed soon.");
+            HUD.Toast(Loc.T("It's midnight. You should go to bed soon.", "자정이에요. 이제 자러 가야겠어요."));
         }
         if (hour >= passOutHour - 1 && !warnedLate)
         {
             warnedLate = true;
-            HUD.Toast("You can barely keep your eyes open...");
+            HUD.Toast(Loc.T("You can barely keep your eyes open...", "눈꺼풀이 천근만근이에요..."));
         }
 
         if (hour >= passOutHour)

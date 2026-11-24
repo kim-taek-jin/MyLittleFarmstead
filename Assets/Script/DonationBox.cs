@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 // 시장의 나눔 상자. 들고 있는 먹을거리(작물, 음식, 물고기)를 E로 1개, Shift+E로 전부 나눕니다.
 // 나눔 점수가 30이 되면 '별의 언덕'이 열립니다.
@@ -42,14 +42,14 @@ public class DonationBox : MonoBehaviour
         string item = Hotbar.SelectedItem;
         if (string.IsNullOrEmpty(item) || !IsShareable(item))
         {
-            HUD.Toast("Hold crops, food or fish to share them with the village.", 2.5f);
+            HUD.Toast(Loc.T("Hold crops, food or fish to share them with the village.", "작물이나 음식, 물고기를 손에 들면 마을과 나눌 수 있어요."), 2.5f);
             return;
         }
 
         int room = data.story.ShareRoom(data.Today);
         if (room <= 0)
         {
-            HUD.Toast("The sharing box is full for today. Come back tomorrow!", 2.5f);
+            HUD.Toast(Loc.T("The sharing box is full for today. Come back tomorrow!", "오늘 나눔 상자는 가득 찼어요. 내일 또 와요!"), 2.5f);
             return;
         }
 
@@ -63,8 +63,8 @@ public class DonationBox : MonoBehaviour
         data.RemoveItem(item, count);
         int got = data.story.AddShare(data.Today, perItem * count);
         int left = data.story.ShareRoom(data.Today);
-        HUD.Toast($"You shared {item} x{count}.  <color=#ff9fc4>Kindness +{got}</color>  ({data.story.kindness}/{StarHill.KindnessToUnlock})" +
-                  (left <= 0 ? "  <color=#c8c0b0>That's plenty for today.</color>" : ""), 3f);
+        HUD.Toast(Loc.T($"You shared {item} x{count}.", $"{ItemNames.Display(item)} {count}개를 나눴어요.") + "  <color=#ff9fc4>" + Loc.T("Kindness", "다정함") + $" +{got}</color>  ({data.story.kindness}/{StarHill.KindnessToUnlock})" +
+                  (left <= 0 ? "  <color=#c8c0b0>" + Loc.T("That's plenty for today.", "오늘은 이만하면 충분해요.") + "</color>" : ""), 3f);
         data.AddKindness(got, fromShareBox: true);
         Album.Report("share");
     }
@@ -73,7 +73,7 @@ public class DonationBox : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         inRange = true;
-        HUD.Toast("Sharing box: hold food and press E to share (Shift+E: all).", 2.5f);
+        HUD.Toast(Loc.T("Sharing box: hold food and press E to share (Shift+E: all).", "나눔 상자: 음식을 들고 E로 나눠요 (Shift+E: 전부)."), 2.5f);
     }
 
     void OnTriggerExit2D(Collider2D other)

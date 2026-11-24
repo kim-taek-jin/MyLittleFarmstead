@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -243,8 +243,8 @@ public class HUD : MonoBehaviour
 
         albumTitle.text = $"<color={SeasonSystem.Color(page)}>{SeasonSystem.Name(page)}</color>   <size=26>{Album.Count(story, page)}/{AlbumDB.PerSeason}</size>";
         albumFooter.text = reached
-            ? $"[<-] [->] Season    [P] Close        Total {story.photos.Count}/{AlbumDB.All.Count}"
-            : "This season hasn't come yet. Keep living well.    [<-] [->]  [P]";
+            ? Loc.T($"[<-] [->] Season    [P] Close        Total {story.photos.Count}/{AlbumDB.All.Count}", $"[<-] [->] 계절    [P] 닫기        모두 {story.photos.Count}/{AlbumDB.All.Count}")
+            : Loc.T("This season hasn't come yet. Keep living well.    [<-] [->]  [P]", "아직 오지 않은 계절이에요. 잘 지내다 보면 와요.    [<-] [->]  [P]");
 
         for (int i = 0; i < 6; i++)
         {
@@ -287,7 +287,7 @@ public class HUD : MonoBehaviour
         hud.OpenDialogue(speaker, portrait);
     }
 
-    public static void Ask(string speaker, string question, Sprite portrait, System.Action onYes, System.Action onNo = null, string yes = "Yes", string no = "No")
+    public static void Ask(string speaker, string question, Sprite portrait, System.Action onYes, System.Action onNo = null, string yes = null, string no = null)
     {
         HUD hud = Ensure();
         hud.isChoice = true;
@@ -296,7 +296,7 @@ public class HUD : MonoBehaviour
         hud.choiceYes = onYes;
         hud.choiceNo = onNo;
         hud.OpenDialogue(speaker, portrait);
-        hud.dialogueHint.text = $"[Y] {yes}     [N] {no}";
+        hud.dialogueHint.text = $"[Y] {yes ?? Loc.T("Yes", "네")}     [N] {no ?? Loc.T("No", "아니요")}";
     }
 
     public static void HideAnnouncement()

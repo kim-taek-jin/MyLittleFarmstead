@@ -74,8 +74,8 @@ public class Shop : MonoBehaviour
         if (dataManager != null)
         {
             MarketState m = dataManager.market;
-            string bonus = m.haggleBonus > 0f ? $"  |  Haggle bonus +{m.haggleBonus * 100f:0}%" : "";
-            HUD.Toast($"Today's demand: {m.demandItem} (+{MarketState.DemandBonus * 100f:0}%){bonus}", 4f);
+            string bonus = m.haggleBonus > 0f ? "  |  " + Loc.T("Haggle bonus", "흥정 덤") + $" +{m.haggleBonus * 100f:0}%" : "";
+            HUD.Toast(Loc.T("Today's demand", "오늘 잘 팔리는 것") + $": {ItemNames.Display(m.demandItem)} (+{MarketState.DemandBonus * 100f:0}%){bonus}", 4f);
         }
     }
 
@@ -137,7 +137,7 @@ public class Shop : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
-            HUD.Toast("Press E to trade with the merchant.", 2.5f);
+            HUD.Toast(Loc.T("Press E to trade at the stall.", "E를 눌러 가게에서 사고팔아요."), 2.5f);
         }
     }
 

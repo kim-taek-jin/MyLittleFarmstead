@@ -49,7 +49,8 @@ public class HillArea : MonoBehaviour
     public static void Morning(DataManager data, out string headline)
     {
         headline = CheckOpen(data)
-            ? "<color=#ffb070>The thorns on the south lane turned into an arch of autumn leaves.</color>\nA path climbs up to Sunset Hill."
+            ? Loc.T("<color=#ffb070>The thorns on the south lane turned into an arch of autumn leaves.</color>\nA path climbs up to Sunset Hill.",
+                    "<color=#ffb070>남쪽 길의 가시덤불이 단풍 아치로 바뀌었어요.</color>\n노을 언덕으로 오르는 길이 났어요.")
             : null;
     }
 
@@ -181,7 +182,8 @@ public class HillArea : MonoBehaviour
             if (state.AllRevived)
             {
                 data.ChangeHeart(OrchardHeart, Loc.T("The whole orchard is alive again.", "과수원 전체가 다시 살아났어요."));
-                HUD.Announce("<size=42><color=#ffb070>The orchard is alive again</color></size>\n\nApples, pears and persimmons, all in color.\nThe hill glows in the evening light.", 6f);
+                HUD.Announce(Loc.T("<size=42><color=#ffb070>The orchard is alive again</color></size>\n\nApples, pears and persimmons, all in color.\nThe hill glows in the evening light.",
+                                   "<size=42><color=#ffb070>과수원이 다시 살아났어요</color></size>\n\n사과, 배, 감이 모두 빛깔을 찾았어요.\n언덕이 저녁 햇살에 물들어요."), 6f);
             }
         }
         else

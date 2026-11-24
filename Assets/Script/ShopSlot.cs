@@ -71,7 +71,7 @@ public class ShopSlot : MonoBehaviour
         int price = dataManager.SellItem(itemName);
         if (price <= 0)
         {
-            HUD.Toast("You can't sell that.");
+            HUD.Toast(Loc.T("You can't sell that.", "그건 팔 수 없어요."));
             return;
         }
         HUD.Toast($"Sold {itemName} for {price}G.", 2f);
@@ -90,7 +90,7 @@ public class ShopSlot : MonoBehaviour
         }
         else
         {
-            HUD.Toast("Not enough gold!");
+            HUD.Toast(Loc.T("Not enough gold!", "돈이 모자라요!"));
         }
     }
 }

@@ -14,6 +14,8 @@ public class MapExit
     public float spawnX, spawnY;
     public string locked;   // 이 출구를 여는 마음의 계절 (비어 있으면 열림)
     public string sign;     // 잠겨 있을 때 보여줄 말
+    public string signKo;   // 같은 말 (한국어)
+    public string Sign => Loc.Ko && !string.IsNullOrEmpty(signKo) ? signKo : sign;
     public string art;      // 잠겨 있을 때 그림 (기본: 가시덤불)
     public string openArt;  // 열린 뒤 그림 (기본: 꽃 아치)
 

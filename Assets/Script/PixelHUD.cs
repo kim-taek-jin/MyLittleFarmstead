@@ -307,7 +307,7 @@ public class PixelHUD : MonoBehaviour
         DataManager data = DataManager.instance;
         foreach (BagSlot b in bagSlots) Destroy(b.gameObject);
         bagSlots.Clear();
-        bagInfo.text = "<color=#c8c0b0>Point at an item to see what it is.</color>";
+        bagInfo.text = "<color=#c8c0b0>" + Loc.T("Point at an item to see what it is.", "물건을 가리키면 무엇인지 보여요.") + "</color>";
         if (data == null) return;
         var items = data.inventory.Where(p => p.Value > 0).OrderBy(p => ItemDB.SortKey(p.Key)).ToList();
         const int cols = 10;

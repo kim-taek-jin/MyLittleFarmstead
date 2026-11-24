@@ -57,8 +57,8 @@ public class LockedExit : MonoBehaviour
     }
 
     public string Message => SeasonReached
-        ? "The gray thorns have started to loosen... Not yet, but soon."
-        : exit.sign;
+        ? Loc.T("The gray thorns have started to loosen... Not yet, but soon.", "잿빛 덤불이 조금씩 느슨해지고 있어요... 아직은 아니지만, 곧.")
+        : exit.Sign;
 
     void OnCollisionEnter2D(Collision2D collision)
     {

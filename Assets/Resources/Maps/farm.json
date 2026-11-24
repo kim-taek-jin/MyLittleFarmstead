@@ -129,7 +129,8 @@
    "locked": "Spring",
    "art": "thorns",
    "openArt": "flower_arch",
-   "sign": "The path up the back hill is overgrown with gray thorns. Maybe when spring comes in your heart..."
+   "sign": "The path up the back hill is overgrown with gray thorns. Maybe when spring comes in your heart...",
+   "signKo": "\ub4b7\uc0b0 \uc232\uae38\uc774 \uc7bf\ube5b \uac00\uc2dc\ub364\ubd88\ub85c \ub4a4\ub36e\uc600\uc5b4\uc694. \ub9c8\uc74c\uc5d0 \ubd04\uc774 \uc624\uba74 \ud639\uc2dc..."
   },
   {
    "to": "Lake",
@@ -142,7 +143,8 @@
    "locked": "Summer",
    "art": "reeds_gray",
    "openArt": "reeds_open",
-   "sign": "Tall gray reeds have closed over the path to the reservoir. They'll wake when summer comes to your heart."
+   "sign": "Tall gray reeds have closed over the path to the lake. They'll wake when summer comes to your heart.",
+   "signKo": "\ud0a4 \ud070 \uc7bf\ube5b \uac08\ub300\uac00 \uc800\uc218\uc9c0 \uac00\ub294 \uae38\uc744 \ub9c9\uc558\uc5b4\uc694. \ub9c8\uc74c\uc5d0 \uc5ec\ub984\uc774 \uc624\uba74 \uae68\uc5b4\ub0a0 \uac70\uc608\uc694."
   },
   {
    "to": "Hill",
@@ -155,7 +157,8 @@
    "locked": "Autumn",
    "art": "thorns",
    "openArt": "maple_arch",
-   "sign": "The hill path is buried in gray thorns. Maybe when autumn comes to your heart..."
+   "sign": "The hill path is buried in gray thorns. Maybe when autumn comes to your heart...",
+   "signKo": "\uc5b8\ub355\uae38\uc774 \uc7bf\ube5b \uac00\uc2dc\ub364\ubd88\uc5d0 \ubb3b\ud614\uc5b4\uc694. \ub9c8\uc74c\uc5d0 \uac00\uc744\uc774 \uc624\uba74 \ud639\uc2dc..."
   }
  ],
  "signs": [

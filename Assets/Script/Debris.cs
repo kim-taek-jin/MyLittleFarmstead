@@ -114,7 +114,7 @@ public class Debris : MonoBehaviour
         {
             if (type != ToolType.Scythe && type != ToolType.Hoe)
             {
-                HUD.Toast("Weeds. Cut them with a scythe or dig them out with a hoe.", 2.5f);
+                HUD.Toast(Loc.T("Weeds. Cut them with a scythe or dig them out with a hoe.", "잡초예요. 낫으로 베거나 괭이로 파내세요."), 2.5f);
                 return true;
             }
             if (!data.UseEnergy(WeedEnergy)) return true;
@@ -124,8 +124,10 @@ public class Debris : MonoBehaviour
 
         if (type != ToolType.Mattock)
         {
-            string what = kind == 'k' ? "An old stump." : kind == 'o' ? "A heavy boulder." : "A fallen log blocks the way.";
-            HUD.Toast(data.HasItem("Mattock") ? $"{what} Use the mattock." : $"{what} You need a mattock. (Market, or craft: 5 Wood + 5 Stone)", 3f);
+            string what = kind == 'k' ? Loc.T("An old stump.", "오래된 그루터기예요.") : kind == 'o' ? Loc.T("A heavy boulder.", "무거운 바위예요.")
+                : Loc.T("A fallen log blocks the way.", "쓰러진 통나무가 길을 막았어요.");
+            HUD.Toast(what + " " + (data.HasItem("Mattock") ? Loc.T("Use the mattock.", "곡괭이를 쓰세요.")
+                : Loc.T("You need a mattock. (Market, or craft: 5 Wood + 5 Stone)", "곡괭이가 필요해요. (장터에서 사거나, 만들기: 나무 5 + 돌 5)")), 3f);
             return true;
         }
         if (!data.UseEnergy(DigEnergy)) return true;
@@ -133,19 +135,20 @@ public class Debris : MonoBehaviour
         punch = 1f;
         if (hitsLeft > 0)
         {
-            HUD.Toast(kind == 'k' ? $"The roots creak... ({hitsLeft} more)" : kind == 'l' ? $"The log rolls a little... ({hitsLeft} more)" : $"The boulder shifts... ({hitsLeft} more)", 1.2f);
+            HUD.Toast((kind == 'k' ? Loc.T("The roots creak...", "뿌리가 삐걱거려요...") : kind == 'l' ? Loc.T("The log rolls a little...", "통나무가 조금 굴러요...") : Loc.T("The boulder shifts...", "바위가 들썩여요..."))
+                      + Loc.T($" ({hitsLeft} more)", $" ({hitsLeft}번 더)"), 1.2f);
             return true;
         }
 
         if (kind == 'k')
         {
             data.AddItem("Wood", 2);
-            HUD.Toast("You pulled out the old stump. +2 Wood", 2f);
+            HUD.Toast(Loc.T("You pulled out the old stump. +2 Wood", "묵은 그루터기를 뽑았어요. 나무 +2"), 2f);
         }
         else if (kind == 'l')
         {
             data.AddItem("Wood", 3);
-            HUD.Toast("You cleared the fallen log. The path is open. +3 Wood", 2.5f);
+            HUD.Toast(Loc.T("You cleared the fallen log. The path is open. +3 Wood", "쓰러진 통나무를 치웠어요. 길이 열렸어요. 나무 +3"), 2.5f);
         }
         else
         {
@@ -154,9 +157,9 @@ public class Debris : MonoBehaviour
             if (Random.Range(0f, 100f) < chance)
             {
                 data.AddItem("Earth's Breath");
-                HUD.Toast("<color=#ffe28a>Earth's Breath was sleeping under the boulder!</color>");
+                HUD.Toast("<color=#ffe28a>" + Loc.T("Earth's Breath was sleeping under the boulder!", "바위 밑에 대지의 숨결이 잠들어 있었어요!") + "</color>");
             }
-            else HUD.Toast("You rolled the boulder away. +2 Stone", 2f);
+            else HUD.Toast(Loc.T("You rolled the boulder away. +2 Stone", "바위를 굴려 치웠어요. 돌 +2"), 2f);
         }
         Clear();
         return true;

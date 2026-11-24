@@ -95,14 +95,14 @@ public class CraftingManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(recipe.requiredStation) && !dataManager.HasItem(recipe.requiredStation))
         {
-            reason = $"Needs a {recipe.requiredStation}.";
+            reason = Loc.T($"Needs a {recipe.requiredStation}.", $"{ItemNames.With(recipe.requiredStation, "이", "가")} 있어야 해요.");
             return false;
         }
         foreach (ItemInfo requiredItem in recipe.requiredItems)
         {
             if (!dataManager.HasItem(requiredItem.itemName, requiredItem.count))
             {
-                reason = $"Not enough {requiredItem.itemName}.";
+                reason = Loc.T($"Not enough {requiredItem.itemName}.", $"{ItemNames.With(requiredItem.itemName, "이", "가")} 모자라요.");
                 return false;
             }
         }
@@ -136,12 +136,12 @@ public class CraftingManager : MonoBehaviour
             }
             if (itemNameText != null)
             {
-                itemNameText.text = recipe.resultItem.count > 1 ? $"{resultName} x{recipe.resultItem.count}" : resultName;
+                itemNameText.text = recipe.resultItem.count > 1 ? $"{ItemNames.Display(resultName)} x{recipe.resultItem.count}" : ItemNames.Display(resultName);
             }
             if (requiredItemsText != null)
             {
-                string requiredText = string.Join(", ", recipe.requiredItems.Select(i => $"{i.itemName} x{i.count}"));
-                if (!string.IsNullOrEmpty(recipe.requiredStation)) requiredText += $"  [{recipe.requiredStation}]";
+                string requiredText = string.Join(", ", recipe.requiredItems.Select(i => $"{ItemNames.Display(i.itemName)} x{i.count}"));
+                if (!string.IsNullOrEmpty(recipe.requiredStation)) requiredText += $"  [{ItemNames.Display(recipe.requiredStation)}]";
                 requiredItemsText.text = requiredText;
             }
 
@@ -172,7 +172,7 @@ public class CraftingManager : MonoBehaviour
         if (ItemDB.GetToolType(recipe.resultItem.itemName) == ToolType.WateringCan) dataManager.RefillWater();
 
         DisplayRecipes();
-        HUD.Toast($"Crafted {recipe.resultItem.itemName}!");
+        HUD.Toast(Loc.T($"Crafted {recipe.resultItem.itemName}!", $"{ItemNames.With(recipe.resultItem.itemName, "을", "를")} 만들었어요!"));
         Album.Report("craft", recipe.resultItem.itemName);
     }
 

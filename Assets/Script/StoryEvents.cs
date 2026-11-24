@@ -172,8 +172,8 @@ public static class StoryEvents
         LakeState lake = story.lake;
         if (lake != null && lake.open)
         {
-            string next = lake.IsClear ? Loc.T("The lake is clear. Fireflies come out at night.", "호수가 맑아요. 밤이면 반딧불이가 떠요.") : Loc.T($"{lake.ToNextZone()} more to clear the next part", $"다음 구역까지 {lake.ToNextZone()}");
-            sb.Append("<color=#8fd0ff>" + Loc.T("Lake", "호수") + "</color>  " + Loc.T("clear parts", "맑은 구역") + $" {lake.ZonesClear}/{LakeState.Thresholds.Length}   <size=22>" + Loc.T("fish released", "놓아준 물고기") + $" {lake.released}, {next}</size>\n");
+            string next = lake.IsClear ? Loc.T("The lake is clear. Fireflies come out at night.", "저수지가 맑아요. 밤이면 반딧불이가 떠요.") : Loc.T($"{lake.ToNextZone()} more to clear the next part", $"다음 구역까지 {lake.ToNextZone()}");
+            sb.Append("<color=#8fd0ff>" + Loc.T("Lake", "저수지") + "</color>  " + Loc.T("clear parts", "맑은 구역") + $" {lake.ZonesClear}/{LakeState.Thresholds.Length}   <size=22>" + Loc.T("fish released", "놓아준 물고기") + $" {lake.released}, {next}</size>\n");
         }
 
         sb.Append("\n<color=#8fb8ff>" + Loc.T("Fish caught", "잡은 물고기") + "</color>  ");

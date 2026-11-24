@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -141,7 +141,7 @@ public class Hotbar : MonoBehaviour
         Draw();
 
         ItemDef def = ItemDB.Get(lastSelectedName);
-        if (def != null && !string.IsNullOrEmpty(def.description)) HUD.Toast($"{def.name}: {def.description}", 2.5f);
+        if (def != null && !string.IsNullOrEmpty(def.description)) HUD.Toast($"{ItemNames.Display(def.name)}: {ItemNames.Description(def)}", 2.5f);
     }
 
     void KeepSelectionVisible()

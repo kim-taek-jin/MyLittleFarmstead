@@ -87,10 +87,10 @@ public static class SeasonSystem
     {
         switch (s)
         {
-            case Season.Spring: return "The snow is melting. Little green shoots push through the ground.\nYou can finally breathe again.";
-            case Season.Summer: return "Long, bright days. The fields hum with life,\nand so do you.";
-            case Season.Autumn: return "Golden light over everything you've grown.\nThis is what fruition feels like.";
-            default: return "The world is quiet and gray.";
+            case Season.Spring: return Loc.T("The snow is melting. Little green shoots push through the ground.\nYou can finally breathe again.", "눈이 녹아요. 땅을 뚫고 파릇한 싹이 올라와요.\n이제야 숨이 쉬어져요.");
+            case Season.Summer: return Loc.T("Long, bright days. The fields hum with life,\nand so do you.", "길고 환한 날들. 들판이 생기로 웅성거려요,\n나도 그렇고요.");
+            case Season.Autumn: return Loc.T("Golden light over everything you've grown.\nThis is what fruition feels like.", "내가 키운 모든 것 위로 금빛 햇살.\n결실이란 이런 거구나.");
+            default: return Loc.T("The world is quiet and gray.", "세상이 조용하고 잿빛이에요.");
         }
     }
 }
