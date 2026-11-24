@@ -1,0 +1,48 @@
+{
+ "width": 640,
+ "height": 360,
+ "regions": [
+  {
+   "id": "farm",
+   "labelX": 300,
+   "labelY": 214,
+   "pinX": 300,
+   "pinY": 176
+  },
+  {
+   "id": "market",
+   "labelX": 532,
+   "labelY": 196,
+   "pinX": 532,
+   "pinY": 156
+  },
+  {
+   "id": "forest",
+   "labelX": 104,
+   "labelY": 208,
+   "pinX": 104,
+   "pinY": 150
+  },
+  {
+   "id": "hill",
+   "labelX": 218,
+   "labelY": 334,
+   "pinX": 218,
+   "pinY": 282
+  },
+  {
+   "id": "lake",
+   "labelX": 474,
+   "labelY": 334,
+   "pinX": 474,
+   "pinY": 282
+  },
+  {
+   "id": "starhill",
+   "labelX": 412,
+   "labelY": 96,
+   "pinX": 412,
+   "pinY": 52
+  }
+ ]
+}

@@ -42,6 +42,10 @@ public class PixelHUD : MonoBehaviour
     private RectTransform viewLayers;
     private TextMeshProUGUI viewCaption;
     private int viewOpenedFrame;
+    private bool mapShown;                  // 같은 화면(view)을 마을 지도로 쓰는 중
+    private RectTransform mapPin;
+    private Vector2 mapPinBase;
+    public static bool MapOpen => ViewOpen && Instance.mapShown;
 
     private float nextFontPass;
     private static GameObject introPanel;   // 시작 인트로가 떠 있는 동안에는 이 UI를 숨김
@@ -186,7 +190,7 @@ public class PixelHUD : MonoBehaviour
         view.SetActive(false);
     }
 
-    public static void ShowView(List<string> layers, string caption)
+    public static void ShowView(List<string> layers, string caption, string closeHint = null)
     {
         PixelHUD hud = Ensure();
         foreach (Transform child in hud.viewLayers) Destroy(child.gameObject);
@@ -199,9 +203,82 @@ public class PixelHUD : MonoBehaviour
             img.offsetMin = Vector2.zero; img.offsetMax = Vector2.zero;
             img.GetComponent<Image>().sprite = sprite;
         }
-        hud.viewCaption.text = caption + "\n<size=20><color=#c8c0b0>[E] or [Esc] Close</color></size>";
+        hud.viewCaption.text = caption + "\n<size=20><color=#c8c0b0>" + (closeHint ?? Loc.T("[E] or [Esc] Close", "[E] 또는 [Esc] 닫기")) + "</color></size>";
         hud.view.SetActive(true);
         hud.viewOpenedFrame = Time.frameCount;
+        hud.mapShown = false;
+        hud.mapPin = null;
+    }
+
+    // ---------------------------------------------------------------- 마을 지도 (M)
+    [System.Serializable] class MapRegionPos { public string id; public float labelX, labelY, pinX, pinY; }
+    [System.Serializable] class MapLayout { public int width, height; public MapRegionPos[] regions; }
+    static MapLayout layout;
+
+    static MapLayout Layout()
+    {
+        if (layout != null) return layout;
+        TextAsset text = Resources.Load<TextAsset>("Maps/villagemap");
+        layout = text != null ? JsonUtility.FromJson<MapLayout>(text.text) : new MapLayout { width = 640, height = 360, regions = new MapRegionPos[0] };
+        return layout;
+    }
+
+    // 지도 그림의 픽셀 좌표 (왼쪽 위 0,0, 640 x 360) → 1280 x 720 화면 틀 안의 위치 (가운데 기준)
+    static Vector2 MapToFrame(float x, float y) => new Vector2(x * 2f - 640f, 360f - y * 2f);
+
+    public static void ShowMap()
+    {
+        DataManager data = DataManager.instance;
+        if (data == null) return;
+        StoryState story = data.story;
+        var layers = new List<string> { "vmap" };
+        foreach (string id in VillageMap.Fogged(story)) layers.Add("vmap_fog_" + id);
+
+        // 텃밭 뙈기: 열린 수 / 전체
+        int plotsOpen = 0, plotsTotal = 0;
+        MapData farm = MapData.Load("farm");
+        if (farm != null && farm.plots != null)
+            foreach (MapPlot p in farm.plots) { plotsTotal++; if (Plots.IsOpen(data.farm, p)) plotsOpen++; }
+
+        ShowView(layers, "<color=#ffd84a>" + Loc.T("Village Map", "마을 지도") + "</color>   <size=22>" + VillageMap.Footer(story) + "</size>",
+                 Loc.T("[M] or [Esc] Close", "[M] 또는 [Esc] 닫기"));
+        PixelHUD hud = Instance;
+        hud.mapShown = true;
+
+        var entries = VillageMap.Entries(story, data.Today, plotsOpen, plotsTotal);
+        var ink = new Color(0.24f, 0.16f, 0.1f);
+        foreach (MapRegionPos r in Layout().regions)
+        {
+            VillageMapEntry e = entries.Find(x => x.id == r.id);
+            if (e == null) continue;
+            TextMeshProUGUI label = Label("Label_" + r.id, hud.viewLayers, 22f, TextAlignmentOptions.Top);
+            RectTransform rt = label.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = MapToFrame(r.labelX, r.labelY);
+            rt.sizeDelta = new Vector2(300f, 90f);
+            label.color = e.open ? ink : new Color(0.38f, 0.36f, 0.38f);
+            label.text = $"<b>{e.name}</b>\n<size=17>{e.status}</size>" + (string.IsNullOrEmpty(e.who) ? "" : $"\n<size=15>{e.who}</size>");
+        }
+
+        // 내가 있는 곳: 빨간 핀
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        Vector2 pos = player != null ? (Vector2)player.transform.position : Vector2.zero;
+        string here = VillageMap.RegionAt(SceneManager.GetActiveScene().name, pos.x, pos.y);
+        foreach (MapRegionPos r in Layout().regions)
+        {
+            if (r.id != here) continue;
+            Sprite pinSprite = PixelArt.Load("World/vmap_pin");
+            if (pinSprite == null) break;
+            RectTransform pin = Rect("Pin", hud.viewLayers, Color.white);
+            pin.anchorMin = pin.anchorMax = new Vector2(0.5f, 0.5f);
+            pin.pivot = new Vector2(0.5f, 0f);
+            pin.sizeDelta = new Vector2(pinSprite.rect.width * 2f, pinSprite.rect.height * 2f);
+            pin.GetComponent<Image>().sprite = pinSprite;
+            hud.mapPinBase = MapToFrame(r.pinX, r.pinY);
+            pin.anchoredPosition = hud.mapPinBase;
+            hud.mapPin = pin;
+        }
     }
 
     void BuildBag()
@@ -278,9 +355,19 @@ public class PixelHUD : MonoBehaviour
         }
 
         if (ViewOpen && Time.frameCount > viewOpenedFrame + 1 &&
-            (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Space)))
+            (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Space) ||
+             (mapShown && Input.GetKeyDown(KeyCode.M))))
         {
             view.SetActive(false);
+            mapShown = false;
+            return;
+        }
+        if (MapOpen && mapPin != null)
+            mapPin.anchoredPosition = mapPinBase + new Vector2(0f, Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 3f) * 2f);
+        if (Input.GetKeyDown(KeyCode.M) && !ViewOpen && !BagOpen && !PauseMenu.Open && !HUD.DialogueOpen && !HUD.AlbumOpen
+            && !HUD.AnnouncementOpen && Time.timeScale > 0f)
+        {
+            ShowMap();
             return;
         }
         if (Input.GetKeyDown(KeyCode.I) && !PauseMenu.Open && !HUD.DialogueOpen && !HUD.AlbumOpen && !ViewOpen) ToggleBag();

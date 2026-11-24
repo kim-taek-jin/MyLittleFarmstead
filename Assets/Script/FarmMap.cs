@@ -328,12 +328,18 @@ public static class FarmMap
                 AreaPortal portal = AreaPortal.Create(exit.to + "Gate", exit.Area, into, ArriveLine(exit.to));
                 LockedExit.PlaceArt(portal.transform, exit.OpenArt, exit.Area, map.Bounds, mat);
                 SceneManager.MoveGameObjectToScene(portal.gameObject, scene);
+                // 열린 뒤 처음 오면: 남아 있던 안개가 걷히는 모습을 한 번 보여 줌
+                DataManager data = DataManager.instance;
+                if (data != null && !data.story.IsUnlocked(FogBank.LiftKey(exit.to.ToLowerInvariant())))
+                    SceneManager.MoveGameObjectToScene(FogBank.Create(exit.to.ToLowerInvariant(), exit.Area, map.Bounds, mat, true).gameObject, scene);
                 continue;
             }
             if (exit.IsLocked)
             {
                 LockedExit locked = LockedExit.Create(exit, map.Bounds, mat);
                 SceneManager.MoveGameObjectToScene(locked.gameObject, scene);
+                if (region != null)    // 잠긴 지역 길 너머에는 잿빛 안개
+                    SceneManager.MoveGameObjectToScene(FogBank.Create(exit.to.ToLowerInvariant(), exit.Area, map.Bounds, mat, false).gameObject, scene);
                 continue;
             }
             // 열린 출구: 같은 씬으로 가는 기존 포털을 길 끝으로 옮김

@@ -273,6 +273,14 @@ def main():
     for name, fn in (('well_winter', kmarket.well), ('tree_winter', kmarket.tree)):
         exported['World'].append(export('World', name, backgrounds.snow_cap(fn())))
 
+    # ---- the village map (M key) and the fog over places that haven't opened yet ----
+    import villagemap
+    villagemap.write_json()
+    for name, img in villagemap.images().items():
+        export_image('World', name, img)
+    for name, canvas in villagemap.world_sprites().items():
+        exported['World'].append(export('World', name, canvas))
+
     # folder metas (Resources/, Resources/PixelArt/, groups)
     for p in [os.path.join(ROOT, 'Assets', 'Resources'), OUT] + [os.path.join(OUT, g) for g in exported]:
         write_folder_meta(p)
