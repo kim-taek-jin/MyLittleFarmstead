@@ -65,6 +65,15 @@ reg('Sunshine Shard', 'Special', { sell: 100, desc: 'Use on a crop: it ripens go
 reg("Earth's Breath", 'Special', { sell: 100, desc: 'Use on a crop: it grows by one day.' });
 reg('Star Fragment', 'Special', { sell: 50, desc: 'The dokkaebi fire loves it (all four colors).' });
 reg('Compost', 'Special', { sell: 0, desc: 'Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life.' });
+// K-2: making sauces
+reg('Soybeans', 'Resource', { sell: 5, desc: 'Dried soybeans for meju. Boil four at the agungi to make one.' });
+reg('Salt', 'Resource', { sell: 2, desc: 'Coarse sea salt. Two go in each sauce jar.' });
+reg('Fresh Meju', 'Special', { sell: 0, desc: 'A block of boiled, pounded soybeans. Hang it on the meju rack to dry.' });
+reg('Dried Meju', 'Special', { sell: 40, desc: 'Meju dried in the winter wind. Put it in a sauce jar with 2 Salt.' });
+reg('Doenjang', 'Resource', { sell: 60, desc: 'Soybean paste you made yourself.' });
+reg('Ganjang', 'Resource', { sell: 50, desc: 'Soy sauce you made yourself.' });
+reg('Doenjang Stew', 'Food', { sell: 180, hunger: 45, thirst: 10, heart: 5, desc: 'Doenjang, potato and carrot, bubbling in an earthen pot.' });
+reg('Braised Potatoes', 'Food', { sell: 160, hunger: 35, heart: 3, desc: 'Potatoes braised sweet and salty in your own ganjang.' });
 reg('Campfire', 'Station', { sell: 20, desc: 'Needed for cooking recipes.' });
 // the forest (map stage 3)
 reg('Mattock', 'Tool', { tool: 'mattock', desc: 'Digs out stumps, boulders and fallen logs.' });
@@ -99,7 +108,7 @@ const CROPS = {
   pumpkin: { harvest: 'Pumpkin', days: 6, regrow: 0, season: 3 },
 };
 
-const SHOP = [['Wood', 5], ['Carrot Seed', 10], ['Potato Seed', 40], ['Strawberry Seed', 50], ['Corn Seed', 30], ['Campfire', 50], ['Rice Cake', 20], ['Apple', 12]];
+const SHOP = [['Soybeans', 12], ['Salt', 8], ['Wood', 5], ['Carrot Seed', 10], ['Potato Seed', 40], ['Strawberry Seed', 50], ['Corn Seed', 30], ['Campfire', 50], ['Rice Cake', 20], ['Apple', 12]];
 // five-day market (장날): every 5th day the lane fills with stalls, rare goods and an old farmer to haggle with
 const MARKET_CYCLE = 5;
 const isMarketDay = d => d > 0 && d % MARKET_CYCLE === 3;
@@ -116,6 +125,9 @@ const RECIPES = [
   { out: 'Mattock', n: 1, req: [['Wood', 5], ['Stone', 5]] },
   { out: 'Spring Greens', n: 1, req: [['Wild Garlic', 1], ['Fern Sprout', 1]], lock: 'forest_open' },
   { out: 'Morel Soup', n: 1, req: [['Morel', 2], ['Wild Garlic', 1]], station: 'Campfire', lock: 'forest_open' },
+  { out: 'Fresh Meju', n: 1, req: [['Soybeans', 4], ['Wood', 1]], station: 'Agungi' },
+  { out: 'Doenjang Stew', n: 1, req: [['Doenjang', 1], ['Potato', 1], ['Carrot', 1]], station: 'Campfire' },
+  { out: 'Braised Potatoes', n: 2, req: [['Potato', 2], ['Ganjang', 1]], station: 'Campfire' },
   { out: 'Roasted Carrot', n: 1, req: [['Carrot', 2], ['Wood', 1]], station: 'Campfire' },
   { out: 'Baked Potato', n: 1, req: [['Potato', 1], ['Wood', 1]], station: 'Campfire' },
   { out: 'Steamed Corn', n: 1, req: [['Corn', 2]], station: 'Campfire' },
@@ -480,9 +492,10 @@ const DOOR = ANCHOR('door', -8.38, -4.54);
 const COMPOST = ANCHOR('compost', 9.5, 1.5);
 const CHEST = ANCHOR('storage', -3.89, -1.07);
 const COTTAGE = ANCHOR('cottage', -7.75, -3.85);
+const AGUNGI = ANCHOR('agungi', 1.0, 0.0), MEJURACK = ANCHOR('mejurack', -0.4, 0.0), JANGDOK = ANCHOR('jangdok', 7.0, 0.0);
 const farmBlocked = (cx, cy) => 'PwWHJKBCRb|'.includes(mapAt(cx, cy));
 { const [mx, my] = ANCHOR('mina', 5.0, -2.4); VILLAGERS[2].x = mx; VILLAGERS[2].y = my; }
-const ORGANIC = new Set(['Carrot', 'Potato', 'Corn', 'Strawberry', 'Sunflower', 'Pumpkin', 'Apple', 'Pear', 'Persimmon', 'Wild Garlic', 'Fern Sprout', 'Morel', 'Wild Raspberry', 'Watercress', 'Acorn', 'Rice Cake', 'Roasted Carrot', 'Baked Potato', 'Steamed Corn', 'Spring Greens']);
+const ORGANIC = new Set(['Carrot', 'Potato', 'Corn', 'Strawberry', 'Sunflower', 'Pumpkin', 'Apple', 'Pear', 'Persimmon', 'Wild Garlic', 'Fern Sprout', 'Morel', 'Wild Raspberry', 'Watercress', 'Acorn', 'Rice Cake', 'Roasted Carrot', 'Baked Potato', 'Steamed Corn', 'Spring Greens', 'Soybeans']);
 
 // ------------------------------------------------------------------ state
 let G;  // game state
@@ -1001,6 +1014,10 @@ function endDay(passedOut) {
   if (!G.log.exhausted) { delta += 3; lines.push("Didn't overwork  [#9dff9d]+3[/]"); } else { delta -= 3; lines.push('Worked until exhausted  [#ff8080]-3[/]'); }
   if (G.log.starved) { delta -= 5; lines.push('Went hungry or thirsty  [#ff8080]-5[/]'); }
   if (G.log.harvested) { delta += 2; lines.push(`Harvested ${G.log.harvested} crops  [#9dff9d]+2[/]`); }
+  { const j = Jg();   // K-2: a warm floor, and the jars count the day's sun or rain
+    if (j.fireToday && !passedOut) { facts.warm = true; delta += 2; lines.push('Slept on a warm floor  [#9dff9d]+2[/]'); }
+    if (j.lidsOpen) for (const jar of j.jars) if (jar.start >= 0) { if (G.raining || G.snowing) jar.rain++; else jar.care++; }
+    j.fireToday = false; }
   changeHeart(delta);
   G.hunger = Math.max(0, G.hunger - 15); G.thirst = Math.max(0, G.thirst - 20); G.health = Math.min(100, G.health + 30);
 
@@ -1047,11 +1064,12 @@ function endDay(passedOut) {
   if (fHead) header += '\n' + fHead;
   if (G.raining) report('rain_morning');
   facts.delta = delta;
-  const notes = lines.filter(l => !/^(Passed out|Went to bed|Stayed up|Ate proper|Drank fresh|Didn't overwork|Worked until|Went hungry|Harvested)/.test(l)).map(l => l.replace(/\s*\[#[0-9a-f]{6}\][+-]\d+\[\/\]/g, ''));
+  const notes = lines.filter(l => !/^(Slept on a warm|Passed out|Went to bed|Stayed up|Ate proper|Drank fresh|Didn't overwork|Worked until|Went hungry|Harvested)/.test(l)).map(l => l.replace(/\s*\[#[0-9a-f]{6}\][+-]\d+\[\/\]/g, ''));
   showAnnounce(`${header}\n\n[#e8d8b0]— Yesterday's diary —[/]\n${diaryLines(facts, G.day - 1).join('\n')}\n[#ff8fb1]${diaryMood(delta)}[/]` +
                (notes.length ? `\n\n[#c8c0b0]${notes.join('\n')}[/]` : '') + todayPreview(after), 10);
   queueBroadcast(broadcastLines({ day: G.day, before: seasonBefore, after, raining: G.raining, snowing: G.snowing,
-    forestOpened: !wasOpen[0] && F().open, lakeOpened: !wasOpen[1] && Lk().open, hillOpened: !wasOpen[2] && Hl().open }));
+    forestOpened: !wasOpen[0] && F().open, lakeOpened: !wasOpen[1] && Lk().open, hillOpened: !wasOpen[2] && Hl().open,
+    mejuSeason: after === 0 && !Jg().jars.some(x => x.start >= 0) && !Jg().hung.length, lidsOpen: Jg().lidsOpen }));
   letters();
   save();
 }
@@ -1144,6 +1162,7 @@ function interact() {
   if (G.scene === 'farm') {
     const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.0)) { talk(mina); return; }
     if (near(COMPOST[0], COMPOST[1], 1.4)) { useHeap(); return; }
+    { const s = jangSpot(); if (s === 'agungi') { useAgungi(); return; } if (s === 'rack') { useMejuRack(); return; } if (s === 'jars') { useJangdok(); return; } }
     if (near(WELL[0], WELL[1] - 0.4, 1.3)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) { go('hill', 0, -3.1); return; }
     if (near(POND[0], POND[1], 1.9)) { fish(); return; }
@@ -1159,6 +1178,75 @@ function interact() {
     if (near(0, -4.4, 1.4)) { go('farm', LADDER[0] - 0.6, LADDER[1] - 1.0); return; }
     if (near(5.1, -2.0, 1.5)) { if (S().benchDay === G.day) toast('You already watched the stars tonight.'); else { S().benchDay = G.day; G.log.rested = true; changeHeart(3, 'You sat on the bench and watched the stars.'); } }
   }
+}
+// ------------------------------------------------------------------ K-2: making sauces (agungi, meju rack, jangdokdae)
+const JANG = { jars: 3, rack: 4, dry: 3, ferment: 8, salt: 2 };
+function Jg() { if (!G.jang) G.jang = { hung: [], jars: [], lidsOpen: false, fireToday: false };
+  while (G.jang.jars.length < JANG.jars) G.jang.jars.push({ start: -1, care: 0, rain: 0 }); return G.jang; }
+const jarYield = j => { const b = (j.care >= 3) + (j.care >= 6) - (j.rain >= 2); return [Math.max(1, 2 + b), Math.max(1, 1 + b)]; };
+const jarTaste = j => j.rain >= 2 ? "A little watery, but it's still yours." : j.care >= 6 ? 'Deep and rich. The sun is in it.' : j.care >= 3 ? 'A good, honest taste.' : "Mild. Next time I'll let it see more sun.";
+function howTo(key, text) { if (unlock('howto_' + key)) showAnnounce(text, 8); }
+function useAgungi() {
+  const j = Jg();
+  if (!j.fireToday) {
+    if (!has('Wood')) { toast('You need a piece of firewood (Wood) to light the agungi.', 3); return; }
+    remove('Wood', 1); j.fireToday = true;
+    toast('You light the agungi. The floor will be warm tonight. ([C] to cook here)', 4);
+    howTo('agungi', '[#ffd84a]The agungi[/]\n\nThe kitchen fire also heats the floor of the room (ondol).\nLight it once a day with a piece of firewood, and you\'ll sleep warm.\n\nStanding here, press [#ffd84a][C][/] to cook without a campfire,\nand to boil soybeans into [#ffd84a]meju[/] (4 Soybeans + 1 Wood).');
+    return;
+  }
+  panel = { kind: 'craft' };
+}
+function useMejuRack() {
+  const j = Jg();
+  const ready = j.hung.filter(d => G.day >= d).length; j.hung = j.hung.filter(d => G.day < d); if (ready) add('Dried Meju', ready);
+  const have = G.inv['Fresh Meju'] || 0, hung = Math.min(have, JANG.rack - j.hung.length);
+  for (let i = 0; i < hung; i++) j.hung.push(G.day + JANG.dry); if (hung) remove('Fresh Meju', hung);
+  if (ready && hung) toast(`You took down ${ready} dried meju and hung ${hung} more.`, 3);
+  else if (ready) toast(`You took down ${ready} dried meju. It smells nutty.`, 3);
+  else if (hung) toast(`You hung ${hung} meju to dry. They'll be ready in ${JANG.dry} days.`, 3);
+  else if (j.hung.length) toast(`The meju are still drying. (${j.hung.length} hanging)`, 2.5);
+  else toast('A rack for drying meju. Boil soybeans into meju at the agungi first.', 3);
+  if (hung) howTo('meju', '[#ffd84a]Drying meju[/]\n\nMeju dries slowly in the cold winter air.\nIn a few days, take the dried meju down and put it in a sauce jar\nat the jangdokdae with [#ffd84a]2 Salt[/].');
+}
+function useJangdok() {
+  const j = Jg();
+  const ready = j.jars.findIndex(x => x.start >= 0 && G.day - x.start >= JANG.ferment);
+  if (ready >= 0) {
+    const jar = j.jars[ready], [d, g] = jarYield(jar), taste = jarTaste(jar); j.jars[ready] = { start: -1, care: 0, rain: 0 };
+    add('Doenjang', d); add('Ganjang', g); changeHeart(3, `You split your sauces: ${d} doenjang, ${g} ganjang. ${taste}`); return;
+  }
+  const empty = j.jars.findIndex(x => x.start < 0);
+  if (empty >= 0 && has('Dried Meju') && has('Salt', JANG.salt)) {
+    let filled = 0, e = empty;
+    while (e >= 0 && has('Dried Meju') && has('Salt', JANG.salt)) { remove('Dried Meju', 1); remove('Salt', JANG.salt); j.jars[e] = { start: G.day, care: 0, rain: 0 }; filled++; e = j.jars.findIndex(x => x.start < 0); }
+    toast(filled === 1 ? `You put the meju in a jar with salt water. In ${JANG.ferment} days it can be split into sauces.` : `You filled ${filled} jars with meju and salt water. In ${JANG.ferment} days they can be split into sauces.`, 4);
+    howTo('jangdok', "[#ffd84a]Looking after the jars[/]\n\nOn sunny days, open the lids and let the sun in: the sauce gets deeper.\nWhen it rains or snows, close them, or rainwater gets in.\n(Press [#ffd84a][E][/] at the jangdokdae to open or close all the lids.)\nForgetting isn't a disaster. It just tastes a little milder.");
+    return;
+  }
+  j.lidsOpen = !j.lidsOpen;
+  const n = j.jars.filter(x => x.start >= 0).length, st = n ? `  (${n} jar(s) fermenting)` : '';
+  if (j.lidsOpen) toast((G.raining || G.snowing ? 'You opened the lids... in this weather? Rain will get in.' : 'You opened the jar lids to let the sun in.') + st, 3);
+  else toast('You closed the jar lids.' + st, 2.5);
+  if (!n) howTo('jang', '[#ffd84a]The jangdokdae[/]\n\nThis is where the sauces of the house are made.\n1. Boil [#ffd84a]4 Soybeans[/] into meju at the agungi\n2. Hang it on the meju rack to dry for a few days\n3. Put [#ffd84a]1 Dried Meju + 2 Salt[/] in an empty jar here\n4. After a while, split it into doenjang and ganjang.\nSoybeans and salt are sold at the market.');
+}
+// the agungi and the meju rack stand side by side: [E] goes to the nearest one only
+function jangSpot() {
+  const c = [['agungi', AGUNGI[0], AGUNGI[1] + 0.4, 1.5], ['rack', MEJURACK[0], MEJURACK[1] + 0.4, 1.1], ['jars', JANGDOK[0], JANGDOK[1] - 0.3, 1.5]]
+    .map(([n, x, y, r]) => [n, Math.hypot(G.px - x, G.py - y), r]).filter(([, d, r]) => d <= r).sort((a, b) => a[1] - b[1]);
+  return c.length ? c[0][0] : null;
+}
+function jangPrompt() {
+  const j = Jg(), s = jangSpot();
+  if (s === 'agungi') return j.fireToday ? '[E] Cook at the agungi' : has('Wood') ? '[E] Light the agungi (1 Wood)' : 'Agungi (needs 1 Wood to light)';
+  if (s === 'rack') { const r = j.hung.filter(d => G.day >= d).length;
+    return r ? `[E] Take down ${r} dried meju` : has('Fresh Meju') ? '[E] Hang meju to dry' : j.hung.length ? `Meju drying (${j.hung.length})` : 'Meju rack'; }
+  if (s === 'jars') {
+    if (j.jars.some(x => x.start >= 0 && G.day - x.start >= JANG.ferment)) return '[E] Split the sauce';
+    if (j.jars.some(x => x.start < 0) && has('Dried Meju') && has('Salt', JANG.salt)) return '[E] Put meju in the empty jars (1 Dried Meju + 2 Salt each)';
+    return j.lidsOpen ? '[E] Close the jar lids' : '[E] Open the jar lids';
+  }
+  return null;
 }
 function useHeap() {
   if (G.compostReady > 0) { const n = G.compostReady; G.compostReady = 0; add('Compost', n); toast(`You dig out ${n} bag(s) of dark, crumbly compost.`, 3); return; }
@@ -1205,7 +1293,8 @@ function shopStock() {
   return list.filter(([n]) => { const d = ITEMS[n]; return !(d.cat === 'Seed' && d.crop && CROPS[d.crop].season > S().season); });
 }
 function canCraft(r) {
-  if (r.station && !has(r.station)) return `Needs a ${r.station}.`;
+  const atAgungi = G.scene === 'farm' && near(AGUNGI[0], AGUNGI[1] + 0.4, 2.0);
+  if (r.station && !has(r.station) && !(atAgungi && (r.station === 'Campfire' || r.station === 'Agungi'))) return r.station === 'Agungi' ? 'Stand at the agungi to make this.' : `Needs a ${r.station}.`;
   for (const [n, c] of r.req) if (!has(n, c)) return `Not enough ${n}.`;
   return null;
 }
@@ -1617,6 +1706,11 @@ function renderWorld() {
     draws.push([WELL[1] - 0.6, () => sprite(c, G.story.season === 0 ? 'World/well_winter' : 'World/well', WELL[0], WELL[1])]);
     draws.push([CHEST[1] - 0.4, () => sprite(c, G.story.season === 0 ? 'World/storage_box_winter' : 'World/storage_box', CHEST[0], CHEST[1])]);
     draws.push([COMPOST[1] - 0.5, () => sprite(c, 'World/compost_heap', COMPOST[0], COMPOST[1] - 0.5, 1, 'bottom')]);
+    { const j = Jg(), w = G.story.season === 0 ? '_winter' : '';
+      draws.push([AGUNGI[1], () => sprite(c, j.fireToday ? 'World/agungi_fire' : 'World/agungi', AGUNGI[0], AGUNGI[1], 1, 'bottom')]);
+      const rk = !j.hung.length ? 'meju_rack' : j.hung.some(d => G.day >= d) ? 'meju_rack_dried' : 'meju_rack_fresh';
+      draws.push([MEJURACK[1], () => sprite(c, 'World/' + rk + w, MEJURACK[0], MEJURACK[1], 1, 'bottom')]);
+      if (j.lidsOpen) draws.push([-998, () => sprite(c, 'World/jangdok_open', JANGDOK[0], JANGDOK[1], 1, 'bottom')]); }
     if (starVineOpen()) draws.push([LADDER[1] - 1.1, () => sprite(c, 'World/star_ladder', LADDER[0], LADDER[1])]);
   }
   if (G.scene === 'lake') {
@@ -1782,6 +1876,7 @@ function promptText() {
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
     if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The stream is full of fish');
     if (near(DOOR[0], DOOR[1], 1.6)) return 'Home';
+    const jp = jangPrompt(); if (jp) return jp;
     if (near(COMPOST[0], COMPOST[1], 1.4)) return G.compostReady ? `[E] Take ${G.compostReady} bag(s) of compost` : ORGANIC.has(selectedItem()) ? `[E] Put ${selectedItem()} in the heap  (Shift+E: all)` : `Compost heap (${G.compostPoints} inside)`;
     if (G.px < MAPB.x0 + 2.2 && Math.abs(G.py + 9.1) < 1.4) return F().open ? '← To the forest' : 'Gray thorns block the forest path';
     if (G.px > MAPB.x1 - 2.4 && Math.abs(G.py + 10.6) < 1.4) return Lk().open ? 'To the lake →' : 'Tall gray reeds block the path to the lake';
@@ -2016,6 +2111,7 @@ function diaryLines(f, day) {
   if (f.lateNight) notes.push(pickLine(day, ['I stayed up far too late.', 'Midnight came and went.']));
   if (f.talked > 0) notes.push(pickLine(day, ['I talked with the neighbors for a while.', 'Someone smiled at me today.']));
   if (f.rested) notes.push(pickLine(day, ['I sat down for a while and just watched. The wind was nice.', 'I let myself rest for a bit.']));
+  if (f.warm) notes.push(pickLine(day, ['I lit the agungi. The floor was warm under me all night.', 'The warm floor melted something in me.']));
   if (f.harvested > 0) notes.push(pickLine(day, ['I picked something I grew with my own hands.', 'The harvest was small, but it was mine.']));
   if (f.meals >= 2) notes.push(pickLine(day, ['I ate properly, twice.', 'Warm food, eaten slowly.'])); else if (f.meals === 1) notes.push(pickLine(day, ['I ate a proper meal.', 'I remembered to eat.']));
   if (f.onTime && !f.passedOut) notes.push(pickLine(day, ['Going to bed early tonight.', 'Bed before midnight, for once.']));
@@ -2034,6 +2130,8 @@ function broadcastLines(n) {
   if (n.hillOpened) body.push('The lane up to Sunset Hill is open.');
   if (isMarketDay(n.day)) body.push('Today is market day. The stalls are up in the lane, so drop by.'); else if (daysUntilMarket(n.day) === 1) body.push('Tomorrow is market day. Get your things ready to sell.');
   if (n.snowing) body.push('Snow tonight made the roads slippery. Careful out there, especially our elders.'); else if (n.raining) body.push("It's raining, so keep your sauce jar lids closed.");
+  if ((n.raining || n.snowing) && n.lidsOpen) body.push('And whoever left their jar lids open, close them quick!');
+  if (n.mejuSeason && n.day >= 3 && n.day % 4 === 3) body.push('Winter is meju season. Soybeans and salt are at the corner store in the market lane.');
   if (!body.length && n.day > 2 && n.day % 3 === 0) body.push('Nothing special today. Just make sure you all eat well.');
   return body.length ? ['Ahem, ahem. Attention, everyone in the village.', ...body, "That's all from your village head."] : [];
 }

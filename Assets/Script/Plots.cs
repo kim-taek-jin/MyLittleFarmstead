@@ -111,7 +111,7 @@ public static class Plots
     {
         "Carrot", "Potato", "Corn", "Strawberry", "Sunflower", "Pumpkin", "Apple", "Pear", "Persimmon",
         "Wild Garlic", "Fern Sprout", "Morel", "Wild Raspberry", "Watercress", "Acorn",
-        "Rice Cake", "Roasted Carrot", "Baked Potato", "Steamed Corn", "Spring Greens",
+        "Rice Cake", "Roasted Carrot", "Baked Potato", "Steamed Corn", "Spring Greens", "Soybeans",
     };
 
     public static bool IsOrganic(string item) => item != null && Organic.Contains(item);

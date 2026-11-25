@@ -9,6 +9,8 @@ public class MorningNews
     public Season before, after;
     public bool raining, snowing;
     public bool forestOpened, lakeOpened, hillOpened;
+    public bool mejuSeason;        // 겨울인데 아직 장을 안 담갔음 (K-2)
+    public bool lidsOpen;          // 장독 뚜껑이 열려 있음
 }
 
 public static class VillageBroadcast
@@ -36,6 +38,10 @@ public static class VillageBroadcast
             body.Add(Loc.T("Tomorrow is market day. Get your things ready to sell.", "내일은 장날입니다. 내다 팔 것들 미리 챙겨 두시고요."));
         if (n.snowing) body.Add(Loc.T("Snow tonight made the roads slippery. Careful out there, especially our elders.", "눈이 와서 길이 미끄럽습니다. 어르신들 특히 조심하십시오."));
         else if (n.raining) body.Add(Loc.T("It's raining, so keep your sauce jar lids closed.", "비가 오니 장독 뚜껑들 꼭 덮어 두시고요."));
+        if ((n.raining || n.snowing) && n.lidsOpen)
+            body.Add(Loc.T("And whoever left their jar lids open, close them quick!", "장독 뚜껑 열어 둔 집은 얼른 가서 덮으시고요!"));
+        if (n.mejuSeason && n.day >= 3 && n.day % 4 == 3)
+            body.Add(Loc.T("Winter is meju season. Soybeans and salt are at the corner store in the market lane.", "겨울은 메주 쑤는 철입니다. 메주콩이랑 소금은 장터 행복슈퍼에 있습니다."));
 
         // 할 말이 없는 날에도 가끔 (사흘에 한 번) 안부 한 마디
         if (body.Count == 0 && n.day > 2 && n.day % 3 == 0)

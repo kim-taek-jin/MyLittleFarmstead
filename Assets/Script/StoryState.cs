@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 // 주민 한 명의 진행 상황
 [System.Serializable]
@@ -68,6 +68,9 @@ public class StoryState
 
     // 노을 언덕 (맵 4-2단계): 열림, 과수원 되살리기, 곶감, 전망대
     public HillState hill = new HillState();
+
+    // 장 담그기 (K-2): 메주 걸이, 장독 셋, 아궁이 불
+    public JangState jang = new JangState();
 
     public VillagerProgress Get(string id)
     {

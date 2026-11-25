@@ -25,7 +25,10 @@ public static class ItemNames
         { "Minnow", "피라미" }, { "Carp", "잉어" }, { "Golden Koi", "황금 잉어" }, { "Old Boot", "낡은 장화" },
         { "Bluegill", "블루길" }, { "Moonfin", "달빛지느러미" }, { "Glassfish", "유리고기" },
         // 자원, 특별한 것
-        { "Wood", "나무" }, { "Stone", "돌" }, { "Campfire", "모닥불" }, { "Compost", "퇴비" },
+        { "Wood", "나무" }, { "Stone", "돌" }, { "Campfire", "모닥불" }, { "Compost", "퇴비" }, { "Agungi", "아궁이" },
+        // 장 담그기
+        { "Soybeans", "메주콩" }, { "Salt", "소금" }, { "Fresh Meju", "생메주" }, { "Dried Meju", "마른 메주" },
+        { "Doenjang", "된장" }, { "Ganjang", "간장" }, { "Doenjang Stew", "된장찌개" }, { "Braised Potatoes", "감자조림" },
         { "Sunshine Shard", "햇살 조각" }, { "Earth's Breath", "대지의 숨결" }, { "Star Fragment", "별 조각" },
     };
 
@@ -55,6 +58,14 @@ public static class ItemNames
         { "Persimmon", "달고 말랑해요. 노을 언덕의 곶감 걸이에 걸면 곶감이 돼요." },
         { "Dried Persimmon", "가을바람에 천천히 말린 쫀득하고 달콤한 곶감." },
         { "Campfire", "요리할 때 필요해요." },
+        { "Soybeans", "메주를 쑤는 콩. 아궁이에서 삶아요." },
+        { "Salt", "장독에 넣는 굵은 소금." },
+        { "Fresh Meju", "콩을 삶아 찧어 빚은 메주. 집 옆 메주 걸이에 걸어 말려요." },
+        { "Dried Meju", "단단하게 마른 구수한 메주. 소금이랑 장독에 넣어요." },
+        { "Doenjang", "내 장독에서 가른 된장. 찌개의 바탕이에요." },
+        { "Ganjang", "내 장독에서 가른 간장." },
+        { "Doenjang Stew", "감자, 당근 넣고 보글보글 끓인 된장찌개. 집밥 맛이에요." },
+        { "Braised Potatoes", "내가 담근 간장에 졸인 알감자." },
     };
 
     public static string Description(ItemDef def)

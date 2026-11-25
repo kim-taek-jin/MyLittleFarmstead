@@ -48,6 +48,7 @@ public static class FarmMap
         BuildWalls(map, scene);
         FarmPlots.Create(scene, mat);
         CompostHeap.Create(scene, Anchor("compost", new Vector2(9.5f, 1.5f)), mat);
+        JangSpots.Create(scene, mat);   // K-2: 아궁이, 메주 걸이, 장독대
         SetupExits(map, scene, mat);
         Camera cam = Camera.main;
         CameraFollow follow = cam != null ? CameraFollow.Attach(cam, map.Bounds) : null;

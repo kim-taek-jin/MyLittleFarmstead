@@ -101,6 +101,15 @@ public static class ItemDB
         Register(new ItemDef { name = "Pumpkin Porridge", category = ItemCategory.Food, sellPrice = 320, hunger = 45f, heart = 4f, color = new Color(0.9f, 0.55f, 0.25f), description = "Golden pumpkin porridge with little rice cake balls. Tastes like a good year." });
 
         // --- 별의 언덕 ---
+        // ---- 장 담그기 (K-2) ----
+        Register(new ItemDef { name = "Soybeans", category = ItemCategory.Resource, sellPrice = 5, color = new Color(0.9f, 0.8f, 0.5f), description = "Dried soybeans for making meju. Boil them at the agungi." });
+        Register(new ItemDef { name = "Salt", category = ItemCategory.Resource, sellPrice = 2, color = new Color(0.95f, 0.95f, 0.95f), description = "Coarse sea salt for sauce jars." });
+        Register(new ItemDef { name = "Fresh Meju", category = ItemCategory.Special, sellPrice = 0, color = new Color(0.8f, 0.65f, 0.4f), description = "A block of mashed soybeans. Hang it on the meju rack by the house to dry." });
+        Register(new ItemDef { name = "Dried Meju", category = ItemCategory.Special, sellPrice = 40, color = new Color(0.6f, 0.45f, 0.25f), description = "Dried hard and fragrant. Put it in a sauce jar with salt." });
+        Register(new ItemDef { name = "Doenjang", category = ItemCategory.Resource, sellPrice = 60, color = new Color(0.55f, 0.35f, 0.15f), description = "Soybean paste from your own jar. The base of a good stew." });
+        Register(new ItemDef { name = "Ganjang", category = ItemCategory.Resource, sellPrice = 50, color = new Color(0.2f, 0.1f, 0.05f), description = "Soy sauce from your own jar." });
+        Register(new ItemDef { name = "Doenjang Stew", category = ItemCategory.Food, sellPrice = 180, hunger = 45f, thirst = 10f, heart = 5f, color = new Color(0.6f, 0.4f, 0.2f), description = "Bubbling doenjang stew with potato and carrot. Tastes like home." });
+        Register(new ItemDef { name = "Braised Potatoes", category = ItemCategory.Food, sellPrice = 160, hunger = 35f, heart = 3f, color = new Color(0.7f, 0.5f, 0.25f), description = "Little potatoes simmered in your own soy sauce." });
         Register(new ItemDef { name = "Compost", category = ItemCategory.Special, sellPrice = 0, color = new Color(0.4f, 0.3f, 0.2f), description = "Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life." });
         Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. The dokkaebi fire loves it (all four colors)." });
 

@@ -73,8 +73,23 @@
   },
   {
    "name": "storage",
-   "x": 0.4,
+   "x": -1.6,
    "y": 0.5
+  },
+  {
+   "name": "agungi",
+   "x": 1.0,
+   "y": 0.0
+  },
+  {
+   "name": "mejurack",
+   "x": -0.4,
+   "y": 0.0
+  },
+  {
+   "name": "jangdok",
+   "x": 7.0,
+   "y": 0.0
   },
   {
    "name": "compost",

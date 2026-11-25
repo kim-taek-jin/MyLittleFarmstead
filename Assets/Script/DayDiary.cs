@@ -8,6 +8,7 @@ public class DayFacts
     public bool passedOut, lateNight, onTime;
     public int meals, harvested, talked;
     public bool drank, exhausted, starved, rested;
+    public bool warm;            // 아궁이에 불을 때서 방이 뜨끈했음 (K-2)
     public float delta;          // 마음 변화 (일기 문장 고르기에만 씀, 화면에는 숫자를 안 보임)
 }
 
@@ -50,6 +51,8 @@ public static class DayDiary
                                               ("Someone smiled at me today.", "오늘 누군가 나를 보고 웃었다.")));
         if (f.rested) notes.Add(Pick(day, ("I sat down for a while and just watched. The wind was nice.", "잠깐 앉아서 그냥 바라봤다. 바람이 좋았다."),
                                           ("I let myself rest for a bit.", "잠시 쉬어도 된다고 나에게 말해 줬다.")));
+        if (f.warm) notes.Add(Pick(day, ("I lit the agungi. The floor was warm under me all night.", "아궁이에 불을 땠더니 밤새 방바닥이 뜨끈했다."),
+                                       ("The warm floor melted something in me.", "뜨끈한 방바닥에 몸이 녹았다.")));
         if (f.harvested > 0) notes.Add(Pick(day, ("I picked something I grew with my own hands.", "내 손으로 키운 걸 거뒀다."),
                                                  ("The harvest was small, but it was mine.", "많지는 않아도 내가 거둔 것이다.")));
         if (f.meals >= 2) notes.Add(Pick(day, ("I ate properly, twice.", "밥을 두 번이나 제대로 챙겨 먹었다."), ("Warm food, eaten slowly.", "따뜻한 밥을 천천히 먹었다.")));

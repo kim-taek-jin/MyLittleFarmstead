@@ -223,6 +223,12 @@ def main():
         exported['World'].append(export('World', f'plot_straw_{v}', kfarm.plot_straw(v)))
     exported['World'].append(export('World', 'compost_heap', kfarm.compost_heap()))
     exported['Items'].append(export('Items', 'compost', kfarm.compost_icon()))
+    # ---- K-2: making sauces (agungi, meju rack, open jar lids) and its items ----
+    import jang
+    for name, canvas in jang.world_sprites().items():
+        exported['World'].append(export('World', name, canvas))
+    for name, fn in jang.ITEMS.items():
+        exported['Items'].append(export('Items', name, fn()))
     for name, fn in farmmap.DEBRIS.items():
         exported['World'].append(export('World', name, fn()))
     for name, canvas in farmmap.debris_variants().items():

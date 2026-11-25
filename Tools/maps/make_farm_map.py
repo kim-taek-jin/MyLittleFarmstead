@@ -120,7 +120,10 @@ data = {
     'anchors': [
         {'name': 'door', 'x': 3.5, 'y': -0.15},        # HomePortal (the house door, bottom middle of the house)
         {'name': 'well', 'x': 6.9, 'y': -1.4},         # well_0 (yard, right side)
-        {'name': 'storage', 'x': 0.4, 'y': 0.5},       # storage chest by the porch
+        {'name': 'storage', 'x': -1.6, 'y': 0.5},      # storage chest in the yard (moved left for the kitchen agungi)
+        {'name': 'agungi', 'x': 1.0, 'y': 0.0},        # K-2: the kitchen agungi touching the house's left wall (bottom middle)
+        {'name': 'mejurack', 'x': -0.4, 'y': 0.0},     # K-2: wooden rack for drying meju, between the storage chest and the agungi
+        {'name': 'jangdok', 'x': 7.0, 'y': 0.0},       # K-2: the jangdokdae (bottom middle of its picture)
         {'name': 'compost', 'x': 9.5, 'y': 1.5},       # compost heap
         {'name': 'pond', 'x': -6.6, 'y': -1.5},        # fishing spot: the stream by the side gate
         {'name': 'mina', 'x': -3.6, 'y': -0.6},        # Mina sits on the pyeong-sang... next to it

@@ -101,6 +101,9 @@ public class Shop : MonoBehaviour
                 }
                 if (dataManager.CurrentSeason >= Season.Autumn) stock.Add(new ItemForSale { itemName = "Pumpkin Seed", price = 70 });
                 if (!dataManager.HasItem("Mattock")) stock.Add(new ItemForSale { itemName = "Mattock", price = 150 });
+                // 장 담그기 재료 (K-2)
+                stock.Add(new ItemForSale { itemName = "Soybeans", price = 12 });
+                stock.Add(new ItemForSale { itemName = "Salt", price = 8 });
                 if (MarketState.IsMarketDay(dataManager.Today))
                     foreach (ItemStack fair in MarketState.FairStock) stock.Add(new ItemForSale { itemName = fair.itemName, price = fair.count });   // 장날 (count = 가격)
             }

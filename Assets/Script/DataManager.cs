@@ -678,6 +678,10 @@ public class DataManager : MonoBehaviour
         else { delta -= 3f; lines.Add(Loc.T("Worked until exhausted", "기력이 바닥날 때까지 일했어요") + "  <color=#ff8080>-3</color>"); }
         if (today.starved) { delta -= 5f; lines.Add(Loc.T("Went hungry or thirsty", "배고프거나 목마른 채로 지냈어요") + "  <color=#ff8080>-5</color>"); }
         if (today.harvested > 0) { delta += 2f; lines.Add(Loc.T($"Harvested {today.harvested} crops", $"작물 {today.harvested}개를 거뒀어요") + "  <color=#9dff9d>+2</color>"); }
+        // K-2: 아궁이에 불을 땠으면 방이 뜨끈 (구들), 장독은 그날 날씨와 뚜껑으로 돌봄을 셈
+        story.jang.Ensure();
+        if (story.jang.fireToday && !passedOut) { facts.warm = true; delta += 2f; lines.Add(Loc.T("Slept on a warm floor", "뜨끈한 방바닥에서 잤어요") + "  <color=#9dff9d>+2</color>"); }
+        story.jang.AdvanceNight(raining || snowing);
 
         ChangeHeart(delta, null);
 
@@ -782,6 +786,8 @@ public class DataManager : MonoBehaviour
         BroadcastBanner.Queue(VillageBroadcast.Lines(new MorningNews
         {
             day = day, before = before, after = after, raining = raining, snowing = snowing,
+            mejuSeason = after == Season.Winter && story.jang.Fermenting() == 0 && story.jang.hung.Count == 0,
+            lidsOpen = story.jang.lidsOpen,
             forestOpened = !forestWas && story.forest != null && story.forest.open,
             lakeOpened = !lakeWas && story.lake != null && story.lake.open,
             hillOpened = !hillWas && story.hill != null && story.hill.open,
@@ -812,7 +818,7 @@ public class DataManager : MonoBehaviour
     // 하루 평가의 점수 줄 (일기가 대신 이야기함)
     static bool IsScoreLine(string l)
     {
-        string[] keys = { "Passed out", "지쳐서", "Went to bed", "제때", "Stayed up", "늦게까지", "Ate proper", "챙겨 먹", "Drank fresh", "시원한 물",
+        string[] keys = { "Slept on a warm", "뜨끈한 방바닥", "Passed out", "지쳐서", "Went to bed", "제때", "Stayed up", "늦게까지", "Ate proper", "챙겨 먹", "Drank fresh", "시원한 물",
                           "Didn't overwork", "무리하지", "Worked until", "기력이 바닥", "Went hungry", "배고프거나", "Harvested", "거뒀어요" };
         foreach (string k in keys) if (l.Contains(k)) return true;
         return false;
