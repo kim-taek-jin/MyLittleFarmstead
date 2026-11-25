@@ -17,6 +17,17 @@ public class WorldColor : MonoBehaviour
     private ColorAdjustments colorAdjustments;
     private float targetSaturation;
     private float currentSaturation;
+    // 색 물결(ColorWave)과 함께 잠깐 확 오르는 채도
+    private float boost, boostPeak, boostT, boostDur;
+
+    // amount 만큼 빠르게 올랐다가 seconds 동안 가라앉음
+    public static void Pulse(float amount, float seconds)
+    {
+        Ensure();
+        instance.boostPeak = amount;
+        instance.boostT = 0f;
+        instance.boostDur = Mathf.Max(0.1f, seconds);
+    }
 
     public static void Ensure()
     {
@@ -85,15 +96,25 @@ public class WorldColor : MonoBehaviour
 
     void Update()
     {
+        bool changed = false;
         if (!Mathf.Approximately(currentSaturation, targetSaturation))
         {
             currentSaturation = Mathf.MoveTowards(currentSaturation, targetSaturation, changeSpeed * Time.unscaledDeltaTime);
-            Apply();
+            changed = true;
         }
+        if (boostDur > 0f)
+        {
+            boostT += Time.unscaledDeltaTime;
+            float t = boostT / boostDur;
+            boost = t < 0.35f ? boostPeak * (t / 0.35f) : boostPeak * Mathf.Max(0f, 1f - (t - 0.35f) / 0.65f);   // 물결이 화면 끝에 닿을 때 가장 진함
+            if (t >= 1f) { boost = 0f; boostDur = 0f; }
+            changed = true;
+        }
+        if (changed) Apply();
     }
 
     void Apply()
     {
-        if (colorAdjustments != null) colorAdjustments.saturation.value = currentSaturation;
+        if (colorAdjustments != null) colorAdjustments.saturation.value = Mathf.Min(currentSaturation + boost, 40f);
     }
 }

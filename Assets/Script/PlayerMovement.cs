@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -18,7 +18,8 @@ public class PlayerMovement : MonoBehaviour
         if (rb == null) return;
 
         // 게임 오버 상태에서는 움직이지 않음
-        if ((DataManager.instance != null && DataManager.instance.IsGameOver) || PauseMenu.Open || HUD.AlbumOpen || PixelHUD.BagOpen || PixelHUD.ViewOpen)
+        if ((DataManager.instance != null && DataManager.instance.IsGameOver) || PauseMenu.Open || HUD.AlbumOpen || PixelHUD.BagOpen || PixelHUD.ViewOpen
+            || PlayerPixelAnimator.Busy)                     // 괭이질, 물 주기, 수확 동작 중에는 잠깐 멈춤
         {
             rb.linearVelocity = Vector2.zero;
             return;

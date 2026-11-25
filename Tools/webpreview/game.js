@@ -551,6 +551,23 @@ function sprite(c, key, wx, wy, scale = 1, anchor = 'center', flip = false, alph
 
 // ------------------------------------------------------------------ HUD helpers
 let toasts = [], announce = null, dialogue = null, panel = null, haggle = null, fishing = null;
+// D-2: action poses, little bursts, the color wave (same as PlayerPixelAnimator / ActionFX / ColorWave in Unity)
+let act = null, fx = [], wave = null, wavePending = null, satBoost = null;
+function doAction(kind, cx, cy) {
+  const dx = cx + 0.5 - G.px, dy = cy + 0.5 - G.py;
+  if (dx * dx + dy * dy > 0.04) { if (Math.abs(dx) > Math.abs(dy)) { G.dir = 'side'; G.facingLeft = dx < 0; } else G.dir = dy > 0 ? 'up' : 'down'; }
+  act = { kind, t: 0.31 };
+}
+const FX_COLORS = { dust: ['#784f2e', '#9a6b42', '#5c3b21'], splash: ['#c0e6ff', '#58a4e4'], seed: ['#93d66a', '#fff09a'], swish: ['#e6cc74', '#93d66a'] };
+function burst(type, cx, cy) {
+  const cols = FX_COLORS[type], n = type === 'swish' ? 10 : type === 'seed' ? 5 : 8;
+  for (let i = 0; i < n; i++) {
+    const a = (i + Math.random() * 0.6) / n * Math.PI * 2, sp = type === 'seed' ? 0.6 : type === 'swish' ? 2 : 1.3;
+    fx.push({ x: cx + 0.5, y: cy + (type === 'dust' ? 0.25 : 0.4), vx: Math.cos(a) * sp * (0.6 + Math.random() * 0.6), vy: (type === 'splash' ? 2.2 : 1.5) * (0.6 + Math.random() * 0.8), g: type === 'splash' ? 9 : 6, t: 0, life: 0.5, col: cols[i % cols.length] });
+  }
+}
+function pop(cx, cy, item) { fx.push({ pop: iconKey(item), x: cx + 0.5, y: cy + 0.5, t: 0, life: 0.7 }); burst('seed', cx, cy); }
+function requestWave(big) { wavePending = wavePending === 'big' || big ? 'big' : 'small'; }
 const keys = {}, pressed = {};
 function toast(text, dur = 3.2) {
   const ex = toasts.find(t => t.text === text); if (ex) { ex.t = dur; return; }
@@ -609,6 +626,7 @@ function report(evt, arg = null) {
 }
 function changeHeart(a, reason) {
   const before = G.heart; G.heart = Math.max(0, Math.min(100, G.heart + a));
+  if (a >= 2 && G.heart > before && reason) requestWave(false);
   if (reason && Math.abs(a) >= 0.5) toast(`[#ff8fb1]${a > 0 ? '+' : ''}${Math.round(a)} Heart[/]  ${reason}`);
   for (const [m, t] of [[30, 'Color returns...\n\nThe gray haze of the city is starting to lift.'], [50, 'Breathing again\n\nYou notice the smell of the soil and the sound of the wind.'], [75, 'Warm days\n\nThe village feels like home now.'], [100, 'Happiness rebuilt\n\nThe world is full of color again.']]) {
     if (before < m && G.heart >= m && !G.milestones.includes(m)) { G.milestones.push(m); showAnnounce(`[#ff8fb1]${t.split('\n')[0]}[/]${t.slice(t.indexOf('\n'))}`, 5); }
@@ -699,7 +717,7 @@ function cellsFor(cx, cy, tier) { return tier >= 2 ? [[cx, cy], [cx - 1, cy], [c
 function harvestCell(x, y) {
   const c = cropAt(x, y); const def = CROPS[c.id]; const blessed = c.blessed, rich = c.rich; const n = 1 + (blessed ? 1 : 0) + (rich ? 1 : 0);
   if (def.regrow) { c.days = def.days - def.regrow; c.blessed = false; c.rich = false; } else delete G.crops[x + ',' + y];
-  add(def.harvest, n); G.log.harvested += n;
+  add(def.harvest, n); G.log.harvested += n; pop(x, y, def.harvest);
   toast(`Harvested ${def.harvest} x${n}` + (blessed ? '  [#ffd84a](golden!)[/]' : '') + (rich ? '  [#c9a46a](rested soil +1)[/]' : ''));
   report('harvest', def.harvest); if (blessed) { report('golden'); changeHeart(3, 'A golden harvest!'); }
   else if (G.log.harvested === n) changeHeart(1, 'Your first harvest of the day.');
@@ -729,27 +747,27 @@ function worldClick(wx, wy) {
   if (d.tool === 'scythe') {
     const ripe = []; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const c = cropAt(cx + dx, cy + dy); if (c && mature(c)) ripe.push([cx + dx, cy + dy]); }
     if (!ripe.length) { toast('Nothing is ripe here yet.'); return; }
-    if (!useEnergy(2)) return; ripe.forEach(([x, y]) => harvestCell(x, y)); return;
+    if (!useEnergy(2)) return; ripe.forEach(([x, y]) => harvestCell(x, y)); doAction('hoe', cx, cy); burst('swish', cx, cy); return;
   }
   const crop = cropAt(cx, cy);
-  if (crop && mature(crop)) { harvestCell(cx, cy); return; }
+  if (crop && mature(crop)) { harvestCell(cx, cy); doAction('harvest', cx, cy); return; }
   if (d.tool === 'hoe') {
     const t = cellsFor(cx, cy, d.tier).filter(([x, y]) => tillable(x, y) && !debrisAt(x, y) && !tileAt(x, y));
     if (!t.length) { toast(tileAt(cx, cy) ? 'This ridge is already tilled. Plant a seed here!' : 'You can only farm on the ridges of an open plot.'); return; }
-    if (!useEnergy(d.tier >= 2 ? 6 : 4)) return; t.forEach(([x, y]) => G.tiles[x + ',' + y] = { wet: false });
+    if (!useEnergy(d.tier >= 2 ? 6 : 4)) return; t.forEach(([x, y]) => G.tiles[x + ',' + y] = { wet: false }); doAction('hoe', cx, cy); burst('dust', cx, cy);
   } else if (d.tool === 'can') {
     if (G.water <= 0) { toast('Your watering can is empty. Refill it at the well (E).'); return; }
     const t = cellsFor(cx, cy, d.tier).filter(([x, y]) => { const tl = tileAt(x, y); const c = cropAt(x, y); return tl && (!tl.wet || (c && !c.watered)); });
     if (!t.length) { toast(tileAt(cx, cy) ? 'This spot is already watered.' : 'Water tilled soil or crops.'); return; }
     if (!useEnergy(2)) return; G.water--;
-    t.forEach(([x, y]) => { tileAt(x, y).wet = true; const c = cropAt(x, y); if (c) c.watered = true; });
+    t.forEach(([x, y]) => { tileAt(x, y).wet = true; const c = cropAt(x, y); if (c) c.watered = true; }); doAction('water', cx, cy); burst('splash', cx, cy);
     if (G.water === 0) toast('The watering can is empty now.');
   } else if (d.cat === 'Seed') {
     if (!tileAt(cx, cy)) { toast('Till the soil with a hoe first.'); return; }
     if (crop) { toast('Something is already growing here.'); return; }
     const def = CROPS[d.crop];
     if (G.story.season < def.season) { toast(`It's still ${SEASONS[G.story.season]} in your heart. ${def.harvest} needs ${SEASONS[def.season]}.`); return; }
-    if (!useEnergy(1)) return; remove(item); const rich = plotRested(plotAt(cx, cy)); G.crops[cx + ',' + cy] = { id: d.crop, days: 0, watered: tileAt(cx, cy).wet, blessed: false, rich };
+    if (!useEnergy(1)) return; remove(item); const rich = plotRested(plotAt(cx, cy)); G.crops[cx + ',' + cy] = { id: d.crop, days: 0, watered: tileAt(cx, cy).wet, blessed: false, rich }; doAction('harvest', cx, cy); burst('seed', cx, cy);
     if (rich && !G.richHint) { G.richHint = true; toast('This plot rested overnight. The soil is rich: crops planted today give +1 on their first harvest.', 4); }
   } else if (d.cat === 'Special' && item !== 'Star Fragment') {
     if (!crop) { toast('Use it on a growing crop.'); return; }
@@ -987,6 +1005,7 @@ function endDay(passedOut) {
   const before = S().season; let after = before; const target = THRESH.filter(t => G.heart >= t).length - 1;
   if (target > before) after = target; else if (target < before && G.heart < THRESH[before] - 5) after = before - 1;
   S().season = after; S().highest = Math.max(S().highest, after); if (after >= 3) unlock('season_autumn');
+  if (after > before) requestWave(true); else if (delta >= 4) requestWave(false);
   // weather follows mood
   let chance = [0.3, 0.3, 0.15, 0.25][after]; if (delta >= 6) chance *= 0.5; else if (delta < 0) chance = Math.min(0.9, chance + 0.3);
   const wet = Math.random() < chance; G.snowing = wet && after === 0; G.raining = wet && after !== 0;
@@ -1338,7 +1357,12 @@ function update(dt) {
   // movement
   let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
   let my = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
-  const moving = mx || my;
+  if (act) { act.t -= dt; if (act.t <= 0) act = null; }
+  for (const f of fx) { f.t += dt; if (!f.pop) { f.vy -= f.g * dt; f.x += f.vx * dt; f.y += f.vy * dt; } } fx = fx.filter(f => f.t < f.life);
+  if (satBoost) { satBoost.t += dt; if (satBoost.t >= satBoost.dur) satBoost = null; }
+  if (wavePending && !announce && !dialogue && !panel && !screen) { const big = wavePending === 'big'; wavePending = null; wave = { t: 0, dur: big ? 2.6 : 1.7, big, seeds: Array.from({ length: big ? 130 : 70 }, () => [Math.random() * Math.PI * 2, 0.3 + Math.random() * 0.7, Math.random() * 0.35, Math.random() * 6]) }; satBoost = { t: 0, dur: wave.dur + 0.6, peak: big ? 0.6 : 0.35 }; }
+  if (wave) { wave.t += dt; if (wave.t >= wave.dur) wave = null; }
+  const moving = (mx || my) && !act;
   if (moving) {
     const l = Math.hypot(mx, my); let sp = 5 * (G.hunger <= 0 || G.thirst <= 0 ? 0.6 : 1);
     const ox = G.px, oy = G.py;
@@ -1624,7 +1648,14 @@ function renderWorld() {
   }
   if (G.scene !== 'haggle') {
     const frameIdx = G.step === 1 ? 1 : G.step === 3 ? 2 : 0;
-    draws.push([G.py - 0.45, () => sprite(c, `Player/player_${G.dir}_${frameIdx}`, G.px, G.py, 1, 'center', G.dir === 'side' && G.facingLeft)]);
+    const pkey = act ? `Player/player_${act.kind}_${G.dir}_${act.t > 0.2 ? 0 : 1}` : `Player/player_${G.dir}_${frameIdx}`;
+    draws.push([G.py - 0.45, () => sprite(c, pkey, G.px, G.py, 1, 'center', G.dir === 'side' && G.facingLeft)]);
+    for (const f of fx) draws.push([-900, () => {
+      const a = Math.round(Math.max(0, 1 - f.t / f.life) * 4) / 4;
+      if (f.pop) { const h = 0.9 * (1 - Math.pow(1 - Math.min(1, f.t / f.life * 1.6), 2)); sprite(c, f.pop, f.x, f.y + Math.round(h * 32) / 32, 0.75, 'center', false, f.t / f.life < 0.6 ? 1 : a); return; }
+      const [sx, sy] = toScreen(f.x, f.y), k = Math.max(1, Math.round(uy() / 32)) * 2;
+      c.globalAlpha = a; c.fillStyle = f.col; c.fillRect(Math.round(sx), Math.round(sy), k, k); c.globalAlpha = 1;
+    }]);
     if (G.spirit) draws.push([G.spirit.y - 0.3, () => sprite(c, 'Spirit/' + spiritForm(S().spirit), G.spirit.x, G.spirit.y, 1 + Math.sin(G.spirit.pulse * Math.PI) * 0.25, 'center', G.spirit.vx < -0.05)]);
   }
   draws.sort((a, b) => b[0] - a[0]).forEach(d => d[1]());
@@ -1636,7 +1667,8 @@ function renderWorld() {
   if (G.scene === 'lake') drawFireflies(c);
 
   // seasons of the heart: the world's saturation follows Heart (UI layer is not affected)
-  const sat = 1 + (-80 + 95 * G.heart / 100) / 100;
+  let sat = 1 + (-80 + 95 * G.heart / 100) / 100;
+  if (satBoost) { const t = satBoost.t / satBoost.dur; sat += t < 0.35 ? satBoost.peak * t / 0.35 : satBoost.peak * Math.max(0, 1 - (t - 0.35) / 0.65); sat = Math.min(sat, 1.4); }
   worldCanvas.style.filter = `saturate(${sat.toFixed(2)})`;
 }
 
@@ -1645,6 +1677,7 @@ function renderUI() {
   hits = [];
   ctx.clearRect(0, 0, CW, CH); ctx.textBaseline = 'top';
   if (screen) { drawScreen(); return; }
+  if (wave) drawWave();
   // weather
   if (sc().outdoor && (G.raining || G.snowing)) {
     if (particles.length !== 80 || particles.snow !== G.snowing) { particles = Array.from({ length: 80 }, () => ({ x: Math.random() * CW, y: Math.random() * CH, s: Math.random() })); particles.snow = G.snowing; }
@@ -1901,6 +1934,22 @@ function drawScreen() {
     if (screen.fade > 0) { ctx.fillStyle = `rgba(0,0,0,${Math.round(Math.min(1, screen.fade / 0.4) * 4) / 4})`; ctx.fillRect(0, 0, CW, CH); }
     hit(0, 0, CW, CH, () => { pressed.Space = true; });
   }
+}
+function drawWave() {
+  const [px, py] = toScreen(G.px, G.py), reach = CW * 0.8;
+  const petals = ['#ff9fc4', '#ffd84a', '#93d66a', '#8cccff', '#ffb06a', '#ffffff'];
+  const dot = (x, y, s, col, a) => { ctx.globalAlpha = Math.round(Math.max(0, Math.min(1, a)) * 4) / 4; ctx.fillStyle = col; ctx.fillRect(Math.round((px + x) / 2) * 2 - s / 2, Math.round((py + y) / 2) * 2 - s / 2, s, s); };
+  for (let k = 0; k < (wave.big ? 2 : 1); k++) {
+    const t = (wave.t - k * 0.45) / (wave.dur - k * 0.45); if (t < 0 || t >= 1) continue;
+    const r = reach * Math.sqrt(t), a = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+    for (let i = 0; i < 120; i++) { const ang = (i + 0.5 * k) / 120 * Math.PI * 2; dot(Math.cos(ang) * r, -Math.sin(ang) * r, 10, '#ffd84a', a); dot(Math.cos(ang) * r * 1.018, -Math.sin(ang) * r * 1.018, 8, '#ff9fc4', a); }
+  }
+  wave.seeds.forEach(([ang, sp, delay, ph], i) => {
+    const t = (wave.t - delay) / (wave.dur - delay); if (t < 0 || t >= 1) return;
+    const r = reach * sp * Math.sqrt(t), w = Math.sin(t * 9 + ph) * 8;
+    dot(Math.cos(ang) * r - Math.sin(ang) * w, -Math.sin(ang) * r - Math.cos(ang) * w, i % 3 ? 10 : 8, petals[i % petals.length], t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45);
+  });
+  ctx.globalAlpha = 1;
 }
 function guideStep() {
   if (!unlocked('guide_on') || unlocked('guide_done')) return -1;

@@ -62,7 +62,7 @@ public class PlayerAction : MonoBehaviour
         if (dataManager == null) dataManager = DataManager.instance;
         if (dataManager == null || dataManager.IsGameOver || Time.timeScale == 0f || PixelHUD.BagOpen || PixelHUD.ViewOpen) return;
 
-        bool use = Input.GetMouseButtonDown(0);
+        bool use = Input.GetMouseButtonDown(0) && !PlayerPixelAnimator.Busy;   // 동작이 끝나기 전 클릭은 무시
         bool eat = Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.F);
         if (!use && !eat) return;
         if ((use || Input.GetMouseButtonDown(1)) && IsPointerOverUI()) return;
@@ -130,6 +130,8 @@ public class PlayerAction : MonoBehaviour
         {
             debris.Hit(def);
             Sfx.Play("hit");
+            PlayerPixelAnimator.PlayAction("hoe", cellCenter);
+            ActionFX.Dust(cellCenter);
             return;
         }
 
@@ -138,6 +140,8 @@ public class PlayerAction : MonoBehaviour
         {
             farm.TryScythe(cell);
             Sfx.Play("swish");
+            PlayerPixelAnimator.PlayAction("hoe", cellCenter);
+            ActionFX.Swish(cellCenter);
             return;
         }
 
@@ -145,7 +149,13 @@ public class PlayerAction : MonoBehaviour
         CropData crop = dataManager.farm.GetCrop(cell.x, cell.y);
         if (crop != null && crop.IsMature)
         {
-            if (farm.TryHarvest(cell)) Sfx.Play("harvest");
+            string got = crop.Def != null ? crop.Def.harvestItem : null;
+            if (farm.TryHarvest(cell))
+            {
+                Sfx.Play("harvest");
+                PlayerPixelAnimator.PlayAction("harvest", cellCenter);
+                ActionFX.Pop(cellCenter, got);
+            }
             return;
         }
 
@@ -154,11 +164,17 @@ public class PlayerAction : MonoBehaviour
         switch (def.category)
         {
             case ItemCategory.Tool:
-                if (tool == ToolType.Hoe) { if (farm.TryTill(cell, def.toolTier)) Sfx.Play("till"); }
-                else if (tool == ToolType.WateringCan) { if (farm.TryWater(cell, def.toolTier)) Sfx.Play("water"); }
+                if (tool == ToolType.Hoe)
+                {
+                    if (farm.TryTill(cell, def.toolTier)) { Sfx.Play("till"); PlayerPixelAnimator.PlayAction("hoe", cellCenter); ActionFX.Dust(cellCenter); }
+                }
+                else if (tool == ToolType.WateringCan)
+                {
+                    if (farm.TryWater(cell, def.toolTier)) { Sfx.Play("water"); PlayerPixelAnimator.PlayAction("water", cellCenter); ActionFX.Splash(cellCenter); }
+                }
                 break;
             case ItemCategory.Seed:
-                if (farm.TryPlant(cell, def.name)) Sfx.Play("plant");
+                if (farm.TryPlant(cell, def.name)) { Sfx.Play("plant"); PlayerPixelAnimator.PlayAction("harvest", cellCenter); ActionFX.Seed(cellCenter); }
                 break;
             case ItemCategory.Special:
                 if (def.name == "Compost") HUD.Toast(Loc.T("Spread compost on a gray, hardened plot to bring it back.", "퇴비는 회색으로 굳은 묵정밭에 뿌려 주세요."), 2.5f);

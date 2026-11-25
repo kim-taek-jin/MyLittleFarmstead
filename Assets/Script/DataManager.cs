@@ -442,6 +442,7 @@ public class DataManager : MonoBehaviour
         float before = heart;
         heart = Mathf.Clamp(heart + amount, 0f, maxHeart);
         if (amount >= 1f && heart > before) Sfx.Play("heart", 0.8f, 0.5f);
+        if (amount >= 2f && heart > before && !string.IsNullOrEmpty(reason)) ColorWave.Request(false);   // 낮에 생긴 좋은 일 (아침 요약은 아래에서)
         WorldColor.SetHeart(heart / maxHeart);
 
         if (!string.IsNullOrEmpty(reason) && Mathf.Abs(amount) >= 0.5f)
@@ -683,6 +684,9 @@ public class DataManager : MonoBehaviour
         Season after = SeasonSystem.Evaluate(heart, before, cap);
         story.season = (int)after;
         if ((int)after > story.highestSeason) story.highestSeason = (int)after;
+        // 색 물결: 아침 요약을 닫으면 퍼짐 (계절이 바뀐 아침은 크게)
+        if (after > before) ColorWave.Request(true);
+        else if (delta >= 4f) ColorWave.Request(false);
         if (after >= Season.Autumn) story.Unlock("season_autumn");
 
         // ---- 마음을 따라가는 날씨 (겨울에는 눈: 밭을 적시지 않음) ----

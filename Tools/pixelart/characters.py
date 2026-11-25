@@ -90,7 +90,7 @@ def _walk(m, frame, side=False):
     return m
 
 
-def _side_walk(frame):
+def _side_walk(frame, arm=True):
     """Profile facing right. frame 0 idle, 1/2 legs scissored (and arm swinging) in opposite directions."""
     m = PixelMap(W, H)
     put = lambda y, x0, x1, ch: m.seg(y, x0, x1, ch, mirror=False)
@@ -130,6 +130,9 @@ def _side_walk(frame):
     if frame == 2:                                  # back foot lifted
         put(28, 7, 10, '.'); put(27, 7, 10, 'n'); put(26, 7, 9, 'a')
     m.shade(SHADE)
+    if not arm:                                     # action poses draw their own arm
+        m.put(7, 2, 'J')
+        return m
     # arm in front (after shading so it keeps its own dark edge)
     swing = {0: 0, 1: 1, 2: -1}[frame]
     for y in range(16, 22):
@@ -158,4 +161,144 @@ def player_frames():
         out[f'player_down_{f}'] = _frame(_walk(_front(), f))
         out[f'player_up_{f}'] = _frame(_walk(_front(back=True), f))
         out[f'player_side_{f}'] = _frame(_side_walk(f))
+    return out
+
+
+# ---------------------------------------------------------------- action poses (D-2): hoe, watering can, harvest
+# Built on the idle frames: the hand that holds the tool is taken off the body and drawn again on the tool,
+# so a pose never shows three hands. The tool goes in front of the body (down, side) or behind it (up).
+HANDLE = P['woodlight']
+BLADE = P['metal']
+CAN = P['cloth']                                    # a blue tin can, like the hotbar icon
+SKIN = P['skin']
+
+
+def _no_hand(m, right=True, left=False):
+    """Front/back map: take a hand off (row 22) so the pose can draw it where the tool is."""
+    cols = []
+    if right:
+        cols += [16, 17]
+    if left:
+        cols += [2, 3]
+    for x in cols:
+        if m.g[22][x] in 'sSl':
+            m.g[22][x] = '.'
+    return m
+
+
+def _compose(body, tool, front=True):
+    c = Canvas(32, 32)
+    c.shadows = list(body.shadows)
+    for layer in ((body, tool) if front else (tool, body)):
+        for y in range(32):
+            for x in range(32):
+                p = layer.get(x, y)
+                if p is not None:
+                    c.set(x, y, p)
+    return c
+
+
+def _hand(c, x, y):
+    c.rect(x, y, x + 1, y + 1, SKIN[2])
+    c.set(x, y, SKIN[3])
+
+
+def _sleeve(c, x0, y0, x1, y1):
+    """An arm in the knit sleeve. Drawn after the tool's outline, so it sits on the body like the idle arm
+    (light on top, a darker line under it) instead of getting its own outline."""
+    c.thick_line(x0, y0 + 1, x1, y1 + 1, CARDIGAN[1], 1)
+    c.thick_line(x0, y0, x1, y1, CARDIGAN[2], 1)
+
+
+def _hoe(c, gx, gy, tx, ty, blade_dx, blade_dy):
+    """Handle from the grip (gx, gy) to the top end (tx, ty), and a blade bent off the top end."""
+    c.thick_line(gx, gy, tx, ty, HANDLE[2], 2)
+    c.line(gx, gy, tx, ty, HANDLE[3])
+    bx, by = tx + blade_dx, ty + blade_dy
+    c.thick_line(tx, ty, bx, by, BLADE[2], 3)
+    c.set(bx, by, BLADE[3])
+
+
+def _can(c, x, y, tilt):
+    """A small watering can whose body's top-left is (x, y); tilt 1 pours forward (to the right)."""
+    c.box(x, y + tilt, x + 6, y + 5 + tilt, CAN)
+    c.rect(x + 1, y - 1 + tilt, x + 4, y - 1 + tilt, CAN[1])           # handle on top
+    if tilt:
+        c.thick_line(x + 6, y + 3, x + 9, y + 6, CAN[1], 1)               # spout down
+    else:
+        c.thick_line(x + 6, y + 3, x + 9, y + 1, CAN[1], 1)               # spout up
+
+
+def _drops(c, x, y, n=3):
+    for k in range(n):
+        c.set(x + (k % 2), y + k * 2, P['water'][3])
+        c.set(x + (k % 2), y + k * 2 + 1, P['water'][2])
+
+
+def _crouch(c, drop=2):
+    """Bend down: move everything above the hips down by `drop` rows (the legs look bent)."""
+    out = Canvas(32, 32)
+    out.shadows = list(c.shadows)
+    for y in range(32):
+        for x in range(32):
+            p = c.get(x, y)
+            if p is None:
+                continue
+            ny = y + drop if y < 24 else y
+            if ny < 32 and (y < 24 or out.get(x, ny) is None):
+                out.set(x, ny, p)
+    return out
+
+
+def action_frames():
+    out = {}
+    down = lambda: _frame(_no_hand(_front()))
+    up = lambda: _frame(_no_hand(_front(back=True)))
+    side = lambda: _frame(_side_walk(0, arm=False))
+
+    # ---- hoe: 0 raised, 1 striking the ground
+    t = Canvas(32, 32); _hoe(t, 22, 17, 25, 4, -3, 2); _hand(t, 21, 16); t.outline()
+    out['player_hoe_down_0'] = _compose(down(), t)
+    t = Canvas(32, 32); _hoe(t, 21, 20, 25, 27, -3, 3); _hand(t, 20, 20); t.outline()
+    out['player_hoe_down_1'] = _compose(down(), t)
+    t = Canvas(32, 32); _hoe(t, 21, 16, 24, 3, -3, 1); _hand(t, 20, 15); t.outline()
+    out['player_hoe_up_0'] = _compose(up(), t, front=False)
+    t = Canvas(32, 32); _hoe(t, 20, 12, 17, 2, -3, 0); t.outline()       # the blade bites the ground ahead (up the screen)
+    out['player_hoe_up_1'] = _compose(up(), t, front=False)
+    t = Canvas(32, 32); _hoe(t, 13, 13, 7, 3, -2, 3); _hand(t, 12, 12); t.outline(); _sleeve(t, 14, 17, 13, 14)
+    out['player_hoe_side_0'] = _compose(side(), t)
+    t = Canvas(32, 32); _hoe(t, 19, 20, 27, 25, 1, 4); _hand(t, 18, 19); t.outline(); _sleeve(t, 14, 17, 17, 19)
+    out['player_hoe_side_1'] = _compose(side(), t)
+
+    # ---- watering can: 0 held, 1 pouring
+    for f in (0, 1):
+        t = Canvas(32, 32); _can(t, 19, 21, f); _hand(t, 20, 19); t.outline()
+        if f:
+            _drops(t, 28, 26)
+        out[f'player_water_down_{f}'] = _compose(down(), t)
+        t = Canvas(32, 32); _can(t, 19, 17, f); t.outline()
+        if f:
+            _drops(t, 27, 10)
+        out[f'player_water_up_{f}'] = _compose(up(), t, front=False)
+        t = Canvas(32, 32); _can(t, 17, 19, f); _hand(t, 17, 18); t.outline(); _sleeve(t, 14, 17, 16, 18)
+        if f:
+            _drops(t, 27, 25)
+        out[f'player_water_side_{f}'] = _compose(side(), t)
+
+    # ---- harvest: 0 bent down reaching, 1 pulling up (a green top in hand)
+    for f in (0, 1):
+        for d, base in (('down', down), ('up', up), ('side', side)):
+            body = _crouch(base(), 2 if f == 0 else 1)
+            t = Canvas(32, 32)
+            if d == 'side':
+                hx, hy = (20, 25) if f == 0 else (19, 21)
+            else:
+                hx, hy = (15, 26) if f == 0 else (15, 21)
+            _hand(t, hx, hy)
+            if f:
+                t.rect(hx, hy - 3, hx + 1, hy - 1, P['leaf'][2]); t.set(hx - 1, hy - 3, P['leaf'][3])
+            t.outline()
+            if d == 'side':
+                _sleeve(t, 14, 19, hx - 1, hy)
+            out[f'player_harvest_{d}_{f}'] = _compose(body, t, front=(d != 'up'))
     return out

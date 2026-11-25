@@ -189,6 +189,9 @@ def main():
         exported['World'].append(export('World', name, fn()))
     for name, canvas in world.player_frames().items():
         exported['Player'].append(export('Player', name, canvas))
+    import characters
+    for name, canvas in characters.action_frames().items():      # D-2: hoe, watering can, harvest poses
+        exported['Player'].append(export('Player', name, canvas))
     for vid, fn in villagers.VILLAGERS.items():
         for i, canvas in enumerate(villagers.stages(fn())):
             exported['Villagers'].append(export('Villagers', f'{vid}_{i}', canvas))
