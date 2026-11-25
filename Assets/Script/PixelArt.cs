@@ -30,6 +30,19 @@ public static class PixelArt
         if (!Enabled || string.IsNullOrEmpty(path)) return null;
         if (spriteCache.TryGetValue(path, out Sprite cached)) return cached;
         Sprite sprite = Resources.Load<Sprite>("PixelArt/" + path);
+        if (sprite == null)
+        {
+            // 그림이 Sprite가 아니라 일반 텍스처로 들어온 경우 (가져오기 설정이 어긋났을 때): 직접 Sprite로 만듦
+            Texture2D tex = Resources.Load<Texture2D>("PixelArt/" + path);
+            if (tex != null)
+            {
+                tex.filterMode = FilterMode.Point;
+                tex.wrapMode = TextureWrapMode.Clamp;
+                sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                sprite.name = tex.name;
+                Debug.LogWarning($"[PixelArt] {path} was imported as a plain texture, not a sprite. Using it anyway; right-click Assets/Resources/PixelArt > Reimport to fix the import.");
+            }
+        }
         if (sprite != null) spriteCache[path] = sprite;   // 없는 그림은 기억하지 않음 (가져오기가 늦게 끝나도 다음에 다시 찾음)
         return sprite;
     }
