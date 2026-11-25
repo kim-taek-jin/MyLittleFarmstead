@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 씬이 열릴 때마다 배경(농장, 집, 시장, 흥정, 도시)과 월드 오브젝트(나무, 돌, 사과, 우물, 상자, 침대, 출구, 상인)를 픽셀 아트로 바꿔 그립니다.
@@ -94,7 +94,11 @@ public static class PixelArtWorld
         string tex = sr.sprite.texture.name;
         switch (tex)
         {
-            case "BackGroundFarm": return FarmMap.Active && SeasonalSprite("bg_farmmap") != null ? "bg_farmmap" : "bg_farm";
+            case "BackGroundFarm":
+                if (FarmMap.Active && SeasonalSprite("bg_farmmap") != null) return "bg_farmmap";
+                Debug.LogWarning($"[FarmMap] Using the old one-screen farm: map={(FarmMap.Map != null ? "ok" : "missing")}, " +
+                                 $"pixelArt={PixelArt.Enabled}, picture={(SeasonalSprite("bg_farmmap") != null ? "ok" : "missing")}");
+                return "bg_farm";
             case "BackGroundHome": return "bg_home";
             case "BackGroundMarket": return "bg_market";
             case "BGMG": return "bg_minigame";

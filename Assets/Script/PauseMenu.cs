@@ -95,7 +95,7 @@ public class PauseMenu : MonoBehaviour
 
     void LateUpdate()
     {
-        if (status != null && status.text.Length > 0 && Time.unscaledTime > statusUntil) status.text = "";
+        if (status != null && !string.IsNullOrEmpty(status.text) && Time.unscaledTime > statusUntil) status.text = "";
         if (!Input.GetKeyDown(KeyCode.Escape)) return;
         if (Open) { Close(); return; }
         if (otherUIOpenAtFrameStart || Time.timeScale == 0f) return;

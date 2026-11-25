@@ -73,7 +73,17 @@ public class MapData
     {
         if (cache.TryGetValue(mapName, out MapData cached)) return cached;
         TextAsset text = Resources.Load<TextAsset>("Maps/" + mapName);
-        MapData map = text != null ? Parse(text.text) : null;
+        if (text == null)
+        {
+            Debug.LogWarning($"[MapData] Resources/Maps/{mapName}.json not found (is it imported? check Assets/Resources/Maps)");
+            return null;                       // 실패는 기억하지 않음 (다음에 다시 시도)
+        }
+        MapData map = Parse(text.text);
+        if (map == null)
+        {
+            Debug.LogWarning($"[MapData] Maps/{mapName}.json could not be read ({text.text.Length} chars)");
+            return null;
+        }
         cache[mapName] = map;
         return map;
     }

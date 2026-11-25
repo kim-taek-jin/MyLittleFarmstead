@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 // Tools/pixelart/generate.py로 만든 픽셀 아트(Assets/Resources/PixelArt)를 불러옵니다.
@@ -30,7 +30,7 @@ public static class PixelArt
         if (!Enabled || string.IsNullOrEmpty(path)) return null;
         if (spriteCache.TryGetValue(path, out Sprite cached)) return cached;
         Sprite sprite = Resources.Load<Sprite>("PixelArt/" + path);
-        spriteCache[path] = sprite; // 없는 경우(null)도 캐시해서 반복 로드를 막습니다.
+        if (sprite != null) spriteCache[path] = sprite;   // 없는 그림은 기억하지 않음 (가져오기가 늦게 끝나도 다음에 다시 찾음)
         return sprite;
     }
 
