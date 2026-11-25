@@ -124,7 +124,7 @@ public class DataManager : MonoBehaviour
 
         if (SaveSystem.HasSave() && LoadGame())
         {
-            HUD.Toast(Loc.T($"Welcome back. Day {(timeManager != null ? timeManager.day : 1)}.", $"다시 왔어요. {(timeManager != null ? timeManager.day : 1)}일째."));
+            // "다시 왔어요"는 타이틀 화면에서 이어하기를 누를 때 (TitleScreen)
         }
         else
         {
@@ -185,6 +185,7 @@ public class DataManager : MonoBehaviour
 
     void HandleHotkeys()
     {
+        if (TitleScreen.Blocking) return;      // 타이틀 화면, 오프닝 중에는 단축키를 받지 않음
         if (Input.GetKeyDown(KeyCode.F5) && !IsGameOver)
         {
             SaveGame();
@@ -905,6 +906,7 @@ public class DataManager : MonoBehaviour
         market.StartNewDay(rng, Season.Winter);
         today = new DayLog();
         story = new StoryState();
+        story.Unlock(FirstDayGuide.OnKey);      // 첫날 안내는 새 게임에서만
         clearedResources.Clear();
         raining = false;
         snowing = false;

@@ -101,7 +101,7 @@ public class Spirit : MonoBehaviour
 
         RefreshSprite(false);
 
-        if (Input.GetKeyDown(KeyCode.G) && !HUD.DialogueOpen && Data != null && !Data.IsGameOver) Feed(Hotbar.SelectedItem);
+        if (Input.GetKeyDown(KeyCode.G) && !HUD.DialogueOpen && !TitleScreen.Blocking && Data != null && !Data.IsGameOver) Feed(Hotbar.SelectedItem);
     }
 
     void RefreshSprite(bool force)

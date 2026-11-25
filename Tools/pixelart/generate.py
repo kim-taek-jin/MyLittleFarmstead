@@ -281,6 +281,12 @@ def main():
     for name, canvas in villagemap.world_sprites().items():
         exported['World'].append(export('World', name, canvas))
 
+    # ---- title screen, the short opening and the first-day guide arrow (D-1) ----
+    import opening
+    for name, img in opening.images().items():
+        export_image('World', name, img)
+    exported['World'].append(export('World', 'guide_arrow', opening.guide_arrow()))
+
     # folder metas (Resources/, Resources/PixelArt/, groups)
     for p in [os.path.join(ROOT, 'Assets', 'Resources'), OUT] + [os.path.join(OUT, g) for g in exported]:
         write_folder_meta(p)

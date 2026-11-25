@@ -498,7 +498,7 @@ function newGame() {
     tiles: {}, crops: {}, cleared: [], clearedDebris: [], debrisHits: {}, openPlots: [], restedPlots: [], compostPoints: 0, compostReady: 0,
     market: { demand: 'Carrot', haggle: 0, haggled: false, sold: {} },
     log: { harvested: 0, meals: 0, exhausted: false, starved: false, drank: false },
-    story: { season: 0, highest: 0, unlocks: [], photos: [], villagers: {}, kindness: 0, shareDay: -1, sharedToday: 0, donationDay: -1,
+    story: { season: 0, highest: 0, unlocks: ['guide_on'], photos: [], villagers: {}, kindness: 0, shareDay: -1, sharedToday: 0, donationDay: -1,
       fish: {}, starsDay: -1, starsTonight: 0, starsTotal: 0, benchDay: -1,
       spirit: { found: false, xp: 0, pts: [0, 0, 0, 0], forms: [] },
       forest: newForest(), lake: newLake(), hill: newHill() },
@@ -1287,6 +1287,8 @@ function drawPanel() {
 let frame = 0, speed = 1, last = 0;
 function update(dt) {
   frame++;
+  if (screen) { updateScreen(dt); clearPressed(); return; }
+  { const st = guideStep(); if (st === 3) { unlock('guide_done'); toast('Your first day went well. From here, live as you like.  [M] map  [J] journal', 7); } }
   for (const t of toasts) t.t -= dt; toasts = toasts.filter(t => t.t > 0);
   if (announce) { announce.t -= dt; if (announce.t <= 0) announce = null; }
 
@@ -1605,6 +1607,7 @@ function renderWorld() {
     draws.push([HRACK[1] - 0.5, () => sprite(c, 'World/' + rk, HRACK[0], HRACK[1] - 0.45, 1, 'bottom')]);
   }
   if (G.scene === 'farm' && unlocked('ending_seen')) draws.push([COTTAGE[1], () => sprite(c, seasonal('cottage_color'), COTTAGE[0], COTTAGE[1], 1, 'bottom')]);
+  if (G.scene === 'farm') { const tg = guideTarget(guideStep()); if (tg) { const bob = Math.round(Math.abs(Math.sin(performance.now() / 333)) * 4) / 32; draws.push([-1000, () => sprite(c, 'World/guide_arrow', tg[0], tg[1] + bob)]); } }
   if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
   if (G.scene === 'market') {
     draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
@@ -1641,6 +1644,7 @@ let particles = [];
 function renderUI() {
   hits = [];
   ctx.clearRect(0, 0, CW, CH); ctx.textBaseline = 'top';
+  if (screen) { drawScreen(); return; }
   // weather
   if (sc().outdoor && (G.raining || G.snowing)) {
     if (particles.length !== 80 || particles.snow !== G.snowing) { particles = Array.from({ length: 80 }, () => ({ x: Math.random() * CW, y: Math.random() * CH, s: Math.random() })); particles.snow = G.snowing; }
@@ -1663,6 +1667,12 @@ function renderUI() {
   const s = S(); const time = `${String(G.hour % 24).padStart(2, '0')}:${String(Math.floor(G.minute)).padStart(2, '0')}`;
   box(12, 10, 300, 74, 'rgba(20,14,11,0.78)', '#6a4f36');
   drawRich(`[${SEASON_COLOR[s.season]}]${SEASONS[s.season]}[/] Day ${G.day}  ${time}`, 26, 20, 22, 290);
+  { const st = guideStep(); if (st >= 0 && st < 3) {                       // first-day guide card
+    box(12, 90, 470, 76, 'rgba(20,14,11,0.86)', '#c89552');
+    drawRich(`[#ffd84a]Today[/]  [#c8c0b0]${st + 1}/3[/]`, 24, 98, 15, 440);
+    drawRich(GUIDE[st][0], 24, 118, 18, 450);
+    drawRich(GUIDE[st][1], 24, 142, 13, 450, 'left', '#c8c0b0');
+  } }
   drawRich(`${G.snowing ? '[#e4ecf4]Snow[/]' : G.raining ? '[#8fb8ff]Rain[/]' : '[#ffe28a]Sunny[/]'}   [#ffd84a]${G.gold}G[/]   [#ff8fb1]Heart ${Math.round(G.heart)}[/]`, 26, 50, 18, 290);
   // bars (top right)
   const bars = [['HP', G.health, '#e0483e'], ['Food', G.hunger, '#e0a13a'], ['Water', G.thirst, '#58a4e4'], ['Energy', G.energy, '#7fd36a']];
@@ -1825,10 +1835,90 @@ $('t-lake').onclick = () => {
 };
 $('t-night').onclick = () => { G.hour = Math.max(G.hour, 20); G.minute = 30; toast('Preview: it is night now.'); uiCanvas.focus(); };
 $('t-speed').onclick = e => { speed = speed === 1 ? 4 : 1; e.currentTarget.classList.toggle('on', speed === 4); e.currentTarget.textContent = speed === 4 ? '시간 1배속' : '시간 4배속'; uiCanvas.focus(); };
-$('t-new').onclick = () => { newGame(); toasts = []; dialogue = null; panel = null; announce = null; G.spirit = null; save(); introAnnounce(); uiCanvas.focus(); };
+$('t-new').onclick = () => { newGame(); toasts = []; dialogue = null; panel = null; announce = null; G.spirit = null; save(); startOpening(); uiCanvas.focus(); };
 
 function introAnnounce() {
   showAnnounce('[#ff8fb1]A new life begins[/]\n\n"Day after day in the gray city felt endless. So I left it all behind and set out for a quiet village. I wonder... can I build my happiness again?"\n\nThe world is gray. It is winter in your heart.\nEat, drink, rest and go to bed on time: spring will come.\n\n[#c8c0b0]Till the dirt (Hoe) → plant (Carrot Seed) → water → sleep. Walk into trees and rocks to gather.\nEast of the yard, the vegetable plots wait. Only one is soft enough to farm; the others have gone gray and hard. A compost heap can bring them back.[/]', 14);
+}
+
+// ------------------------------------------------------------------ title screen + opening + first-day guide (D-1)
+let screen = null;   // { kind: 'title', sel, confirm } | { kind: 'opening', i, shown, fade }
+const OPENING = [
+  ['bg_city', 'Overtime, then more overtime. One day the whole world started to look gray.'],
+  ['op_bus', 'I quit, packed one suitcase, and took the last bus out to the countryside.'],
+  ['op_arrive', 'An old house no one had lived in for years. Gray, just like me.'],
+  ['op_arrive_color', 'I decided to take care of it, and of myself, a little at a time.'],
+];
+function titleItems() {
+  if (screen.confirm) return [['Cancel', () => { screen.confirm = false; screen.sel = 0; }], ['Start over', () => { newGame(); toasts = []; dialogue = null; panel = null; announce = null; G.spirit = null; save(); startOpening(); }]];
+  const list = [];
+  if (resumed) list.push([`Continue  [#c8c0b0]${SEASONS[G.story.season]}, day ${G.day}[/]`, () => { screen = null; toast(`Welcome back. Day ${G.day}.`); }]);
+  list.push(resumed ? ['New Game', () => { screen.confirm = true; screen.sel = 0; }] : ['Start', () => startOpening()]);
+  return list;
+}
+function startOpening() { screen = { kind: 'opening', i: 0, shown: 0, fade: 0.4 }; }
+function updateScreen(dt) {
+  if (screen.kind === 'title') {
+    const items = titleItems();
+    if (pressed.ArrowUp || pressed.KeyW) screen.sel = (screen.sel + items.length - 1) % items.length;
+    if (pressed.ArrowDown || pressed.KeyS) screen.sel = (screen.sel + 1) % items.length;
+    if (pressed.Enter || pressed.Space || pressed.KeyE) items[screen.sel][1]();
+    else if (screen.confirm && pressed.Escape) { screen.confirm = false; screen.sel = 0; }
+  } else {
+    const line = OPENING[screen.i][1];
+    if (screen.fade > 0) screen.fade -= dt; else screen.shown += dt;
+    if (pressed.Escape) { screen = null; return; }
+    if (pressed.Enter || pressed.Space || pressed.KeyE) {
+      if (screen.shown * 28 < line.length) screen.shown = line.length / 28 + 0.01;
+      else if (++screen.i >= OPENING.length) screen = null; else { screen.shown = 0; screen.fade = 0.4; }
+    }
+  }
+}
+function drawScreen() {
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, CW, CH); ctx.imageSmoothingEnabled = false;
+  hit(0, 0, CW, CH, () => {});
+  if (screen.kind === 'title') {
+    const bg = IMG['World/title_bg']; if (bg) ctx.drawImage(bg, 0, 0, CW, CH);
+    drawRich('My Little Farmstead', CW / 2 + 3, 62 + 3, 58, 1000, 'center', '#1a100a');
+    drawRich('[#ffd84a]My Little Farmstead[/]', CW / 2, 62, 58, 1000, 'center');
+    ctx.fillStyle = 'rgba(20,12,8,0.55)'; ctx.fillRect(CW / 2 - 300, 140, 600, 30);
+    drawRich('A tired heart, a quiet village, and the colors slowly coming back.', CW / 2, 145, 17, 700, 'center');
+    if (screen.confirm) drawRich('[#ffd84a]Start over? Your current save will be erased.[/]', CW / 2, CH - 250, 18, 800, 'center');
+    titleItems().forEach(([text, act], i) => {
+      const w = 312, h = 40, x = CW / 2 - w / 2, y = CH - 210 + i * 50, on = i === screen.sel;
+      box(x, y, w, h, 'rgba(20,14,11,0.96)', on ? '#ffd84a' : '#c89552');
+      drawRich(on ? `[#ffd84a]${text.replace(/\[#c8c0b0\]|\[\/\]/g, '')}[/]` : text, CW / 2, y + 10, 20, 300, 'center');
+      hit(x, y, w, h, () => { screen.sel = i; act(); });
+    });
+    drawRich('Up/Down choose   Enter select   (mouse works too)', CW / 2, CH - 26, 13, 800, 'center', '#c8c0b0');
+  } else {
+    const [key, line] = OPENING[screen.i], im = IMG['World/' + key];
+    ctx.fillStyle = '#c89552'; ctx.fillRect(CW / 2 - 434, 20, 868, 494);
+    if (im) ctx.drawImage(im, CW / 2 - 430, 24, 860, 486);
+    box(CW / 2 - 434, 530, 868, 70, 'rgba(20,14,11,0.96)', '#c89552');
+    drawRich(line.slice(0, Math.floor(screen.shown * 28)), CW / 2, 555, 21, 840, 'center');
+    drawRich('[Space] next   [Esc] skip', CW - 170, CH - 34, 13, 300, 'center', '#c8c0b0');
+    if (screen.fade > 0) { ctx.fillStyle = `rgba(0,0,0,${Math.round(Math.min(1, screen.fade / 0.4) * 4) / 4})`; ctx.fillRect(0, 0, CW, CH); }
+    hit(0, 0, CW, CH, () => { pressed.Space = true; });
+  }
+}
+function guideStep() {
+  if (!unlocked('guide_on') || unlocked('guide_done')) return -1;
+  if (G.day >= 2) return 3;
+  const crops = Object.values(G.crops);
+  if (!crops.length) return 0;
+  if (!crops.some(c => c.watered)) return 1;
+  return 2;
+}
+const GUIDE = [
+  ['Till the plot right of the house and plant carrot seeds', '[1] Hoe, left click on the plot  ·  then [4] Carrot Seed, left click'],
+  ['Water the seeds you planted', '[2] Watering Can, left click the seeds  ·  out of water? [E] at the well'],
+  ['When it gets dark, go inside and sleep', 'Through the house door, [E] at the bed (from 18:00)'],
+];
+function guideTarget(step) {
+  if (step === 0 || step === 1) { const p = (MAP.plots || []).find(p => p.startOpen); return p ? [(p.x0 + p.x1 + 1) / 2, p.y1 + 1.5] : null; }
+  if (step === 2) return [DOOR[0], DOOR[1] + 1.6];
+  return null;
 }
 
 // ------------------------------------------------------------------ boot
@@ -1853,7 +1943,7 @@ Promise.all([loadAll(), document.fonts ? document.fonts.ready : Promise.resolve(
   renderWorld(); renderUI();
   $('start').onclick = () => {
     $('start').hidden = true; uiCanvas.focus();
-    if (resumed) toast(`Welcome back. ${SEASONS[G.story.season]}, Day ${G.day}.`); else introAnnounce();
+    screen = { kind: 'title', sel: 0, confirm: false };
     requestAnimationFrame(t => { last = t; loop(t); });
   };
 });

@@ -28,7 +28,7 @@ public class CraftingManager : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.C)) ToggleCraftingWindow();
+        if (Input.GetKeyDown(KeyCode.C) && !TitleScreen.Blocking) ToggleCraftingWindow();
         if (craftingPanel != null && craftingPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape)) craftingPanel.SetActive(false);
     }
 

@@ -82,6 +82,7 @@ public class PauseMenu : MonoBehaviour
     bool OtherUIOpen()
     {
         if (HUD.DialogueOpen || HUD.AlbumOpen || HUD.AnnouncementOpen || PixelHUD.BagOpen || PixelHUD.ViewOpen) return true;
+        if (TitleScreen.Blocking) return true;     // 타이틀 화면, 오프닝 (ESC는 오프닝 건너뛰기에 씀)
         if (Time.frameCount - HUD.DialogueClosedFrame <= 1) return true;
         foreach (GameObject p in scenePanels) if (p != null && p.activeInHierarchy) return true;
         return false;
@@ -173,7 +174,7 @@ public class PauseMenu : MonoBehaviour
     {
         Canvas canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 500;   // 모든 UI 위에
+        canvas.sortingOrder = 520;   // 모든 UI 위에 (타이틀 화면 505, 오프닝 510보다도 위)
         CanvasScaler scaler = gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = UIScale.Reference;

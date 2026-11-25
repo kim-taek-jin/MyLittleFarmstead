@@ -27,7 +27,7 @@ public class PixelHUD : MonoBehaviour
 
     // 예전 장면 UI 중 새 UI가 대신하는 것들
     static readonly string[] OldUI = { "WoodText", "StoneText", "GoldText", "DayText", "TimeText",
-        "HealthSlider", "HungerSlider", "ThirstSlider", "EnergySlider", "SpecialItemPanel1" };
+        "HealthSlider", "HungerSlider", "ThirstSlider", "EnergySlider", "SpecialItemPanel1", "ToggleCraftingButton" };
 
     private RectTransform root;
     private TextMeshProUGUI infoLine1, infoLine2, heldName;
@@ -85,6 +85,12 @@ public class PixelHUD : MonoBehaviour
             {
                 if (OldUI.Contains(t.name)) t.gameObject.SetActive(false);
                 if (t.name == "IntroPanel") introPanel = t.gameObject;
+                if (t.name == "GameOverPanel")
+                    foreach (TMP_Text text in t.GetComponentsInChildren<TMP_Text>(true))
+                    {
+                        if (text.text.Trim() == "GAME OVER") text.text = Loc.T("You collapsed...", "쓰러졌어요...");
+                        else if (text.text.Trim() == "RESTART") text.text = Loc.T("Try again", "다시 하기");
+                    }
             }
     }
 
@@ -324,7 +330,7 @@ public class PixelHUD : MonoBehaviour
     // ---------------------------------------------------------------- 매 프레임
     void Update()
     {
-        bool intro = introPanel != null && introPanel.activeInHierarchy;
+        bool intro = (introPanel != null && introPanel.activeInHierarchy) || TitleScreen.Blocking;
         if (canvas != null && canvas.enabled == intro) canvas.enabled = !intro;
         DataManager data = DataManager.instance;
         GameTimeManager time = GameTimeManager.instance;
@@ -371,6 +377,8 @@ public class PixelHUD : MonoBehaviour
         }
         if (MapOpen && mapPin != null)
             mapPin.anchoredPosition = mapPinBase + new Vector2(0f, Mathf.Round(Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3f)) * 3f) * 2f);
+        UpdateGuide();
+        if (TitleScreen.Blocking) return;
         if (Input.GetKeyDown(KeyCode.M) && !ViewOpen && !BagOpen && !PauseMenu.Open && !HUD.DialogueOpen && !HUD.AlbumOpen
             && !HUD.AnnouncementOpen && Time.timeScale > 0f)
         {
@@ -379,6 +387,93 @@ public class PixelHUD : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.I) && !PauseMenu.Open && !HUD.DialogueOpen && !HUD.AlbumOpen && !ViewOpen) ToggleBag();
         else if (BagOpen && Input.GetKeyDown(KeyCode.Escape)) bag.SetActive(false);
+    }
+
+    // ---------------------------------------------------------------- 첫날 안내 (FirstDayGuide)
+    private RectTransform guideCard;
+    private TextMeshProUGUI guideTitle, guideTask, guideHint;
+    private int guideStep = -2;
+    private GameObject guideArrow;
+
+    void BuildGuide()
+    {
+        guideCard = Box("Guide", root, new Vector2(0f, 1f), new Vector2(24f, -140f), new Vector2(640f, 132f));
+        guideTitle = Label("Title", guideCard, 24f, TextAlignmentOptions.Left);
+        Place(guideTitle.rectTransform, 22f, -10f, 600f, 32f);
+        guideTask = Label("Task", guideCard, 28f, TextAlignmentOptions.Left);
+        Place(guideTask.rectTransform, 22f, -44f, 600f, 38f);
+        guideHint = Label("Hint", guideCard, 20f, TextAlignmentOptions.Left);
+        guideHint.color = new Color(0.78f, 0.75f, 0.69f);
+        Place(guideHint.rectTransform, 22f, -88f, 600f, 34f);
+        guideCard.gameObject.SetActive(false);
+        Loc.Changed += () => guideStep = -2;     // 언어가 바뀌면 다시 씀
+    }
+
+    void UpdateGuide()
+    {
+        DataManager data = DataManager.instance;
+        if (guideCard == null) BuildGuide();
+        int step = data != null ? FirstDayGuide.Step(data.story, data.farm, data.Today) : -1;
+        if (TitleScreen.Blocking) step = -1;
+        if (step == 3)
+        {
+            data.story.Unlock(FirstDayGuide.DoneKey);
+            HUD.Toast(FirstDayGuide.Done(), 7f);
+            Sfx.Play("heart", 0.8f);
+            step = -1;
+        }
+        if (step != guideStep)
+        {
+            if (guideStep >= 0 && step > guideStep) Sfx.Play("pickup", 0.8f);   // 한 단계 끝
+            guideStep = step;
+            guideCard.gameObject.SetActive(step >= 0);
+            if (step >= 0)
+            {
+                guideTitle.text = "<color=#ffd84a>" + Loc.T("Today", "오늘 할 일") + $"</color>  <color=#c8c0b0>{step + 1}/{FirstDayGuide.Steps}</color>";
+                guideTask.text = FirstDayGuide.Task(step);
+                guideHint.text = FirstDayGuide.Hint(step);
+            }
+        }
+        UpdateGuideArrow(step);
+    }
+
+    // 금색 화살표: 안내가 가리키는 곳(앞 텃밭, 집 문) 위에서 통통 튐. 농장에서만
+    void UpdateGuideArrow(int step)
+    {
+        string target = FirstDayGuide.Target(step);
+        bool show = target != null && SceneManager.GetActiveScene().name == FarmMap.SceneName && FarmMap.Active;
+        Vector2 at = Vector2.zero;
+        if (show)
+        {
+            if (target == "door") at = FarmMap.Anchor("door", new Vector2(3.5f, -0.15f)) + new Vector2(0f, 1.6f);
+            else
+            {
+                MapPlot front = null;
+                if (FarmMap.PlotList != null) foreach (MapPlot p in FarmMap.PlotList) if (p.startOpen) { front = p; break; }
+                if (front == null) show = false;
+                else at = new Vector2((front.x0 + front.x1 + 1) * 0.5f, front.y1 + 1.5f);
+            }
+        }
+        if (!show)
+        {
+            if (guideArrow != null) guideArrow.SetActive(false);
+            return;
+        }
+        if (guideArrow == null)
+        {
+            Sprite sprite = PixelArt.Load("World/guide_arrow");
+            if (sprite == null) return;
+            guideArrow = new GameObject("GuideArrow");
+            SceneManager.MoveGameObjectToScene(guideArrow, SceneManager.GetActiveScene());
+            SpriteRenderer sr = guideArrow.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.sortingOrder = 30;
+            float scale = PixelArt.PixelsPerUnit / sprite.pixelsPerUnit;
+            guideArrow.transform.localScale = new Vector3(scale, scale, 1f);
+        }
+        guideArrow.SetActive(true);
+        float bob = Mathf.Round(Mathf.Abs(Mathf.Sin(Time.time * 3f)) * 4f) / 32f;
+        guideArrow.transform.position = new Vector3(at.x, at.y + bob, 0f);
     }
 
     void SetBar(int i, float t)

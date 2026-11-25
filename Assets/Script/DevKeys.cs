@@ -23,7 +23,7 @@ public class DevKeys : MonoBehaviour
     void Update()
     {
         DataManager data = DataManager.instance;
-        if (data == null || HUD.DialogueOpen) return;
+        if (data == null || HUD.DialogueOpen || TitleScreen.Blocking) return;
 
         if (Input.GetKeyDown(KeyCode.F1))
         {
