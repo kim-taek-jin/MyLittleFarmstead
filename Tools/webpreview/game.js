@@ -552,7 +552,7 @@ function sprite(c, key, wx, wy, scale = 1, anchor = 'center', flip = false, alph
 // ------------------------------------------------------------------ HUD helpers
 let toasts = [], announce = null, dialogue = null, panel = null, haggle = null, fishing = null;
 // D-2: action poses, little bursts, the color wave (same as PlayerPixelAnimator / ActionFX / ColorWave in Unity)
-let act = null, fx = [], wave = null, wavePending = null, satBoost = null;
+let act = null, fx = [], wave = null, wavePending = null;
 function doAction(kind, cx, cy) {
   const dx = cx + 0.5 - G.px, dy = cy + 0.5 - G.py;
   if (dx * dx + dy * dy > 0.04) { if (Math.abs(dx) > Math.abs(dy)) { G.dir = 'side'; G.facingLeft = dx < 0; } else G.dir = dy > 0 ? 'up' : 'down'; }
@@ -1359,8 +1359,13 @@ function update(dt) {
   let my = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
   if (act) { act.t -= dt; if (act.t <= 0) act = null; }
   for (const f of fx) { f.t += dt; if (!f.pop) { f.vy -= f.g * dt; f.x += f.vx * dt; f.y += f.vy * dt; } } fx = fx.filter(f => f.t < f.life);
-  if (satBoost) { satBoost.t += dt; if (satBoost.t >= satBoost.dur) satBoost = null; }
-  if (wavePending && !announce && !dialogue && !panel && !screen) { const big = wavePending === 'big'; wavePending = null; wave = { t: 0, dur: big ? 2.6 : 1.7, big, seeds: Array.from({ length: big ? 130 : 70 }, () => [Math.random() * Math.PI * 2, 0.3 + Math.random() * 0.7, Math.random() * 0.35, Math.random() * 6]) }; satBoost = { t: 0, dur: wave.dur + 0.6, peak: big ? 0.6 : 0.35 }; }
+  if (wavePending && !announce && !dialogue && !panel && !screen) {
+    const big = wavePending === 'big'; wavePending = null;
+    const grow = big ? 2.0 : 1.3, hold = big ? 0.6 : 0.3, fade = big ? 1.0 : 0.7;
+    const s = S().season, cols = s === 2 ? ['#5aa648', '#93d66a'] : s === 3 ? ['#ec8a2c', '#dc3a3e', '#f0cf48'] : ['#ffb6d0', '#ffe0ea'];
+    wave = { t: 0, big, grow, hold, fade, dur: grow + hold + fade, sparks: Array.from({ length: big ? 14 : 9 }, (_, i) => [i / (big ? 14 : 9) * Math.PI * 2, Math.random() * 6]),
+             leaves: big ? Array.from({ length: 16 }, (_, i) => { const a = Math.random() * Math.PI * 2, sp = 70 + Math.random() * 100; return { a, d: 25 + Math.random() * 40, vx: Math.cos(a) * sp, vy: (-Math.sin(a) + 0.3) * sp, col: cols[i % cols.length] }; }) : [] };
+  }
   if (wave) { wave.t += dt; if (wave.t >= wave.dur) wave = null; }
   const moving = (mx || my) && !act;
   if (moving) {
@@ -1668,7 +1673,7 @@ function renderWorld() {
 
   // seasons of the heart: the world's saturation follows Heart (UI layer is not affected)
   let sat = 1 + (-80 + 95 * G.heart / 100) / 100;
-  if (satBoost) { const t = satBoost.t / satBoost.dur; sat += t < 0.35 ? satBoost.peak * t / 0.35 : satBoost.peak * Math.max(0, 1 - (t - 0.35) / 0.65); sat = Math.min(sat, 1.4); }
+
   worldCanvas.style.filter = `saturate(${sat.toFixed(2)})`;
 }
 
@@ -1935,20 +1940,35 @@ function drawScreen() {
     hit(0, 0, CW, CH, () => { pressed.Space = true; });
   }
 }
+// the world's real colour spreading out from you: the world canvas is drawn again without its saturation filter,
+// clipped to a growing circle (same as ColorWave.cs, which uses a second camera without post-processing)
 function drawWave() {
-  const [px, py] = toScreen(G.px, G.py), reach = CW * 0.8;
-  const petals = ['#ff9fc4', '#ffd84a', '#93d66a', '#8cccff', '#ffb06a', '#ffffff'];
-  const dot = (x, y, s, col, a) => { ctx.globalAlpha = Math.round(Math.max(0, Math.min(1, a)) * 4) / 4; ctx.fillStyle = col; ctx.fillRect(Math.round((px + x) / 2) * 2 - s / 2, Math.round((py + y) / 2) * 2 - s / 2, s, s); };
-  for (let k = 0; k < (wave.big ? 2 : 1); k++) {
-    const t = (wave.t - k * 0.45) / (wave.dur - k * 0.45); if (t < 0 || t >= 1) continue;
-    const r = reach * Math.sqrt(t), a = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
-    for (let i = 0; i < 120; i++) { const ang = (i + 0.5 * k) / 120 * Math.PI * 2; dot(Math.cos(ang) * r, -Math.sin(ang) * r, 10, '#ffd84a', a); dot(Math.cos(ang) * r * 1.018, -Math.sin(ang) * r * 1.018, 8, '#ff9fc4', a); }
+  const [px, py] = toScreen(G.px, G.py);
+  const maxR = Math.max(...[[0, 0], [CW, 0], [0, CH], [CW, CH]].map(([x, y]) => Math.hypot(x - px, y - py))) * 1.08;
+  const g = Math.min(1, wave.t / wave.grow), r = maxR * (1 - (1 - g) * (1 - g));
+  const after = wave.t - wave.grow - wave.hold, a = after > 0 ? Math.round((1 - Math.min(1, after / wave.fade)) * 4) / 4 : 1;
+  ctx.save(); ctx.globalAlpha = a; ctx.imageSmoothingEnabled = false;
+  ctx.beginPath(); ctx.arc(px, py, Math.max(1, r - 10), 0, Math.PI * 2); ctx.clip();
+  ctx.drawImage(worldCanvas, 0, 0, CW, CH);
+  ctx.restore();
+  // dithered edge: a band of 4px blocks, fewer towards the outside
+  if (g < 1 && r > 12) {
+    ctx.save(); ctx.globalAlpha = a; const B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+    for (let ring = 0; ring < 3; ring++) {
+      const rr = r - 10 + ring * 4 + 2, n = Math.max(8, Math.floor(2 * Math.PI * rr / 4)), keep = 12 - ring * 4;
+      for (let i = 0; i < n; i++) { const an = i / n * Math.PI * 2, x = Math.round((px + Math.cos(an) * rr) / 4) * 4, y = Math.round((py + Math.sin(an) * rr) / 4) * 4;
+        if (B[(y / 4) & 3][(x / 4) & 3] < keep) ctx.drawImage(worldCanvas, x * worldCanvas.width / CW, y * worldCanvas.height / CH, 4 * worldCanvas.width / CW, 4 * worldCanvas.height / CH, x, y, 4, 4); }
+    }
+    ctx.restore();
   }
-  wave.seeds.forEach(([ang, sp, delay, ph], i) => {
-    const t = (wave.t - delay) / (wave.dur - delay); if (t < 0 || t >= 1) return;
-    const r = reach * sp * Math.sqrt(t), w = Math.sin(t * 9 + ph) * 8;
-    dot(Math.cos(ang) * r - Math.sin(ang) * w, -Math.sin(ang) * r - Math.cos(ang) * w, i % 3 ? 10 : 8, petals[i % petals.length], t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45);
+  // a few warm sparkles riding the edge, and (new season) a handful of petals or leaves
+  const edgeA = g < 1 ? 1 : Math.max(0, 1 - (wave.t - wave.grow) / 0.4);
+  wave.sparks.forEach(([ang, ph]) => {
+    const an = ang + wave.t * 0.25, x = Math.round((px + Math.cos(an) * r * 0.97) / 2) * 2, y = Math.round((py - Math.sin(an) * r * 0.97) / 2) * 2;
+    ctx.globalAlpha = Math.round(edgeA * (Math.sin(wave.t * 10 + ph) > 0.2 ? 1 : 0.5) * 4) / 4; ctx.fillStyle = '#fff6d8';
+    ctx.fillRect(x - 6, y - 1, 12, 2); ctx.fillRect(x - 1, y - 6, 2, 12);
   });
+  wave.leaves.forEach(l => { ctx.globalAlpha = a; ctx.fillStyle = l.col; const x = px + Math.cos(l.a) * l.d + l.vx * wave.t, y = py - Math.sin(l.a) * l.d + l.vy * wave.t; ctx.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, 8, 5); });
   ctx.globalAlpha = 1;
 }
 function guideStep() {
