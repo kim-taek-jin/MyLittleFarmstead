@@ -49,7 +49,18 @@ public static class SeasonSystem
         }
     }
 
-    public static string Key(Season s) => Name(s).ToLowerInvariant();
+    // 그림 이름, 저장 키에 쓰는 계절 이름: 언어와 상관없이 항상 영어 ("winter" 등).
+    // (화면에 보이는 이름 Name은 한국어일 수 있어서 키로 쓰면 안 됨: 한국어일 때 그림을 못 찾던 버그)
+    public static string Key(Season s)
+    {
+        switch (s)
+        {
+            case Season.Spring: return "spring";
+            case Season.Summer: return "summer";
+            case Season.Autumn: return "autumn";
+            default: return "winter";
+        }
+    }
 
     public static string Color(Season s)
     {
