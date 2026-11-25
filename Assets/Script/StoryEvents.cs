@@ -147,9 +147,8 @@ public static class StoryEvents
         if (sp.found)
         {
             string key = SpiritDB.FormKey(sp);
-            sb.Append("\n<color=#ff9fc4>" + Loc.T("Spirit", "정령") + $"</color>  {SpiritDB.FormName(key)}   " +
-                      "<color=#ffd84a>" + Loc.T("Sun", "햇빛") + $" {sp.sun}</color>  <color=#9dff9d>" + Loc.T("Earth", "대지") + $" {sp.earth}</color>  <color=#8fd0ff>" + Loc.T("Water", "물") + $" {sp.water}</color>  <color=#ff9fc4>" + Loc.T("Bloom", "꽃") + $" {sp.bloom}</color>" +
-                      "   " + Loc.T("forms", "모습") + $" {sp.formsSeen.Count}/{SpiritDB.AllForms.Length}\n");
+            sb.Append("\n<color=#ff9fc4>" + Loc.T("Dokkaebi fire", "도깨비불") + $"</color>  {SpiritDB.FormName(key)}   " +
+                      "\n");
             string perk = SpiritDB.PerkText(sp);
             if (!string.IsNullOrEmpty(perk)) sb.Append($"<size=22>{perk}</size>\n");
         }

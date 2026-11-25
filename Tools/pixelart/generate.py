@@ -20,7 +20,8 @@ import preview  # noqa: E402
 import backgrounds  # noqa: E402
 import farmmap  # noqa: E402
 import kfarm  # noqa: E402
-import kmarket  # noqa: E402
+import kmarket
+import kvillage  # noqa: E402
 import forest  # noqa: E402
 import lake  # noqa: E402
 import hill  # noqa: E402
@@ -196,6 +197,8 @@ def main():
         for i, canvas in enumerate(villagers.stages(fn())):
             exported['Villagers'].append(export('Villagers', f'{vid}_{i}', canvas))
     exported['World'].append(export('World', 'bubble', villagers.bubble()))
+    exported['Villagers'].append(export('Villagers', 'mayor', villagers.mayor()))          # K-1: Village Head Park
+    exported['World'].append(export('World', 'loudspeaker', kvillage.loudspeaker_icon()))
     for name, canvas in spirit.spirit_sprites().items():
         exported['Spirit'].append(export('Spirit', name, canvas))
     exported['Items'].append(export('Items', 'star_fragment', spirit.star_fragment()))

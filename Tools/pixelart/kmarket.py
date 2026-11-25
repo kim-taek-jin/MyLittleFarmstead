@@ -446,7 +446,7 @@ def market(season='summer'):
         bg.prop(styro_box(season, i % 2), wx=wx, wy=-4.6)
 
     # a utility pole between the mill and the hardware store
-    bg.prop(K.pole(), wx=-3.9, wy=1.7)
+    bg.prop(K.pole(speaker=True), wx=-3.75, wy=1.7)       # the village loudspeaker (Village Head Park's broadcasts)
     img = bg.image()
     return img
 

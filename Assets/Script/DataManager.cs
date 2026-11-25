@@ -447,8 +447,8 @@ public class DataManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(reason) && Mathf.Abs(amount) >= 0.5f)
         {
-            string sign = amount > 0 ? "+" : "";
-            HUD.Toast($"<color=#ff8fb1>{sign}{amount:0} " + Loc.T("Heart", "마음") + $"</color>  {reason}");
+            // 숫자 대신 작은 하트 (오르면 분홍, 내리면 흐린 파랑): 마음은 점수가 아니라 느낌으로
+            HUD.Toast((amount > 0 ? "<color=#ff8fb1>♥</color>  " : "<color=#9aa4c0>♡</color>  ") + reason);
         }
 
         foreach (int milestone in heartMilestones)
@@ -634,8 +634,15 @@ public class DataManager : MonoBehaviour
         }
     }
 
+    // 일기에 쓰려고 기록: 이웃과 이야기, 쉼터에서 쉼
+    public void NoteTalk() { today.talked++; }
+    public void NoteRest() { today.rested = true; }
+
     void EndDay(bool passedOut)
     {
+        var facts = new DayFacts { passedOut = passedOut, meals = today.mealsEaten, harvested = today.harvested, talked = today.talked,
+                                   drank = today.drankWater, exhausted = today.exhausted, starved = today.starved, rested = today.rested };
+        bool forestWas = story.forest != null && story.forest.open, lakeWas = story.lake != null && story.lake.open, hillWas = story.hill != null && story.hill.open;
         int hour = timeManager != null ? timeManager.hour : 22;
         var lines = new List<string>();
         float delta = 0f;
@@ -653,12 +660,14 @@ public class DataManager : MonoBehaviour
         }
         else if (hour < 24)
         {
+            facts.onTime = true;
             delta += 4f;
             lines.Add(Loc.T("Went to bed on time", "제때 잠자리에 들었어요") + "  <color=#9dff9d>+4</color>");
             Album.Report("sleep_early");
         }
         else
         {
+            facts.lateNight = true;
             delta -= 2f;
             lines.Add(Loc.T("Stayed up too late", "너무 늦게까지 깨어 있었어요") + "  <color=#ff8080>-2</color>");
         }
@@ -706,7 +715,7 @@ public class DataManager : MonoBehaviour
         if (bloomLevel > 0)
         {
             delta += bloomLevel;
-            lines.Add(Loc.T("Your spirit hummed you to sleep", "정령이 콧노래로 재워 줬어요") + $"  <color=#9dff9d>+{bloomLevel}</color>");
+            lines.Add(Loc.T("The dokkaebi fire kept the room warm all night", "도깨비불이 밤새 방을 따뜻하게 해 줬어요") + $"  <color=#9dff9d>+{bloomLevel}</color>");
             ChangeHeart(bloomLevel, null);
         }
         market.StartNewDay(rng, after);
@@ -751,10 +760,32 @@ public class DataManager : MonoBehaviour
         if (forestHeadline != null) header += $"\n<size=24>{forestHeadline}</size>";
         if (raining) Album.Report("rain_morning");
 
-        string body = string.Join("\n", lines);
-        string sign = delta >= 0 ? "+" : "";
+        // 어제의 일기 (점수 대신 1인칭 두세 줄) + 마음의 말. 밭·숲 소식은 숫자를 빼고 아래에 작게
+        facts.delta = delta;
+        string diary = string.Join("\n", DayDiary.Lines(facts, day - 1));
+        var notes = new List<string>();
+        foreach (string l in lines)
+        {
+            if (l.Contains("<color=#9dff9d>+") || l.Contains("<color=#ff8080>-"))
+            {
+                // 점수 줄(잠, 밥, 물, 무리, 수확)은 일기가 대신함. 숲 빈터처럼 소식인 줄만 숫자를 떼고 남김
+                if (!IsScoreLine(l)) notes.Add(System.Text.RegularExpressions.Regex.Replace(l, @"\s*<color=#[0-9a-f]{6}>[+-]\d+</color>", ""));
+            }
+            else notes.Add(l);
+        }
+        string news = notes.Count > 0 ? "\n\n<size=22><color=#c8c0b0>" + string.Join("\n", notes) + "</color></size>" : "";
         string preview = BuildTodayPreview(after, day);
-        HUD.Announce($"{header}\n\n<size=24>{body}</size>\n\n<color=#ff8fb1>" + Loc.T("Heart", "마음") + $" {sign}{delta:0}  ({heart:0}/{maxHeart:0})</color>{preview}", 8f);
+        HUD.Announce($"{header}\n\n<size=22><color=#e8d8b0>" + Loc.T("— Yesterday's diary —", "— 어제의 일기 —") + $"</color></size>\n<size=26>{diary}</size>\n" +
+                     $"<size=24><color=#ff8fb1>{DayDiary.Mood(delta)}</color></size>{news}{preview}", 9f);
+
+        // 아침 마을 방송 (확성기): 장날, 날씨, 계절, 새로 열린 길
+        BroadcastBanner.Queue(VillageBroadcast.Lines(new MorningNews
+        {
+            day = day, before = before, after = after, raining = raining, snowing = snowing,
+            forestOpened = !forestWas && story.forest != null && story.forest.open,
+            lakeOpened = !lakeWas && story.lake != null && story.lake.open,
+            hillOpened = !hillWas && story.hill != null && story.hill.open,
+        }));
 
         if (demoEndsNow)
         {
@@ -778,6 +809,15 @@ public class DataManager : MonoBehaviour
         StoryEvents.CheckEnding();
     }
 
+    // 하루 평가의 점수 줄 (일기가 대신 이야기함)
+    static bool IsScoreLine(string l)
+    {
+        string[] keys = { "Passed out", "지쳐서", "Went to bed", "제때", "Stayed up", "늦게까지", "Ate proper", "챙겨 먹", "Drank fresh", "시원한 물",
+                          "Didn't overwork", "무리하지", "Worked until", "기력이 바닥", "Went hungry", "배고프거나", "Harvested", "거뒀어요" };
+        foreach (string k in keys) if (l.Contains(k)) return true;
+        return false;
+    }
+
     string NewCropsText(Season s)
     {
         var names = new List<string>();
@@ -789,15 +829,14 @@ public class DataManager : MonoBehaviour
     string BuildTodayPreview(Season season, int today)
     {
         var tips = new List<string>();
-        if (MarketState.IsMarketDay(today)) tips.Add(Loc.T("Market day! Stalls, rare goods and haggling at the market", "장날! 장터에 노점과 귀한 물건, 흥정이 있어요"));
-        else if (MarketState.DaysUntilMarket(today) == 1) tips.Add(Loc.T("Tomorrow is market day", "내일은 장날이에요"));
+        // 장날 소식은 이장님 방송이 알려 줌 (VillageBroadcast)
         int ripe = farm.RipeNow();
         if (ripe > 0) tips.Add(Loc.T($"{ripe} crop(s) ripe in the field", $"밭에 다 익은 작물 {ripe}개"));
         int tomorrow = farm.RipeningTomorrow(season);
         if (tomorrow > 0) tips.Add(Loc.T($"{tomorrow} crop(s) ripen tomorrow if you water them today", $"오늘 물을 주면 내일 익을 작물 {tomorrow}개"));
         int toNext = SeasonSystem.HeartToNext(heart, season);
-        if (toNext > 0 && !(demoMode && season == Season.Winter && story.IsUnlocked("demo_end")))
-            tips.Add(Loc.T($"{SeasonSystem.Name(season + 1)} comes at {toNext} more Heart", $"{SeasonSystem.Name(season + 1)}까지 마음 {toNext}"));
+        if (toNext > 0 && toNext <= 8 && !(demoMode && season == Season.Winter && story.IsUnlocked("demo_end")))
+            tips.Add(Loc.T($"{SeasonSystem.Name(season + 1)} feels close", $"{SeasonSystem.Name(season + 1)}이 가까이 와 있어요"));
         foreach (VillagerDef v in VillagerDB.All)
         {
             VillagerProgress p = story.Get(v.id);

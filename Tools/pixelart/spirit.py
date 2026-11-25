@@ -108,7 +108,71 @@ def spirit_prism():
     return c
 
 
+# ---- K-1: the spirit is now a small dokkaebi-bul (도깨비불): a flame like a drop of water turned upside down,
+#      two little eyes, a flickering tip. Its colour follows what it eats; it only grows a little. No crowns,
+#      petals or fins any more (kept small on purpose).
+FLAME = {
+    'gray': ramp('#3e4250', '#646a7c', '#9aa0b2', '#d6dae4'),
+    'sun': ramp('#7a3a08', '#d0661a', '#f4a23a', '#ffe08a'),           # amber
+    'earth': ramp('#1a4a2a', '#2e8a4a', '#5cc46c', '#b4f0a0'),         # green
+    'water': ramp('#123a6a', '#1e6ac0', '#4aa6f0', '#b0e2ff'),         # the classic blue dokkaebi fire
+    'bloom': ramp('#6a1a46', '#c0407a', '#f07aaa', '#ffc8dc'),         # pink
+}
+
+
+def flame(r, size, tip_lean=0, rainbow=False):
+    """size: radius of the round bottom. The top narrows to a point (with a small lean that flickers)."""
+    c = Canvas(28, 30)
+    cx, cy = 14, 19
+    h = size * 2.1                                           # from the bottom of the ball to the tip
+    bands = [P['red'], P['orange'], P['sun'], P['leaf'], P['water'], BLOOM]
+    for y in range(int(cy - h - 1), int(cy + size + 1)):
+        for x in range(int(cx - size - 1), int(cx + size + 2)):
+            if y >= cy:                                      # round bottom
+                inside = ((x + 0.5 - cx) / size) ** 2 + ((y + 0.5 - cy) / size) ** 2 <= 1
+            else:                                            # tapering top, leaning a little
+                t = (cy - (y + 0.5)) / h                     # 0 at the middle, 1 at the tip
+                if t >= 1:
+                    continue
+                half = size * (1 - t) ** 1.4
+                inside = abs(x + 0.5 - (cx + tip_lean * t * t)) <= half
+            if not inside:
+                continue
+            core = ((x + 0.5 - cx) / (size * 0.55)) ** 2 + ((y + 0.5 - cy - 1) / (size * 0.75)) ** 2 <= 1
+            if rainbow:
+                band = bands[min(5, max(0, int((y - (cy - h)) / (h + size) * 6)))]
+                c.set(x, y, band[3] if core else band[2])
+            else:
+                c.set(x, y, r[3] if core else (r[2] if x + 0.5 < cx + 1 else r[1]))
+    # a small side tongue of flame, so it reads as fire and not a water drop
+    side = 1 if tip_lean <= 0 else -1
+    bx = int(cx + side * (size * 0.55))
+    for k in range(int(size * 0.8)):
+        x = bx + side * (k // 2)
+        y = int(cy - size * 0.4 - k)
+        col = (bands[2][2] if rainbow else r[2]) if k < size * 0.5 else (bands[3][3] if rainbow else r[3])
+        c.set(x, y, col)
+        if k < size * 0.4:
+            c.set(x - side, y, r[2] if not rainbow else bands[2][2])
+    # eyes (no mouth: it's a flame, not a mascot)
+    c.set(cx - 2, cy, OUTLINE); c.set(cx - 2, cy - 1, OUTLINE)
+    c.set(cx + 2, cy, OUTLINE); c.set(cx + 2, cy - 1, OUTLINE)
+    c.outline(color=OUTLINE)
+    # two loose sparks
+    spark = (r[3] if not rainbow else (255, 250, 220, 255))
+    c.set(cx - size - 2, cy - h * 0.5, spark); c.set(cx + size + 1, cy - h * 0.2, spark)
+    return c
+
+
 def spirit_sprites():
+    out = {'spirit_gray': flame(FLAME['gray'], 5.0, 1), 'spirit_prism': flame(FLAME['water'], 7.0, -1, rainbow=True)}
+    for color in COLORS:
+        out[f'spirit_{color}_young'] = flame(FLAME[color], 6.0, 1)
+        out[f'spirit_{color}_grown'] = flame(FLAME[color], 7.0, -1)
+    return out
+
+
+def _old_spirit_sprites():
     out = {'spirit_gray': spirit('gray', 0), 'spirit_prism': spirit_prism()}
     for color in COLORS:
         out[f'spirit_{color}_young'] = spirit(color, 1)

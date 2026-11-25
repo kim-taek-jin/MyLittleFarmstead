@@ -414,9 +414,9 @@ def farmmap(season='spring'):
 
     # utility poles and the wires between them
     poles = sorted(cells('|'))
-    for (c, r) in poles:
+    for k, (c, r) in enumerate(poles):
         bx, by = bottom(c, r)
-        bg.prop(K.pole(), x=bx, y=by - 2)
+        bg.prop(K.pole(speaker=(k == 0)), x=bx + (6 if k == 0 else 0), y=by - 2)   # the first pole on the lane carries a loudspeaker
 
     # signposts (map signs)
     icons = {'Market': B.coin_bag, 'Forest': _icon_tree, 'Sunset Hill': _icon_sun, 'Lake': _icon_water}

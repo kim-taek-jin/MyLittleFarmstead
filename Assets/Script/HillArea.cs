@@ -215,7 +215,11 @@ public class HillArea : MonoBehaviour
         if (Vector2.Distance(p, bench) < 1.6f)
         {
             PixelHUD.ShowView(PanoramaLayers(data), PanoramaCaption(data));
-            if (state.Rest(Today)) data.ChangeHeart(RestHeart, Loc.T("You sat in the pavilion and watched the sun go down over the valley.", "정자에 앉아 골짜기 너머로 해가 지는 걸 바라봤어요."));
+            if (state.Rest(Today))
+            {
+                data.NoteRest();
+                data.ChangeHeart(RestHeart, Loc.T("You sat in the pavilion and watched the sun go down over the valley.", "정자에 앉아 골짜기 너머로 해가 지는 걸 바라봤어요."));
+            }
         }
     }
 

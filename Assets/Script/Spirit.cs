@@ -48,16 +48,14 @@ public class Spirit : MonoBehaviour
         EnsureSpawned();
         Album.Report("spirit_found");
         HUD.Announce(
-            Loc.T("<size=40>A tiny gray spirit</size>\n\n" +
-            "Drawn by the light, a little gray wisp drifts out and starts following you.\n" +
-            "It looks hungry for color.\n\n" +
-            "<size=24><color=#ffd84a>[G]</color> Feed it the item you're holding.\n" +
-            "Sunshine/Sunflower/Corn = sun, Earth's Breath/Carrot/Potato = earth,\nFish = water, Apple/Strawberry/Jam = bloom.</size>",
-            "<size=40>조그만 잿빛 정령</size>\n\n" +
-            "불빛에 이끌려 작은 잿빛 도깨비불이 둥실 나와서 졸졸 따라와요.\n" +
-            "빛깔에 굶주린 것 같아요.\n\n" +
-            "<size=24><color=#ffd84a>[G]</color> 손에 든 걸 먹여 보세요.\n" +
-            "햇살 조각/해바라기/옥수수 = 해, 대지의 숨결/당근/감자 = 흙,\n물고기 = 물, 사과/딸기/잼 = 꽃.</size>"), 9f);
+            Loc.T("<size=40>A little dokkaebi fire</size>\n\n" +
+            "Drawn by the light, a tiny gray flame bobs out of the dark and starts following you.\n" +
+            "Grandma Boksun would say it's a dokkaebi-bul. It looks hungry for color.\n\n" +
+            "<size=24><color=#ffd84a>[G]</color> Feed it what you're holding. Its flame takes the color of what it eats.</size>",
+            "<size=40>작은 도깨비불</size>\n\n" +
+            "불빛에 이끌려 조그만 잿빛 불꽃이 어둠 속에서 둥실 나와 졸졸 따라와요.\n" +
+            "복순 할머니라면 도깨비불이라고 하겠죠. 빛깔에 굶주린 것 같아요.\n\n" +
+            "<size=24><color=#ffd84a>[G]</color> 손에 든 걸 먹여 보세요. 먹은 것의 빛깔로 불꽃 색이 변해요.</size>"), 9f);
     }
 
     static void Record(string key)
@@ -117,12 +115,12 @@ public class Spirit : MonoBehaviour
     {
         if (string.IsNullOrEmpty(item) || !Data.HasItem(item))
         {
-            HUD.Toast(Loc.T("Hold something in your hotbar to feed your spirit.", "정령에게 먹일 걸 손에 들어 주세요."), 2f);
+            HUD.Toast(Loc.T("Hold something to feed the dokkaebi fire.", "도깨비불에게 먹일 걸 손에 들어 주세요."), 2f);
             return;
         }
         if (!SpiritDB.CanEat(item))
         {
-            HUD.Toast(Loc.T($"Your spirit sniffs the {item} and turns away.", $"정령이 {ItemNames.Display(item)} 냄새를 맡더니 고개를 돌려요."), 2f);
+            HUD.Toast(Loc.T($"The dokkaebi fire flickers at the {item} and turns away.", $"도깨비불이 {ItemNames.Display(item)} 앞에서 깜빡이더니 고개를 돌려요."), 2f);
             return;
         }
 
@@ -139,18 +137,19 @@ public class Spirit : MonoBehaviour
         string[] labels = { "<color=#ffd84a>" + Loc.T("Sun", "해") + "</color>", "<color=#9dff9d>" + Loc.T("Earth", "흙") + "</color>",
                             "<color=#8fd0ff>" + Loc.T("Water", "물") + "</color>", "<color=#ff9fc4>" + Loc.T("Bloom", "꽃") + "</color>" };
         for (int i = 0; i < 4; i++) if (p[i] > 0) gained += $" +{p[i]} {labels[i]}";
-        HUD.Toast(Loc.T($"Your spirit munches the {item}!", $"정령이 {ItemNames.With(item, "을", "를")} 냠냠 먹었어요!") + gained, 2.5f);
+        HUD.Toast(Loc.T($"The dokkaebi fire gobbles up the {item}!", $"도깨비불이 {ItemNames.With(item, "을", "를")} 날름 먹었어요!") + gained, 2.5f);
 
         string formAfter = SpiritDB.FormKey(st);
         if (formAfter != formBefore)
         {
             bool isNew = !st.formsSeen.Contains(formAfter);
             Record(formAfter);
-            string grew = SpiritDB.Stage(st) > stageBefore ? Loc.T("Your spirit grew!", "정령이 자랐어요!") : Loc.T("Your spirit changed its colors!", "정령의 빛깔이 바뀌었어요!");
+            string grew = SpiritDB.Stage(st) > stageBefore ? Loc.T("The dokkaebi fire burns a little bigger!", "도깨비불이 조금 더 커졌어요!") : Loc.T("The dokkaebi fire changed color!", "도깨비불의 빛깔이 바뀌었어요!");
             if (SpiritDB.Stage(st) >= 1) Album.Report("spirit_young");
-            HUD.Announce($"<size=40>{grew}</size>\n\n{SpiritDB.FormName(formAfter)}" + (isNew ? "  <color=#9dff9d>" + Loc.T("(new form!)", "(새 모습!)") + "</color>" : "") +
-                         $"\n<size=24>{SpiritDB.PerkText(st)}</size>\n\n<size=22>" + Loc.T("Forms found", "찾은 모습") + $": {st.formsSeen.Count} / {SpiritDB.AllForms.Length}</size>", 5f);
-            if (isNew) Data.ChangeHeart(2f, Loc.T("Your spirit is glowing with color.", "정령이 빛깔로 반짝여요."));
+            // 작게: 큰 알림 대신 한 줄 (도깨비불은 곁에 있는 작은 친구일 뿐, 모으는 대상이 아님)
+            string perk = SpiritDB.PerkText(st);
+            HUD.Toast($"<color=#8fd0ff>{grew}</color>  {SpiritDB.FormName(formAfter)}" + (string.IsNullOrEmpty(perk) ? "" : $"  <color=#c8c0b0>({perk})</color>"), 4f);
+            if (isNew) Data.ChangeHeart(2f, Loc.T("The dokkaebi fire glows with color.", "도깨비불이 빛깔로 반짝여요."));
         }
     }
 }

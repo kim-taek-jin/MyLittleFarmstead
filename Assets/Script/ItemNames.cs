@@ -45,7 +45,7 @@ public static class ItemNames
         { "Carrot Pancake", "복순 할머니 비법. 가장자리는 바삭, 가운데는 따끈." },
         { "Pumpkin Porridge", "새알심 동동 띄운 노란 호박죽. 풍년의 맛이에요." },
         { "Compost", "더미에서 잘 삭은 퇴비. 회색으로 굳은 묵정밭에 뿌리면 되살아나요." },
-        { "Star Fragment", "떨어진 별 한 조각. 정령이 아주 좋아해요 (네 가지 색 모두)." },
+        { "Star Fragment", "떨어진 별 한 조각. 도깨비불이 아주 좋아해요 (네 가지 색 모두)." },
         { "Mattock", "그루터기, 바위, 쓰러진 통나무를 파내요." },
         { "Acorn", "숲 빈터에 심고 며칠 물을 주세요." },
         { "Spring Greens", "숲 바닥에서 갓 캔 봄나물." },

@@ -89,4 +89,6 @@ public class DayLog
     public bool exhausted;      // 에너지를 바닥까지 썼는지
     public bool starved;        // 배고픔/갈증이 0이 된 적 있는지
     public bool drankWater;
+    public int talked;          // 이웃과 이야기한 횟수 (일기)
+    public bool rested;         // 쉼터에서 쉬었는지 (일기)
 }

@@ -285,14 +285,34 @@ def bale():
     return c
 
 
-def pole():
-    c = Canvas(18, 92)
+def pole(speaker=False):
+    c = Canvas(30 if speaker else 18, 92)
     c.shadow(9, 90, 5, 1.5)
     c.rect(8, 6, 10, 89, P['stone'][2]); c.rect(8, 6, 8, 89, P['stone'][3]); c.rect(10, 6, 10, 89, P['stone'][1])
     c.rect(1, 10, 16, 11, P['wood'][1])
     for x in (2, 8, 15):
         c.rect(x, 7, x + 1, 9, P['white'][2])
     c.rect(11, 40, 13, 46, P['metal'][2])                      # transformer box
+    if speaker:                                               # the village loudspeaker: two gray horns on a bracket
+        c.rect(10, 18, 20, 19, P['metal'][1])
+        for (x0, d) in ((18, 1),):
+            c.poly([(x0, 14), (x0 + 8 * d, 10), (x0 + 8 * d, 24), (x0, 20)], P['white'], light_axis='x')
+        c.poly([(12, 22), (22, 20), (22, 32), (12, 28)], P['white'], light_axis='x')
+        c.rect(26, 11, 27, 23, P['white'][1]); c.rect(22, 21, 23, 31, P['white'][1])
+    c.outline()
+    return c
+
+
+def loudspeaker_icon():
+    """HUD icon for the village broadcast: a horn loudspeaker with sound arcs."""
+    c = Canvas(32, 32)
+    c.poly([(6, 12), (18, 5), (18, 27), (6, 20)], P['white'], light_axis='x')
+    c.box(2, 12, 7, 20, P['metal'])
+    for (r, col) in ((5, P['sun'][2]), (9, P['sun'][3])):
+        for a in range(-50, 51, 10):
+            import math
+            x = 20 + r * math.cos(math.radians(a)); y = 16 + r * math.sin(math.radians(a))
+            c.set(int(x), int(y), col)
     c.outline()
     return c
 

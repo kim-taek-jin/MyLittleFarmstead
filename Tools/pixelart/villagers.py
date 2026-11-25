@@ -182,4 +182,46 @@ def stages(canvas):
     return out
 
 
+HIKING = ramp('#5a1410', '#9c2a1c', '#d84a2a', '#f2865a')     # the red hiking jacket every village ajeossi owns
+SLACKS = ramp('#262a30', '#3c424c', '#5a626e', '#828a98')
+
+
+def mayor():
+    """Village Head Park (K-1): thinning gray hair combed over, round glasses, a red zip-up hiking jacket
+    over a collared shirt, gray slacks, brown shoes. Not a villager with a wish (yet): one colour sprite."""
+    pal = dict(BASE)
+    pal.update({'H': P['stone'][2], 'J': P['stone'][3], 'K': P['stone'][1],
+                'j': HIKING[2], 'U': HIKING[1], 'x': HIKING[3], 'z': P['white'][3],
+                'g': SLACKS[2], 'G': SLACKS[1], 'q': SLACKS[3], 'm': P['metal'][2]})
+    m = PixelMap(W, H)
+    # combed-over gray hair, a bit thin on top
+    m.seg(2, 6, 9, 'H'); m.seg(3, 5, 9, 'H'); m.seg(4, 5, 9, 'H')
+    m.put(7, 2, 's'); m.put(8, 3, 's')
+    for y in range(5, 13):
+        m.seg(y, 5, 9, 's')
+    m.seg(5, 5, 5, 'H'); m.seg(6, 5, 5, 'H'); m.seg(7, 5, 5, 'H')
+    # round glasses: rims and the bridge
+    m.seg(8, 6, 6, 'm'); m.seg(8, 8, 8, 'm')          # lens rims (mirrored: both eyes)
+    m.seg(8, 7, 7, 'E')                                # eyes behind the lenses
+    m.seg(7, 6, 8, 'm')                                # top of the frames
+    m.seg(8, 9, 9, 'm')                                # the bridge
+    m.seg(11, 7, 9, 'o')
+    m.seg(8, 4, 4, 's')                                  # ears
+    m.seg(13, 7, 9, 'S')
+    # red hiking jacket with a white collar showing, zip down the middle
+    for y in range(13, 23):
+        m.seg(y, 2, 9, 'j')
+    m.seg(13, 7, 9, 'z'); m.seg(14, 8, 9, 'z')
+    for y in range(15, 22):
+        m.seg(y, 9, 9, 'U')
+    for y in range(16, 22):
+        m.seg(y, 1, 1, 'U')
+    m.seg(22, 1, 2, 's')
+    for y in range(23, 27):
+        m.seg(y, 5, 8, 'g')
+    m.seg(27, 4, 8, 'b'); m.seg(28, 4, 8, 'k')
+    m.shade({'s': ('S', 'l'), 'j': ('U', 'x'), 'g': ('G', 'q')})
+    return _frame(m, pal)
+
+
 VILLAGERS = {'rosa': rosa, 'theo': theo, 'mina': mina}

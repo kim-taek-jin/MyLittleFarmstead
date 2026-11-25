@@ -37,7 +37,7 @@ public static class AlbumDB
         Add(Season.Winter, "w_first_light", L("First Light", "첫 햇살"), L("Harvest your first Carrot.", "처음으로 당근을 거둬요."), "harvest", "Carrot", "Items/carrot");
         Add(Season.Winter, "w_warm_bowl", L("A Warm Bowl", "따뜻한 한 그릇"), L("Eat something you cooked.", "직접 만든 음식을 먹어요."), "eat_cooked", null, "Items/roasted_carrot");
         Add(Season.Winter, "w_early_night", L("Early Night", "일찍 잠들기"), L("Go to bed before midnight.", "자정 전에 잠자리에 들어요."), "sleep_early", null, "World/bed");
-        Add(Season.Winter, "w_gray_friend", L("A Gray Friend", "잿빛 친구"), L("Meet a little spirit.", "작은 정령을 만나요."), "spirit_found", null, "Spirit/spirit_gray");
+        Add(Season.Winter, "w_gray_friend", L("A Gray Friend", "잿빛 친구"), L("Meet a little dokkaebi fire.", "작은 도깨비불을 만나요."), "spirit_found", null, "Spirit/spirit_gray");
         Add(Season.Winter, "w_cold_water", L("Cold Water", "시원한 물"), L("Drink at the well.", "우물물을 마셔요."), "drink", null, "World/well_winter");
         Add(Season.Winter, "w_neighbor", L("Hello, Neighbor", "안녕하세요, 이웃님"), L("Talk to a villager.", "마을 사람과 이야기해요."), "villager_met", null, "Villagers/rosa_0");
         // 봄: 회복
@@ -46,7 +46,7 @@ public static class AlbumDB
         Add(Season.Spring, "s_rainy_day", L("Rainy Day", "비 오는 날"), L("Wake up to spring rain.", "봄비 소리에 잠을 깨요."), "rain_morning", null, "Tiles/tilled_wet");
         Add(Season.Spring, "s_first_catch", L("First Catch", "첫 손맛"), L("Catch a fish.", "물고기를 낚아요."), "fish", null, "Items/minnow");
         Add(Season.Spring, "s_sharing", L("Sharing", "나눔"), L("Share food with the village.", "마을과 음식을 나눠요."), "share", null, "World/donation_box");
-        Add(Season.Spring, "s_growing_up", L("Growing Up", "쑥쑥"), L("Your spirit grows up a little.", "정령이 조금 자라요."), "spirit_young", null, "Spirit/spirit_bloom_young");
+        Add(Season.Spring, "s_growing_up", L("Growing Up", "쑥쑥"), L("The dokkaebi fire burns a little bigger.", "도깨비불이 조금 커져요."), "spirit_young", null, "Spirit/spirit_bloom_young");
         // 여름: 활력
         Add(Season.Summer, "u_sunflower", L("Sunflower Smile", "해바라기 웃음"), L("Harvest a Sunflower.", "해바라기를 거둬요."), "harvest", "Sunflower", "Items/sunflower");
         Add(Season.Summer, "u_corn", L("Tall Corn", "키 큰 옥수수"), L("Harvest Corn.", "옥수수를 거둬요."), "harvest", "Corn", "Items/corn");

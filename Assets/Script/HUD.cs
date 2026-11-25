@@ -432,7 +432,7 @@ public class HUD : MonoBehaviour
 
         for (int i = 0; i < toasts.Count; i++)
         {
-            toasts[i].rect.anchoredPosition = new Vector2(0f, -64f - i * ToastHeight);
+            toasts[i].rect.anchoredPosition = new Vector2(0f, -64f - i * ToastHeight - (BroadcastBanner.Showing ? 130f : 0f));   // 마을 방송이 떠 있으면 그 아래로
         }
 
         if (announcePanel != null && announcePanel.activeSelf)

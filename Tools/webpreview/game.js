@@ -63,7 +63,7 @@ reg('Stone', 'Resource', { sell: 5 });
 reg('Old Boot', 'Resource', { sell: 1 });
 reg('Sunshine Shard', 'Special', { sell: 100, desc: 'Use on a crop: it ripens golden.' });
 reg("Earth's Breath", 'Special', { sell: 100, desc: 'Use on a crop: it grows by one day.' });
-reg('Star Fragment', 'Special', { sell: 50, desc: 'Your spirit loves it (all four colors).' });
+reg('Star Fragment', 'Special', { sell: 50, desc: 'The dokkaebi fire loves it (all four colors).' });
 reg('Compost', 'Special', { sell: 0, desc: 'Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life.' });
 reg('Campfire', 'Station', { sell: 20, desc: 'Needed for cooking recipes.' });
 // the forest (map stage 3)
@@ -376,7 +376,7 @@ const SPIRIT_FOOD = {
   Pear: [0, 0, 1, 1], Persimmon: [1, 0, 0, 1], 'Dried Persimmon': [2, 1, 0, 2],
 };
 const COLORS = ['sun', 'earth', 'water', 'bloom'];
-const FORM_NAMES = { spirit_gray: 'Gray Wisp', spirit_prism: 'Prism Spirit', spirit_sun_young: 'Sunny Sprite', spirit_sun_grown: 'Sun Spirit', spirit_earth_young: 'Sprout Sprite', spirit_earth_grown: 'Grove Spirit', spirit_water_young: 'Droplet Sprite', spirit_water_grown: 'River Spirit', spirit_bloom_young: 'Petal Sprite', spirit_bloom_grown: 'Blossom Spirit' };
+const FORM_NAMES = { spirit_gray: 'Gray Dokkaebi Fire', spirit_prism: 'Rainbow Dokkaebi Fire', spirit_sun_young: 'Little Amber Flame', spirit_sun_grown: 'Amber Dokkaebi Fire', spirit_earth_young: 'Little Green Flame', spirit_earth_grown: 'Green Dokkaebi Fire', spirit_water_young: 'Little Blue Flame', spirit_water_grown: 'Blue Dokkaebi Fire', spirit_bloom_young: 'Little Pink Flame', spirit_bloom_grown: 'Pink Dokkaebi Fire' };
 
 const PHOTOS = [
   [0, 'w1', 'First Light', 'Harvest your first Carrot.', 'harvest', 'Carrot', 'Items/carrot'],
@@ -627,7 +627,7 @@ function report(evt, arg = null) {
 function changeHeart(a, reason) {
   const before = G.heart; G.heart = Math.max(0, Math.min(100, G.heart + a));
   if (a >= 2 && G.heart > before && reason) requestWave(false);
-  if (reason && Math.abs(a) >= 0.5) toast(`[#ff8fb1]${a > 0 ? '+' : ''}${Math.round(a)} Heart[/]  ${reason}`);
+  if (reason && Math.abs(a) >= 0.5) toast((a > 0 ? '[#ff8fb1]♥[/]  ' : '[#9aa4c0]♡[/]  ') + reason);
   for (const [m, t] of [[30, 'Color returns...\n\nThe gray haze of the city is starting to lift.'], [50, 'Breathing again\n\nYou notice the smell of the soil and the sound of the wind.'], [75, 'Warm days\n\nThe village feels like home now.'], [100, 'Happiness rebuilt\n\nThe world is full of color again.']]) {
     if (before < m && G.heart >= m && !G.milestones.includes(m)) { G.milestones.push(m); showAnnounce(`[#ff8fb1]${t.split('\n')[0]}[/]${t.slice(t.indexOf('\n'))}`, 5); }
   }
@@ -935,24 +935,23 @@ function startHomeEnding() {
 function discoverSpirit() {
   const s = S().spirit; s.found = true; if (!s.forms.includes('spirit_gray')) s.forms.push('spirit_gray');
   G.spirit = { x: G.px - 0.8, y: G.py + 0.8, vx: 0, pulse: 0 };
-  showAnnounce('[#ff9fc4]A tiny gray spirit[/]\n\nDrawn by the light, a little gray wisp drifts out and starts following you. It looks hungry for color.\n\n[#ffd84a][G][/] Feed it the item you\'re holding.\nSun: Sunshine Shard, Sunflower, Corn   Earth: Earth\'s Breath, Carrot, Potato\nWater: fish   Bloom: Apple, Strawberry, Jam', 9);
+  showAnnounce('[#8fd0ff]A little dokkaebi fire[/]\n\nDrawn by the light, a tiny gray flame bobs out of the dark and starts following you.\nGrandma Boksun would say it\'s a dokkaebi-bul. It looks hungry for color.\n\n[#ffd84a][G][/] Feed it what you\'re holding. Its flame takes the color of what it eats.', 9);
   report('spirit_found');
 }
 function feedSpirit() {
   const s = S().spirit; if (!s.found) return; const item = selectedItem();
-  if (!item) { toast('Hold something to feed your spirit.'); return; }
-  const f = SPIRIT_FOOD[item]; if (!f) { toast(`Your spirit sniffs the ${item} and turns away.`); return; }
+  if (!item) { toast('Hold something to feed the dokkaebi fire.'); return; }
+  const f = SPIRIT_FOOD[item]; if (!f) { toast(`The dokkaebi fire flickers at the ${item} and turns away.`); return; }
   const stageBefore = spiritStage(s), formBefore = spiritForm(s);
   remove(item); for (let i = 0; i < 4; i++) s.pts[i] += f[i]; s.xp += f.reduce((a, b) => a + b, 0);
   G.spirit.pulse = 1;
-  const labels = ['[#ffd84a]Sun[/]', '[#9dff9d]Earth[/]', '[#8fd0ff]Water[/]', '[#ff9fc4]Bloom[/]'];
-  toast(`Your spirit munches the ${item}!` + f.map((v, i) => v ? ` +${v} ${labels[i]}` : '').join(''));
+  toast(`The dokkaebi fire gobbles up the ${item}!`);
   const form = spiritForm(s);
   if (form !== formBefore) {
     const isNew = !s.forms.includes(form); if (isNew) s.forms.push(form);
     if (spiritStage(s) >= 1) report('spirit_young');
-    showAnnounce(`[#ff9fc4]${spiritStage(s) > stageBefore ? 'Your spirit grew!' : 'Your spirit changed its colors!'}[/]\n\n${FORM_NAMES[form]}${isNew ? '  [#9dff9d](new form!)[/]' : ''}\n\nForms found: ${s.forms.length} / 10`, 5);
-    if (isNew) changeHeart(2, 'Your spirit is glowing with color.');
+    toast(`[#8fd0ff]${spiritStage(s) > stageBefore ? 'The dokkaebi fire burns a little bigger!' : 'The dokkaebi fire changed color!'}[/]  ${FORM_NAMES[form]}`, 4);
+    if (isNew) changeHeart(2, 'The dokkaebi fire glows with color.');
   }
 }
 
@@ -961,6 +960,7 @@ function villagerSprite(v) { return `Villagers/${v.id}_${Math.min(3, villagerPro
 function wishReady(v) { const p = villagerProgress(v.id); if (p.wish >= 3) return false; return v.wishes[p.wish].items.every(([n, c]) => has(n, c)); }
 const itemsText = arr => arr.map(([n, c]) => `${c} ${n}`).join(', ');
 function talk(v) {
+  G.log.talked = (G.log.talked || 0) + 1;
   const p = villagerProgress(v.id); const portrait = villagerSprite(v);
   v.idle = (v.idle || 0) + 1; const seasonal = v.idle % 2 === 1;
   if (p.wish >= 3) { say(v.name, [seasonal ? v.season[S().season] : v.color[v.idle % v.color.length]], portrait); return; }
@@ -990,6 +990,9 @@ function trySleep() {
 }
 function endDay(passedOut) {
   const lines = []; let delta = 0;
+  const facts = { passedOut, lateNight: !passedOut && G.hour >= 24, onTime: !passedOut && G.hour < 24, meals: G.log.meals, harvested: G.log.harvested,
+                  talked: G.log.talked || 0, drank: G.log.drank, exhausted: G.log.exhausted, starved: G.log.starved, rested: !!G.log.rested };
+  const wasOpen = [F().open, Lk().open, Hl().open], seasonBefore = S().season;
   if (passedOut) { delta -= 8; lines.push('Passed out from exhaustion  [#ff8080]-8[/]'); const lost = Math.min(Math.floor(G.gold / 10), 100); if (lost) { G.gold -= lost; lines.push(`Someone carried you home... you lost ${lost}G`); } }
   else if (G.hour < 24) { delta += 4; lines.push('Went to bed on time  [#9dff9d]+4[/]'); report('sleep_early'); }
   else { delta -= 2; lines.push('Stayed up too late  [#ff8080]-2[/]'); }
@@ -1023,11 +1026,11 @@ function endDay(passedOut) {
     if (has) G.restedPlots = G.restedPlots.filter(id => id !== p.id); else if (!G.restedPlots.includes(p.id)) { G.restedPlots.push(p.id); rested++; } }
   if (rested) lines.push(`${rested} plot(s) rested overnight (rich soil for the next crop)`);
   const made = Math.floor(G.compostPoints / 2); if (made) { G.compostPoints -= made * 2; G.compostReady = Math.min(20, G.compostReady + made); lines.push(`The compost heap made ${made} bag(s) of compost`); }
-  const bloom = perk('bloom'); if (bloom) { delta += bloom; lines.push(`Your spirit hummed you to sleep  [#9dff9d]+${bloom}[/]`); changeHeart(bloom); }
+  const bloom = perk('bloom'); if (bloom) { delta += bloom; lines.push(`The dokkaebi fire kept the room warm all night  [#9dff9d]+${bloom}[/]`); changeHeart(bloom); }
   // market + resources + log
   const cands = Object.values(CROPS).filter(c => c.season <= after).map(c => c.harvest);
   G.market = { demand: cands[Math.floor(Math.random() * cands.length)], haggle: 0, haggled: false, sold: {} };
-  G.cleared = []; G.log = { harvested: 0, meals: 0, exhausted: false, starved: false, drank: false };
+  G.cleared = []; G.log = { harvested: 0, meals: 0, exhausted: false, starved: false, drank: false, talked: 0, rested: false };
   G.energy = passedOut ? maxEnergy() * 0.5 : maxEnergy();
   G.day++; G.hour = 6; G.minute = 0; G.warnedMid = false;
 
@@ -1043,7 +1046,12 @@ function endDay(passedOut) {
   if (fDelta) { delta += fDelta; changeHeart(fDelta); }
   if (fHead) header += '\n' + fHead;
   if (G.raining) report('rain_morning');
-  showAnnounce(`${header}\n\n${lines.join('\n')}\n\n[#ff8fb1]Heart ${delta >= 0 ? '+' : ''}${Math.round(delta)}  (${Math.round(G.heart)}/100)[/]${todayPreview(after)}`, 9);
+  facts.delta = delta;
+  const notes = lines.filter(l => !/^(Passed out|Went to bed|Stayed up|Ate proper|Drank fresh|Didn't overwork|Worked until|Went hungry|Harvested)/.test(l)).map(l => l.replace(/\s*\[#[0-9a-f]{6}\][+-]\d+\[\/\]/g, ''));
+  showAnnounce(`${header}\n\n[#e8d8b0]— Yesterday's diary —[/]\n${diaryLines(facts, G.day - 1).join('\n')}\n[#ff8fb1]${diaryMood(delta)}[/]` +
+               (notes.length ? `\n\n[#c8c0b0]${notes.join('\n')}[/]` : '') + todayPreview(after), 10);
+  queueBroadcast(broadcastLines({ day: G.day, before: seasonBefore, after, raining: G.raining, snowing: G.snowing,
+    forestOpened: !wasOpen[0] && F().open, lakeOpened: !wasOpen[1] && Lk().open, hillOpened: !wasOpen[2] && Hl().open }));
   letters();
   save();
 }
@@ -1052,8 +1060,7 @@ function todayPreview(season) {
   const ripe = Object.values(G.crops).filter(mature).length; if (ripe) tips.push(`${ripe} crop(s) ripe`);
   const tm = Object.values(G.crops).filter(c => !mature(c) && season >= CROPS[c.id].season && c.days + 1 >= CROPS[c.id].days).length;
   if (tm) tips.push(`${tm} crop(s) ripen tomorrow if watered`);
-  if (isMarketDay(G.day)) tips.push('Market day! Stalls, rare goods and haggling at the market'); else if (daysUntilMarket(G.day) === 1) tips.push('Tomorrow is market day');
-  if (season < 3) tips.push(`${SEASONS[season + 1]} at ${Math.ceil(THRESH[season + 1] - G.heart)} more Heart`);
+  if (season < 3 && THRESH[season + 1] - G.heart <= 8) tips.push(`${SEASONS[season + 1]} feels close`);
   const ready = VILLAGERS.find(v => villagerProgress(v.id).met && wishReady(v)); if (ready) tips.push(`You have everything for ${ready.name}'s wish`);
   if (unlocked('starhill') && !G.raining && !G.snowing) tips.push('Clear skies tonight: the star vine will grow');
   const left = 6 - PHOTOS.filter(p => p.season === season && S().photos.includes(p.id)).length; if (left) tips.push(`${left} ${SEASONS[season]} photo(s) left [P]`);
@@ -1114,20 +1121,20 @@ function interact() {
     if (near(HRACK[0], HRACK[1], 1.5)) { useRack(); return; }
     if (near(HBENCH[0], HBENCH[1], 1.6)) {
       const [layers, caption] = panoramaLayers(); panel = { kind: 'view', layers, caption };
-      if (Hl().restDay !== G.day) { Hl().restDay = G.day; changeHeart(2, 'You sat in the pavilion and watched the sun go down over the valley.'); }
+      if (Hl().restDay !== G.day) { Hl().restDay = G.day; G.log.rested = true; changeHeart(2, 'You sat in the pavilion and watched the sun go down over the valley.'); }
     }
     return;
   }
   if (G.scene === 'lake') {
     const spot = LFISH.find(([x, y]) => near(x, y, 1.3)); if (spot || (fishing && fishing.lake)) { fish(spot || fishing.at, true); return; }
     if (near(LSTEPS[0], LSTEPS[1], 1.3)) { releaseFish(); return; }
-    if (near(LBENCH[0], LBENCH[1], 1.3)) { if (Lk().restDay !== G.day) { Lk().restDay = G.day; changeHeart(2, 'You sat under the willow and watched the water.'); } else toast("The willow sways. You've already rested here today."); return; }
+    if (near(LBENCH[0], LBENCH[1], 1.3)) { if (Lk().restDay !== G.day) { Lk().restDay = G.day; G.log.rested = true; changeHeart(2, 'You sat under the willow and watched the water.'); } else toast("The willow sways. You've already rested here today."); return; }
     return;
   }
   if (G.scene === 'forest') {
     if (near(FSEAT[0], FSEAT[1], 1.3)) {
       G.thirst = 100; G.log.drank = true; const cap = waterCap(); if (cap) G.water = cap;
-      if (F().restDay !== G.day) { F().restDay = G.day; changeHeart(2, 'You sat by the spring and listened to the forest.'); }
+      if (F().restDay !== G.day) { F().restDay = G.day; G.log.rested = true; changeHeart(2, 'You sat by the spring and listened to the forest.'); }
       else toast("You drink from the spring. It's cool and clear.");
       return;
     }
@@ -1144,12 +1151,13 @@ function interact() {
     if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) { trySleep(); return; }
   } else if (G.scene === 'market') {
     for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) { talk(v); return; }
+    if (near(MAYOR[0], MAYOR[1], 1.0)) { talkMayor(); return; }
     if (near(-4.2, -2.0, 1.1)) { share(); return; }
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) { if (G.market.haggled) toast('"We\'ve struck our deal for today. Come back next market day!"', 2.5); else go('haggle', 0, 0); return; }
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) { panel = { kind: 'shop', tab: 'buy' }; return; }
   } else if (G.scene === 'hill') {
     if (near(0, -4.4, 1.4)) { go('farm', LADDER[0] - 0.6, LADDER[1] - 1.0); return; }
-    if (near(5.1, -2.0, 1.5)) { if (S().benchDay === G.day) toast('You already watched the stars tonight.'); else { S().benchDay = G.day; changeHeart(3, 'You sat on the bench and watched the stars.'); } }
+    if (near(5.1, -2.0, 1.5)) { if (S().benchDay === G.day) toast('You already watched the stars tonight.'); else { S().benchDay = G.day; G.log.rested = true; changeHeart(3, 'You sat on the bench and watched the stars.'); } }
   }
 }
 function useHeap() {
@@ -1307,6 +1315,7 @@ let frame = 0, speed = 1, last = 0;
 function update(dt) {
   frame++;
   if (screen) { updateScreen(dt); clearPressed(); return; }
+  updateBroadcast(dt, pressed.Space || pressed.Enter);
   { const st = guideStep(); if (st === 3) { unlock('guide_done'); toast('Your first day went well. From here, live as you like.  [M] map  [J] journal', 7); } }
   for (const t of toasts) t.t -= dt; toasts = toasts.filter(t => t.t > 0);
   if (announce) { announce.t -= dt; if (announce.t <= 0) announce = null; }
@@ -1474,7 +1483,7 @@ function clampPlayer() {
     }
   }
   if (G.scene === 'market' && isMarketDay(G.day)) { FAIR_STALLS.forEach(([x, y, r]) => { for (let dx = -r + 0.25; dx <= r - 0.25; dx += 0.5) solids.push([x + dx, y + 0.3, 0.3]); }); solids.push([HAGGLER[0], HAGGLER[1] - 0.4, 0.3]); }
-  if (G.scene === 'market') { solids.push([-4.2, -2.35, 0.35]); VILLAGERS.slice(0, 2).forEach(v => solids.push([v.x, v.y - 0.4, 0.25])); }
+  if (G.scene === 'market') { solids.push([MAYOR[0], MAYOR[1] - 0.4, 0.25]); solids.push([-4.2, -2.35, 0.35]); VILLAGERS.slice(0, 2).forEach(v => solids.push([v.x, v.y - 0.4, 0.25])); }
   const fx = G.px, fy = G.py - 0.4;
   for (const [x, y, r] of solids) { const d = Math.hypot(fx - x, fy - y); if (d < r && d > 0) { G.px += (fx - x) / d * (r - d); G.py += (fy - y) / d * (r - d); } }
 }
@@ -1640,6 +1649,7 @@ function renderWorld() {
   if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
   if (G.scene === 'market') {
     draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
+    draws.push([MAYOR[1] - 0.45, () => sprite(c, 'Villagers/mayor', MAYOR[0], MAYOR[1])]);
     if (isMarketDay(G.day)) draws.push([HAGGLER[1], () => sprite(c, 'World/haggler', HAGGLER[0], HAGGLER[1])]);
     draws.push([-2.5, () => sprite(c, 'World/donation_box', -4.2, -2.0)]);
     draws.push([0, () => sprite(c, G.story.season === 0 ? 'World/exit_sign_winter' : 'World/exit_sign', -8.27, -0.05)]);
@@ -1722,7 +1732,7 @@ function renderUI() {
   });
   // toasts
   toasts.forEach((t, i) => {
-    ctx.globalAlpha = Math.min(1, t.t / 0.5); const y = 96 + i * 42;
+    ctx.globalAlpha = Math.min(1, t.t / 0.5); const y = 96 + i * 42 + (broadcast && !announce && !dialogue && !panel && (G.scene === 'farm' || G.scene === 'market') ? 40 : 0);
     ctx.fillStyle = 'rgba(12,9,7,0.72)'; ctx.fillRect(CW / 2 - 400, y, 800, 36); drawRich(t.text, CW / 2, y + 8, 18, 780, 'center'); ctx.globalAlpha = 1;
   });
   // hotbar
@@ -1744,6 +1754,7 @@ function renderUI() {
   }
   // contextual prompt
   const prompt = promptText(); if (prompt && !dialogue && !panel) { ctx.fillStyle = 'rgba(12,9,7,0.7)'; ctx.fillRect(CW / 2 - 250, CH - 140, 500, 30); drawRich(prompt, CW / 2, CH - 134, 16, 480, 'center', '#ffe9b0'); }
+  drawBroadcast();
   drawPanel();
   // dialogue
   if (dialogue) {
@@ -1781,6 +1792,7 @@ function promptText() {
   } else if (G.scene === 'home') { if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) return '[E] Sleep and end the day'; if (G.px > 6.8) return 'Back to the farm';
   } else if (G.scene === 'market') {
     for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) return `[E] Talk to ${v.name}`;
+    if (near(MAYOR[0], MAYOR[1], 1.0)) return '[E] Talk to Village Head Park';
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) return G.market.haggled ? 'The old farmer is done haggling for today' : '[E] Haggle with the old farmer';
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade at the stall';
@@ -1988,6 +2000,68 @@ function guideTarget(step) {
   if (step === 0 || step === 1) { const p = (MAP.plots || []).find(p => p.startOpen); return p ? [(p.x0 + p.x1 + 1) / 2, p.y1 + 1.5] : null; }
   if (step === 2) return [DOOR[0], DOOR[1] + 1.6];
   return null;
+}
+
+// ------------------------------------------------------------------ K-1: diary, village broadcast, Village Head Park
+function pickLine(day, opts) { return opts[((day % opts.length) + opts.length) % opts.length]; }
+function diaryLines(f, day) {
+  const lines = [];
+  if (f.passedOut) lines.push(pickLine(day, ['I passed out in the field. Someone carried me home.', 'Everything went dark. I woke up at home, not knowing how.']));
+  else if (f.delta >= 6) lines.push(pickLine(day, ['Today was a pretty good day.', 'A good day. I want to remember it.', 'The day went by gently.']));
+  else if (f.delta >= 0) lines.push(pickLine(day, ["An ordinary day. That's fine too.", 'A quiet day.', "Nothing special happened. I'm still here."]));
+  else lines.push(pickLine(day, ['A hard day.', 'Today felt heavy.', "I didn't take care of myself today."]));
+  const notes = [];
+  if (f.starved) notes.push(pickLine(day, ['I skipped meals again.', 'My stomach growled all afternoon.']));
+  if (f.exhausted && !f.passedOut) notes.push(pickLine(day, ['I worked until I had nothing left. Like back in the city.', 'I pushed too hard again.']));
+  if (f.lateNight) notes.push(pickLine(day, ['I stayed up far too late.', 'Midnight came and went.']));
+  if (f.talked > 0) notes.push(pickLine(day, ['I talked with the neighbors for a while.', 'Someone smiled at me today.']));
+  if (f.rested) notes.push(pickLine(day, ['I sat down for a while and just watched. The wind was nice.', 'I let myself rest for a bit.']));
+  if (f.harvested > 0) notes.push(pickLine(day, ['I picked something I grew with my own hands.', 'The harvest was small, but it was mine.']));
+  if (f.meals >= 2) notes.push(pickLine(day, ['I ate properly, twice.', 'Warm food, eaten slowly.'])); else if (f.meals === 1) notes.push(pickLine(day, ['I ate a proper meal.', 'I remembered to eat.']));
+  if (f.onTime && !f.passedOut) notes.push(pickLine(day, ['Going to bed early tonight.', 'Bed before midnight, for once.']));
+  if (f.drank && notes.length < 2) notes.push(pickLine(day, ['The well water was cold and sweet.', 'I drank plenty of water.']));
+  for (const n of notes) if (lines.length < 3) lines.push(n);
+  return lines;
+}
+function diaryMood(d) { return d >= 6 ? 'My heart feels much lighter.' : d > 0 ? 'My heart feels a little lighter.' : d === 0 ? 'My heart is the same as yesterday.' : d > -6 ? 'My heart feels a little heavier.' : 'My heart feels heavy.'; }
+function broadcastLines(n) {
+  const body = [];
+  if (n.day === 2) body.push('Someone has moved into the old empty house down the lane. Do say hello, everyone.');
+  if (n.after > n.before) body.push(n.after === 1 ? 'The air has softened a lot. Looks like spring is on its way.' : n.after === 2 ? "It's getting properly warm. Drink plenty of water, everyone." : 'The mornings are crisp now. Autumn has come.');
+  else if (n.after < n.before) body.push("A cold snap has come back. Dress warmly and don't push yourselves.");
+  if (n.forestOpened) body.push('I hear the path up the back hill is open again.');
+  if (n.lakeOpened) body.push('The reeds by the reservoir have cleared. You can walk down there now.');
+  if (n.hillOpened) body.push('The lane up to Sunset Hill is open.');
+  if (isMarketDay(n.day)) body.push('Today is market day. The stalls are up in the lane, so drop by.'); else if (daysUntilMarket(n.day) === 1) body.push('Tomorrow is market day. Get your things ready to sell.');
+  if (n.snowing) body.push('Snow tonight made the roads slippery. Careful out there, especially our elders.'); else if (n.raining) body.push("It's raining, so keep your sauce jar lids closed.");
+  if (!body.length && n.day > 2 && n.day % 3 === 0) body.push('Nothing special today. Just make sure you all eat well.');
+  return body.length ? ['Ahem, ahem. Attention, everyone in the village.', ...body, "That's all from your village head."] : [];
+}
+let broadcast = null;   // { lines, i, t }
+function queueBroadcast(lines) { broadcast = lines.length ? { lines, i: 0, t: 0 } : null; }
+function updateBroadcast(dt, skip) {
+  if (!broadcast || announce || dialogue || panel || screen || (G.scene !== 'farm' && G.scene !== 'market')) return;
+  const line = broadcast.lines[broadcast.i]; broadcast.t += dt;
+  const done = broadcast.t * 22 >= line.length;
+  if (skip && !done) broadcast.t = line.length / 22 + 0.01;
+  else if ((done && broadcast.t > line.length / 22 + 1.8 + line.length / 14) || (skip && done)) { broadcast.i++; broadcast.t = 0; if (broadcast.i >= broadcast.lines.length) broadcast = null; }
+}
+function drawBroadcast() {
+  if (!broadcast || announce || dialogue || panel || screen || (G.scene !== 'farm' && G.scene !== 'market')) return;
+  const line = broadcast.lines[broadcast.i], w = 560, x = CW / 2 - w / 2, y = 52;
+  box(x, y, w, 72, 'rgba(20,14,11,0.96)', '#c89552');
+  const ic = IMG['World/loudspeaker']; if (ic) ctx.drawImage(ic, x + 12, y + 12, 48, 48);
+  drawRich('[#ffd84a]Village broadcast  ·  Village Head Park[/]', x + 72, y + 10, 13, w - 84);
+  drawRich(line.slice(0, Math.floor(broadcast.t * 22)), x + 72, y + 30, 16, w - 84);
+}
+const MAYOR = [-3.9, 0.9];
+function talkMayor() {
+  G.log.talked = (G.log.talked || 0) + 1;
+  if (unlock('mayor_met')) { say('Village Head Park', ["Well now, you must be the one who moved into the empty house! I'm Park, the village head.",
+    "Not many young folks left around here. Everyone's gone to the city. ...It's good to see a new face.", "I make the announcements every morning on that loudspeaker. Keep an ear out, eh?"], 'Villagers/mayor'); return; }
+  const lines = ["Eating well? You look thin. City folks always do.", ["Winter's when we make meju for the sauces. Grandma Boksun knows how.", "Spring! Time to open the sauce jars and let the sun in.", "Hot, isn't it? Come sit in the pavilion when it gets too much.", "Autumn's busy. Kimchi-making day is coming, everyone will need a hand."][S().season],
+    "This village used to be full of children. Now it's quiet... but you're here now.", "If you hear the loudspeaker crackle, that's me. Don't laugh at my voice."];
+  G.mayorLine = (G.mayorLine || 0) + 1; say('Village Head Park', [lines[G.mayorLine % lines.length]], 'Villagers/mayor');
 }
 
 // ------------------------------------------------------------------ boot

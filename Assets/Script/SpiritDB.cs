@@ -99,16 +99,16 @@ public static class SpiritDB
     {
         switch (key)
         {
-            case "spirit_gray": return Loc.T("Gray Wisp", "잿빛 도깨비불");
-            case "spirit_prism": return Loc.T("Prism Spirit", "무지개 정령");
-            case "spirit_sun_young": return Loc.T("Sunny Sprite", "볕 아기 정령");
-            case "spirit_sun_grown": return Loc.T("Sun Spirit", "해 정령");
-            case "spirit_earth_young": return Loc.T("Sprout Sprite", "새싹 아기 정령");
-            case "spirit_earth_grown": return Loc.T("Grove Spirit", "숲 정령");
-            case "spirit_water_young": return Loc.T("Droplet Sprite", "물방울 아기 정령");
-            case "spirit_water_grown": return Loc.T("River Spirit", "냇물 정령");
-            case "spirit_bloom_young": return Loc.T("Petal Sprite", "꽃잎 아기 정령");
-            case "spirit_bloom_grown": return Loc.T("Blossom Spirit", "꽃 정령");
+            case "spirit_gray": return Loc.T("Gray Dokkaebi Fire", "잿빛 도깨비불");
+            case "spirit_prism": return Loc.T("Rainbow Dokkaebi Fire", "무지개 도깨비불");
+            case "spirit_sun_young": return Loc.T("Little Amber Flame", "작은 주홍 도깨비불");
+            case "spirit_sun_grown": return Loc.T("Amber Dokkaebi Fire", "주홍 도깨비불");
+            case "spirit_earth_young": return Loc.T("Little Green Flame", "작은 푸른 도깨비불");
+            case "spirit_earth_grown": return Loc.T("Green Dokkaebi Fire", "푸른 도깨비불");
+            case "spirit_water_young": return Loc.T("Little Blue Flame", "작은 파란 도깨비불");
+            case "spirit_water_grown": return Loc.T("Blue Dokkaebi Fire", "파란 도깨비불");
+            case "spirit_bloom_young": return Loc.T("Little Pink Flame", "작은 분홍 도깨비불");
+            case "spirit_bloom_grown": return Loc.T("Pink Dokkaebi Fire", "분홍 도깨비불");
             default: return key;
         }
     }

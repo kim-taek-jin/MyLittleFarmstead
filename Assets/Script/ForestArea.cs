@@ -275,6 +275,7 @@ public class ForestArea : MonoBehaviour
             int day = GameTimeManager.instance != null ? GameTimeManager.instance.day : 1;
             if (state.Rest(day))
             {
+                data.NoteRest();
                 data.ChangeHeart(RestHeart, Loc.T("You sat by the spring and listened to the forest.", "옹달샘 곁에 앉아 숲 소리를 들었어요."));
             }
             else HUD.Toast(Loc.T("You drink from the spring. It's cool and clear.", "옹달샘 물을 마셨어요. 시원하고 맑아요."), 2.5f);

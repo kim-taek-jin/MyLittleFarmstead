@@ -174,7 +174,7 @@ public class LakeArea : MonoBehaviour
         if (Vector2.Distance(p, steps) < 1.3f) { ReleaseFish(data); return; }
         if (Vector2.Distance(p, bench) < 1.3f)
         {
-            if (state.Rest(AreaKit.Today)) data.ChangeHeart(RestHeart, Loc.T("You sat under the willow and watched the water.", "버드나무 아래 앉아 물을 바라봤어요."));
+            if (state.Rest(AreaKit.Today)) { data.NoteRest(); data.ChangeHeart(RestHeart, Loc.T("You sat under the willow and watched the water.", "버드나무 아래 앉아 물을 바라봤어요.")); }
             else HUD.Toast(Loc.T("The willow sways. You've already rested here today.", "버드나무가 흔들려요. 오늘은 벌써 여기서 쉬었어요."), 2.5f);
         }
     }

@@ -116,6 +116,7 @@ public class Villager : MonoBehaviour
 
     void Talk()
     {
+        Data.NoteTalk();                       // 일기: "이웃과 이야기를 나눴다"
         VillagerProgress p = Progress;
         Sprite portrait = body.sprite;
 

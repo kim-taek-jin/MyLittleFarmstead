@@ -143,6 +143,7 @@ public class StarHill : MonoBehaviour
             return;
         }
         Data.story.benchDay = Data.TimeManager.day;
+        Data.NoteRest();
         Data.ChangeHeart(3f, Loc.T("You sat on the bench and watched the stars.", "벤치에 앉아 별을 바라봤어요."));
     }
 
