@@ -1329,6 +1329,8 @@ function drawDemoEnd() {
   hit(0, 0, CW, CH, () => { if (panel.page < 3) panel.page++; });
 }
 
+const onBedding = () => G.scene === 'home' && Math.abs(G.px + 6.44) < 1.8 && Math.abs(G.py + 0.46) < 1.5;   // H-1: the yo on the araetmok
+
 // ------------------------------------------------------------------ day end (DataManager.EndDay)
 function trySleep() {
   if (G.hour < 18 && G.energy > maxEnergy() * 0.25) { toast("It's too early to sleep. (You can sleep after 18:00)"); return; }
@@ -1511,7 +1513,7 @@ function interact() {
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) { go('hill', 0, -3.1); return; }
     if (near(POND[0], POND[1], 1.9)) { fish(); return; }
   } else if (G.scene === 'home') {
-    if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) { trySleep(); return; }
+    if (onBedding()) { trySleep(); return; }
   } else if (G.scene === 'market') {
     { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0) && !(v.id === 'mina' && gathering())); if (v) { if (!riteTalk(v)) talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; }
       const rn = riteNear(); if (rn === 'pot') { useRitePot(); return; } if (rn === 'gate') { useGate(); return; } if (rn === 'daljip') { useDaljip(); return; } }
@@ -1809,7 +1811,7 @@ function update(dt) {
   const hours = dt * 3 * speed / 60;   // K-5: 3 game minutes per second (a day ~6 min)
   G.minute += dt * 3 * speed; while (G.minute >= 60) { G.minute -= 60; G.hour++; }
   if (G.hour >= 24 && !G.warnedMid) { G.warnedMid = true; toast("It's midnight. You should go to bed soon."); }
-  if (G.hour >= 26) { endDay(true); go('home', 0, -3.5); clearPressed(); return; }
+  if (G.hour >= 26) { endDay(true); go('home', -4.1, -0.5); clearPressed(); return; }   // H-1: wake beside the bedding
   G.hunger = Math.max(0, G.hunger - 5 * hours); G.thirst = Math.max(0, G.thirst - 7 * hours);
   if (G.hunger <= 0 || G.thirst <= 0) { G.log.starved = true; G.health -= 15 * hours; if (G.health <= 0) { G.health = 0; G.dead = true; showAnnounce('[#ff8080]You collapsed...[/]\n\nTake better care of yourself.\n\nPress "새로 시작" below to try again.', 9999); } }
   else if (G.hunger > 50 && G.thirst > 50) G.health = Math.min(100, G.health + 2 * hours);
@@ -1844,7 +1846,7 @@ function update(dt) {
   // portals
   if (G.scene === 'farm') {
     const open = MAP.exits.find(e => !e.locked && inRect(exitRect(e), G.px, G.py));
-    if (near(DOOR[0], DOOR[1], 0.7)) go('home', 0, -3.5);
+    if (near(DOOR[0], DOOR[1], 0.7)) go('home', 0, -3.1);
     else if (open) go(open.to.toLowerCase(), open.spawnX, open.spawnY);          // the end of the road is the way to the market
     const gate = MAP.exits.find(e => areaOpen(e.to) && inRect(exitRect(e), G.px, G.py));
     if (gate && G.scene === 'farm') {
@@ -1882,7 +1884,7 @@ function update(dt) {
       else if (fishing.state === 'bite' && fishing.t <= 0) { fishing = null; toast('It got away...'); }
       if (fishing && !near(fishing.at[0], fishing.at[1], 2.2)) { fishing = null; toast('You reeled in your line.'); }
     }
-  } else if (G.scene === 'home') { if (G.px > 8.4 && Math.abs(G.py) < 1.2) go('farm', ...arrival('Home')); }
+  } else if (G.scene === 'home') { if (G.py < -4.0 && Math.abs(G.px) < 1.25) go('farm', ...arrival('Home')); }   // H-1: out the sliding door
   else if (G.scene === 'market') { if (G.px < -8.5 && Math.abs(G.py) < 1.3) go('farm', ...arrival('Market')); }
   else if (G.scene === 'hill') updateStars(dt);
 
@@ -1918,10 +1920,11 @@ function clampPlayer() {
   if (G.scene === 'lake') { minX = LAKB.x0 + 0.3; maxX = LAKB.x1 - 0.3; minY = LAKB.y0 + 0.5; maxY = LAKB.y1 - 0.8; }
   if (G.scene === 'sunset') { minX = HILB.x0 + 0.3; maxX = HILB.x1 - 0.3; minY = HILB.y0 + 0.5; maxY = HILB.y1 - 0.8; }
   if (G.scene === 'market') maxY = 2.4;
-  if (G.scene === 'home') maxY = 3.0;
+  if (G.scene === 'home') { minX = -8.4; maxX = 8.4; maxY = 3.05; minY = Math.abs(G.px) < 1.1 ? -4.3 : -3.8; }   // H-1: the ondol room, the door in the front wall
   if (G.scene === 'hill') { minX = -8.4; maxX = 8.4; minY = -4.6; maxY = -1.2; }
   G.px = Math.max(minX, Math.min(maxX, G.px)); G.py = Math.max(minY, Math.min(maxY, G.py));
   const solids = [];
+  if (G.scene === 'home') { for (const x of [-8.1, -7.4, -6.7, -6.1]) solids.push([x, 2.3, 0.45]); for (const x of [5.9, 6.6, 7.3, 8.0]) solids.push([x, 2.2, 0.45]); for (const x of [2.6, 3.3, 4.0]) solids.push([x, -1.05, 0.4]); }
   if (G.scene === 'farm') {
     solids.push([WELL[0], WELL[1] - 0.45, 0.55]);
     // stumps and boulders near the player block the way (weeds don't)
@@ -2107,7 +2110,7 @@ function renderWorld() {
   }
   if (G.scene === 'farm' && unlocked('ending_seen')) draws.push([COTTAGE[1], () => sprite(c, seasonal('cottage_color'), COTTAGE[0], COTTAGE[1], 1, 'bottom')]);
   if (G.scene === 'farm') { const tg = guideTarget(guideStep()); if (tg) { const bob = Math.round(Math.abs(Math.sin(performance.now() / 333)) * 4) / 32; draws.push([-1000, () => sprite(c, 'World/guide_arrow', tg[0], tg[1] + bob)]); } }
-  if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
+  // H-1: the bedding, the wardrobe and the table are part of the room picture
   if (G.scene === 'market') {
     draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
     if (isMarketDay(G.day)) draws.push([HAGGLER[1], () => sprite(c, 'World/haggler', HAGGLER[0], HAGGLER[1])]);
@@ -2274,7 +2277,7 @@ function promptText() {
     if (debrisAt(Math.floor(G.px), Math.floor(G.py - 0.4)) === 'g' || ['k', 'o'].some(ch => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => debrisAt(Math.floor(G.px) + dx, Math.floor(G.py - 0.4) + dy) === ch))) {
       const it = ITEMS[selectedItem()] || {}; return it.tool === 'hoe' || it.tool === 'scythe' ? 'Click to clear the old field' : 'The old field: clear it with a hoe or scythe';
     }
-  } else if (G.scene === 'home') { if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) return '[E] Sleep and end the day'; if (G.px > 6.8) return 'Back to the farm';
+  } else if (G.scene === 'home') { if (onBedding()) return '[E] Lie down on the bedding and end the day'; if (G.py < -3.3 && Math.abs(G.px) < 1.4) return 'Out to the porch';
   } else if (G.scene === 'market') {
     { const rp = ritePrompt(); if (rp && !VILLAGERS.some(v => v.scene === G.scene && near(...vPos(v), 1.0))) return rp;
       const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;

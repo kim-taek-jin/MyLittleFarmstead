@@ -287,9 +287,11 @@ def main():
     # ---- ending A: your house stays gray until the end ----
     exported['World'].append(export('World', 'cottage_color', kfarm.cottage_color('spring')))
     exported['World'].append(export('World', 'cottage_color_winter', kfarm.cottage_color('winter')))
-    export_image('World', 'bg_home_gray', forest.gray(backgrounds.home()))
+    import home                                       # H-1: the ondol room replaces the old Western room
+    room = home.home_room().image()
+    export_image('World', 'bg_home_gray', forest.gray(room))
     for name, fn in backgrounds.BACKGROUNDS.items():
-        bgs.append(export_image('World', name, kmarket.market('summer') if name == 'bg_market' else fn()))
+        bgs.append(export_image('World', name, kmarket.market('summer') if name == 'bg_market' else room if name == 'bg_home' else fn()))
     # ---- the country market (direction C): market-day stalls, the haggler, the corner-store auntie,
     #      a Korean well and a red pine for the gatherable tree (these replace the older sprites) ----
     export_image('World', 'market_fair', kmarket.market_fair())

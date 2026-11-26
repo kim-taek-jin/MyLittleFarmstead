@@ -138,6 +138,7 @@ public static class FarmMap
                 if (portal != null && portal.destinationSceneName == "Home")
                 {
                     MoveTo(root, map.Anchor("door", root.transform.position));
+                    portal.destinationPosition = HomeRoom.Arrival;   // H-1: 집 안 미닫이문 안쪽
                     if (root.GetComponent<HideArt>() == null) root.AddComponent<HideArt>();   // 문은 집 그림에 있으므로 표지판은 숨김
                 }
             }

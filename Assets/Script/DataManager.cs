@@ -644,7 +644,7 @@ public class DataManager : MonoBehaviour
         EndDay(true);
         if (SceneManager.GetActiveScene().name != "Home" && Application.CanStreamedLevelBeLoaded("Home"))
         {
-            SceneData.nextPlayerPosition = new Vector2(0f, -4.5f);
+            SceneData.nextPlayerPosition = HomeRoom.WakeSpot;   // H-1: 요 옆에서 눈을 뜸 (예전 자리는 이제 문 앞)
             SceneData.hasNextPlayerPosition = true;
             SceneManager.LoadScene("Home");
         }
