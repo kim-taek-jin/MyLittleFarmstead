@@ -30,7 +30,7 @@ public class Villager : MonoBehaviour
     public static Villager Create(VillagerDef def, Material material, float characterScale)
     {
         GameObject go = new GameObject("Villager_" + def.id);
-        Vector2 at = def.scene == "Farm" && FarmMap.Active ? FarmMap.Anchor(def.id, def.position) : def.position;
+        Vector2 at = def.scene == "Farm" && FarmMap.Active ? FarmMap.Anchor(def.id, def.position) : InteriorRooms.DayPosition(def.id, def.position);   // H-2: 할머니는 방앗간 안
         go.transform.position = new Vector3(at.x, at.y, 0f);
 
         CircleCollider2D talkRange = go.AddComponent<CircleCollider2D>();
@@ -98,7 +98,7 @@ public class Villager : MonoBehaviour
         bool evening = def.eveningPosition != Vector2.zero && Neighbors.IsEvening(Hour);
         if (evening == sittingOut) return;
         sittingOut = evening;
-        Vector2 at = evening ? def.eveningPosition : dayPos;
+        Vector2 at = evening ? InteriorRooms.EveningPosition(def.id, def.eveningPosition) : dayPos;   // H-2: 이장님 저녁은 회관 난롯가
         transform.position = new Vector3(at.x, at.y, 0f);
         if (feet != null) feet.enabled = !evening;      // 앉아 있을 땐 옆자리를 막지 않음
         RefreshVisual();

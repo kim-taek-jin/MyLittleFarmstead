@@ -28,12 +28,15 @@ with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'hill.json'), encodi
     hill_map = json.load(f)
 with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'villagemap.json'), encoding='utf-8') as f:
     village_map = json.load(f)
+with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'rooms.json'), encoding='utf-8') as f:
+    rooms_map = json.load(f)
 js = (js.replace('/*__ASSETS__*/{}', json.dumps(assets))
         .replace('/*__MAP__*/null', json.dumps(farm_map, separators=(',', ':')))
         .replace('/*__FOREST__*/null', json.dumps(forest_map, separators=(',', ':')))
         .replace('/*__LAKE__*/null', json.dumps(lake_map, separators=(',', ':')))
         .replace('/*__HILL__*/null', json.dumps(hill_map, separators=(',', ':')))
-        .replace('/*__VMAP__*/null', json.dumps(village_map, separators=(',', ':'))))
+        .replace('/*__VMAP__*/null', json.dumps(village_map, separators=(',', ':')))
+        .replace('/*__ROOMS__*/null', json.dumps(rooms_map, separators=(',', ':'))))
 html = html.replace('/*__GAME__*/', js)
 out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'Docs', 'web_preview.html')
 with open(out, 'w', encoding='utf-8') as f:

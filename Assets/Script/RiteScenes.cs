@@ -15,7 +15,7 @@ public static class RiteScenes
     public static int Hour => GameTimeManager.instance != null ? GameTimeManager.instance.hour : 12;
     public static bool Helped => Data != null && Data.story.IsUnlocked("favor_hands");   // 이장님 품앗이
 
-    public static readonly Vector2 PotAt = new Vector2(-7.6f, -0.55f);     // 장터: 방앗간 앞 길
+    public static Vector2 PotAt => InteriorRooms.Anchor("mill", "pot", new Vector2(-7.6f, -0.55f));   // H-2: 방앗간 안 (동지 팥죽 솥)
     public static readonly Vector2 GateAt = new Vector2(2.0f, -2.55f);     // 농장: 마당 돌담의 열린 곳
     public static Vector2 DaljipAt => FarmMap.Anchor("daljip", new Vector2(18.5f, -9.4f));   // 농장 남동쪽, 벼를 벤 빈 논 (그루터기 S)
 

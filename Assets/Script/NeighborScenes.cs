@@ -87,7 +87,7 @@ public static class NeighborScenes
         if (player != null)
         {
             if (rb != null) rb.simulated = false;           // 평상 위에 앉히는 동안 벽에 밀려나지 않게
-            Vector2 seat = def.eveningPosition + new Vector2(0.72f, 0f);
+            Vector2 seat = InteriorRooms.EveningPosition(def.id, def.eveningPosition) + new Vector2(0.72f, 0f);
             player.transform.position = new Vector3(seat.x, seat.y, stood.z);
             PlayerPixelAnimator.Sit(true);
         }
@@ -153,9 +153,11 @@ public static class NeighborScenes
 
     public static void CreateSpots(Scene scene, Material mat)
     {
-        foreach (Spot s in Spots)
+        foreach (Spot s0 in Spots)
         {
+            Spot s = s0;
             if (s.scene != scene.name) continue;
+            if (s.id == "steamer") { s.at = InteriorRooms.Anchor("mill", "steamer", s.at); s.size = new Vector2(0.8f, 0.3f); }   // H-2: 떡 시루는 방앗간 안
             var go = new GameObject("Chore_" + s.id);
             SceneManager.MoveGameObjectToScene(go, scene);
             go.transform.position = new Vector3(s.at.x, s.at.y, 0f);

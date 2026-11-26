@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -73,7 +73,7 @@ public class WeatherFX : MonoBehaviour
     {
         DataManager data = DataManager.instance;
         string scene = SceneManager.GetActiveScene().name;
-        bool outdoors = scene == "Farm" || scene == "Market";
+        bool outdoors = (scene == "Farm" || scene == "Market") && !InteriorRooms.Inside;   // H-2: 가게 안에는 눈·비가 안 옴
         bool snow = data != null && data.snowing;
         bool rain = data != null && data.raining;
         bool show = outdoors && (snow || rain) && !StarHill.Active;

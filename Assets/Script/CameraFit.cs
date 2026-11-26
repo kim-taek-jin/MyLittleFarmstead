@@ -26,6 +26,8 @@ public class CameraFit : MonoBehaviour
         CameraFollow follow = GetComponent<CameraFollow>();
         if (follow != null && follow.enabled) return;   // 넓은 맵: CameraFollow 담당
         if (cam == null || !cam.orthographic) return;
+        RoomData room = InteriorRooms.Current;                 // H-2: 가게나 회관 안이면 그 방에 맞춤
+        if (room != null) { InteriorRooms.FrameCamera(cam, room); return; }
         if (!found)
         {
             if (Time.unscaledTime < nextSearch) return;

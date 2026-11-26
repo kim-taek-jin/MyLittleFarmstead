@@ -224,6 +224,12 @@ def main():
         exported['World'].append(export('World', f'plot_straw_{v}', kfarm.plot_straw(v)))
     exported['World'].append(export('World', 'compost_heap', kfarm.compost_heap()))
     exported['Items'].append(export('Items', 'compost', kfarm.compost_icon()))
+    # ---- H-2: inside the mill, the corner store and the village hall (+ their layout for the game) ----
+    import rooms as RM
+    room_art, room_layouts = RM.all_rooms()
+    for name, canvas in room_art.items():
+        export_image('World', name, canvas.image())
+    RM.export_layout(room_layouts)
     # ---- K-4: the winter solstice and Jeongwol Daeboreum ----
     import k4
     for name, canvas in k4.world_sprites().items():

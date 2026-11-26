@@ -547,6 +547,14 @@ const lakeBlocked = (cx, cy) => '#~RWB'.includes(lakeAt(cx, cy));
 const HILL = /*__HILL__*/null;
 // village map (M): same rules as VillageMap.cs, positions from Assets/Resources/Maps/villagemap.json
 const VMAP = /*__VMAP__*/null;
+// H-2: the mill, the corner store and the village hall (rooms.json, drawn by rooms.py). They sit inside the
+// market scene, east of the market; the room the player stands in decides the camera (InteriorRooms.cs).
+const ROOMS = (/*__ROOMS__*/null || { rooms: [] }).rooms;
+const roomW = (r, px, py) => [r.originX + (px - r.w / 2) / 32, r.originY + (r.h / 2 - py) / 32];
+const roomRect = r => ({ x0: r.originX - r.w / 64, x1: r.originX + r.w / 64, y0: r.originY - r.h / 64, y1: r.originY + r.h / 64 });
+const roomAt = (x, y) => G && G.scene === 'market' ? ROOMS.find(r => { const b = roomRect(r); return x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1; }) : null;
+const roomAnchor = (id, name, fb) => { const r = ROOMS.find(r => r.id === id), a = r && r.anchors.find(a => a.name === name); return a ? roomW(r, a.x, a.y) : fb; };
+const STORE_KEEPER = roomAnchor('store', 'keeper', [3.92, 3.01]);
 const VMAP_IDS = ['farm', 'market', 'forest', 'hill', 'lake', 'starhill'];
 const VMAP_NAME = { farm: 'Home', market: 'Market', forest: 'Back Hill', hill: 'Sunset Hill', lake: 'Reservoir', starhill: 'Star Hill' };
 const HILB = boundsOf(HILL);
@@ -642,7 +650,11 @@ function loadAll() {
 }
 
 // ------------------------------------------------------------------ coordinates
-function sc() { return SCENES[G.scene]; }
+function sc() {
+  const r = roomAt(G.px, G.py);
+  if (r) return { ww: r.w / 32, wh: r.h / 32, cx: r.originX, cy: r.originY, bg: () => 'World/room_' + r.id };   // inside a shop or the hall
+  return SCENES[G.scene];
+}
 function ux() { return CW / sc().ww; }
 function uy() { return CH / sc().wh; }
 function toScreen(wx, wy) { const s = sc(); return [(wx - s.cx) * ux() + CW / 2, CH / 2 - (wy - s.cy) * uy()]; }
@@ -1074,7 +1086,8 @@ const vRestored = v => villagerProgress(v.id).wish >= v.chapters.length;
 const vNext = v => vRestored(v) ? null : v.chapters[villagerProgress(v.id).wish];
 const vReady = v => { const p = villagerProgress(v.id); return p.met && !vRestored(v) && G.day >= p.lastDay + 2; };
 const sittingOut = v => !!v.ex && isEvening(G.hour);
-const vPos = v => sittingOut(v) ? [v.ex, v.ey] : [v.x, v.y];
+const vPos = v => sittingOut(v) ? (v.id === 'mayor' ? roomAnchor('hall', 'mayorSeat', [v.ex, v.ey]) : [v.ex, v.ey])
+                                  : (v.id === 'rosa' ? roomAnchor('mill', 'keeper', [v.x, v.y]) : [v.x, v.y]);   // H-2: Grandma works inside the mill; the village head's evenings by the hall stove
 function villagerSprite(v) { const st = Math.min(3, villagerProgress(v.id).wish); return sittingOut(v) ? `Villagers/${v.id}_sit_${st}` : `Villagers/${v.id}_${st}`; }
 function hasBubble(v) {
   const p = villagerProgress(v.id); if (!p.met) return true;
@@ -1136,7 +1149,7 @@ function saecham(v, food, chapter) {
 }
 function masil(v) {
   S().masilDay = G.day; G.log.masil = true; S().masilCount = (S().masilCount || 0) + 1;
-  const stood = [G.px, G.py]; G.px = v.ex + 0.72; G.py = v.ey; G.sitting = true;
+  const stood = [G.px, G.py]; const seat = vPos(v); G.px = seat[0] + 0.72; G.py = seat[1]; G.sitting = true;
   const standUp = () => { G.sitting = false; [G.px, G.py] = stood; G.hour = Math.min(G.hour + 1, 23); };
   if (vNext(v)?.kind === 'Masil' && vReady(v)) { finishChapter(v, standUp); return; }
   changeHeart(1, 'A quiet evening with a neighbor.');
@@ -1149,7 +1162,7 @@ function letter(v) {
   ask(v.name, 'How should it start? You write, I\'ll talk.', face, () => second('"How are you doing? It\'s Dad."'), () => second('"I\'m sorry. It\'s Dad."'), 'How are you?', "I'm sorry.");
 }
 function onFishCaught() { const m = VILLAGERS.find(v => v.id === 'mina'); if (m && villagerProgress('mina').met && vNext(m)?.kind === 'Fish') finishChapter(m); }
-const CHORES = [{ id: 'steamer', who: 'rosa', scene: 'market', x: -7.8, y: 0.95 }, { id: 'forge', who: 'theo', scene: 'market', x: 1.15, y: 0.85 },
+const CHORES = [{ id: 'steamer', who: 'rosa', scene: 'market', x: roomAnchor('mill', 'steamer', [-7.8, 0.95])[0], y: roomAnchor('mill', 'steamer', [-7.8, 0.95])[1] }, { id: 'forge', who: 'theo', scene: 'market', x: 1.15, y: 0.85 },
                 { id: 'briquettes', who: 'mayor', scene: 'market', x: 4.35, y: -3.35 }, { id: 'sled', who: 'mina', scene: 'farm', x: -6.0, y: -3.55 }];
 const choreNear = () => CHORES.find(s => s.scene === G.scene && near(s.x, s.y + 0.3, 1.4));
 function useChore(s) {
@@ -1169,7 +1182,7 @@ const helpWanted = () => VILLAGERS.find(v => vNext(v)?.kind === 'Pumasi' && vRea
 function Rt() { const r = G.story.rites || (G.story.rites = {}); return Object.assign(r, Object.assign({ dongjiPrep: 0, dongjiMemory: null, dongjiPot: false, dongjiDelivered: [], dongjiDone: false,
   boreumDay: -1, daljipWood: 0, bureom: false, jwibul: false, lit: false, burned: null, wish: null, boreumDone: false }, r)); }
 const RITE = { dongji: 7, prepFrom: 5, steps: 3, bowls: 5, earliest: 12, notice: 2, scheduleFrom: 9 };
-const POT_AT = [-7.6, -0.55], GATE_AT = [2.0, -2.55], DALJIP = ANCHOR('daljip', 18.5, -9.4);
+const POT_AT = roomAnchor('mill', 'pot', [-7.6, -0.55]), GATE_AT = [2.0, -2.55], DALJIP = ANCHOR('daljip', 18.5, -9.4);
 const woodNeed = () => unlocked('favor_hands') ? 3 : 5;
 const boreumSched = () => Rt().boreumDay >= 0 && !Rt().boreumDone;
 const daljipBuilt = () => Rt().daljipWood >= woodNeed();
@@ -1519,7 +1532,9 @@ function interact() {
       const rn = riteNear(); if (rn === 'pot') { useRitePot(); return; } if (rn === 'gate') { useGate(); return; } if (rn === 'daljip') { useDaljip(); return; } }
     if (near(-4.2, -2.0, 1.1)) { share(); return; }
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) { if (G.market.haggled) toast('"We\'ve struck our deal for today. Come back next market day!"', 2.5); else go('haggle', 0, 0); return; }
-    if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) { panel = { kind: 'shop', tab: 'buy' }; return; }
+    if (near(STORE_KEEPER[0], STORE_KEEPER[1] - 0.9, 1.4)) { panel = { kind: 'shop', tab: 'buy' }; return; }   // H-2: buy inside the corner store
+    { const r = !roomAt(G.px, G.py) && ROOMS.find(r => near(r.entranceX, r.entranceY, 1.0)); if (r) { [G.px, G.py] = roomAnchor(r.id, 'arrive', [r.originX, r.originY]); return; } }
+    if (Math.abs(G.px - 3.92) < 2 && G.py > 0.8 && G.py < 2.6) { toast("The corner store's stall. Step inside the store to buy and sell.", 2.5); return; }
   } else if (G.scene === 'hill') {
     if (near(0, -4.4, 1.4)) { go('farm', LADDER[0] - 0.6, LADDER[1] - 1.0); return; }
     if (near(5.1, -2.0, 1.5)) { if (S().benchDay === G.day) toast('You already watched the stars tonight.'); else { S().benchDay = G.day; G.log.rested = true; changeHeart(3, 'You sat on the bench and watched the stars.'); } }
@@ -1922,7 +1937,21 @@ function clampPlayer() {
   if (G.scene === 'market') maxY = 2.4;
   if (G.scene === 'home') { minX = -4.1; maxX = 4.1; maxY = 1.7; minY = G.px > 2.45 && G.px < 3.1 ? -2.1 : -1.55; }   // H-1: the ondol room, the door in the front wall
   if (G.scene === 'hill') { minX = -8.4; maxX = 8.4; minY = -4.6; maxY = -1.2; }
+  const room = roomAt(G.px, G.py);
+  if (room) {   // H-2: inside: the room's walls, the door in the front wall
+    const [lx, back] = roomW(room, 6, room.wallH), [rx, front] = roomW(room, room.w - 6, room.h - room.frontH);
+    const d0 = roomW(room, room.doorX0, 0)[0], d1 = roomW(room, room.doorX1 + 1, 0)[0], inDoor = G.px > d0 + 0.15 && G.px < d1 - 0.15;
+    minX = lx + 0.3; maxX = rx - 0.3; maxY = back + 0.4; minY = inDoor ? front - 0.1 : front + 0.45;
+    if (inDoor && G.py - 0.4 < front - 0.3) { G.px = room.exitX; G.py = room.exitY; return; }   // out the door, back to the lane
+  }
   G.px = Math.max(minX, Math.min(maxX, G.px)); G.py = Math.max(minY, Math.min(maxY, G.py));
+  if (room) for (const f of room.furniture) {   // furniture: push the feet out of each rect
+    const [x0, y1] = roomW(room, f.x0, f.y0), [x1, y0] = roomW(room, f.x1, f.y1), fy = G.py - 0.4;
+    if (G.px > x0 - 0.15 && G.px < x1 + 0.15 && fy > y0 - 0.1 && fy < y1 + 0.1) {
+      const d = [[G.px - (x0 - 0.15), 'l'], [(x1 + 0.15) - G.px, 'r'], [fy - (y0 - 0.1), 'd'], [(y1 + 0.1) - fy, 'u']].sort((a, b) => a[0] - b[0])[0];
+      if (d[1] === 'l') G.px = x0 - 0.15; else if (d[1] === 'r') G.px = x1 + 0.15; else if (d[1] === 'd') G.py = y0 - 0.1 + 0.4; else G.py = y1 + 0.1 + 0.4;
+    }
+  }
   const solids = [];
   if (G.scene === 'home') { for (const x of [-4.0, -3.6]) solids.push([x, 1.25, 0.32]); for (const x of [3.6, 4.0]) solids.push([x, 1.3, 0.32]); for (const x of [2.1, 2.6]) solids.push([x, 1.12, 0.3]); solids.push([0.2, -0.4, 0.3]); }
   if (G.scene === 'farm') {
@@ -2018,7 +2047,7 @@ function renderWorld() {
     else sprite(c, sc().bg(), (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2);
   } else {
     const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH);
-    if (G.scene === 'market' && isMarketDay(G.day) && IMG['World/market_fair']) c.drawImage(IMG['World/market_fair'], 0, 0, CW, CH);   // market-day stalls
+    if (G.scene === 'market' && !roomAt(G.px, G.py) && isMarketDay(G.day) && IMG['World/market_fair']) c.drawImage(IMG['World/market_fair'], 0, 0, CW, CH);   // market-day stalls
   }
   const draws = [];  // [sortY, fn]
   if (G.scene === 'farm') {
@@ -2112,7 +2141,7 @@ function renderWorld() {
   if (G.scene === 'farm') { const tg = guideTarget(guideStep()); if (tg) { const bob = Math.round(Math.abs(Math.sin(performance.now() / 333)) * 4) / 32; draws.push([-1000, () => sprite(c, 'World/guide_arrow', tg[0], tg[1] + bob)]); } }
   // H-1: the bedding, the wardrobe and the table are part of the room picture
   if (G.scene === 'market') {
-    draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
+    draws.push([STORE_KEEPER[1], () => sprite(c, 'World/merchant', STORE_KEEPER[0], STORE_KEEPER[1])]);   // H-2: the auntie behind her counter, inside
     if (isMarketDay(G.day)) draws.push([HAGGLER[1], () => sprite(c, 'World/haggler', HAGGLER[0], HAGGLER[1])]);
     draws.push([-2.5, () => sprite(c, 'World/donation_box', -4.2, -2.0)]);
     draws.push([0, () => sprite(c, G.story.season === 0 ? 'World/exit_sign_winter' : 'World/exit_sign', -8.27, -0.05)]);
@@ -2284,7 +2313,9 @@ function promptText() {
       const ch = choreNear(); if (ch) { const w = VILLAGERS.find(x => x.id === ch.who), c = vNext(w); return c?.kind === 'Pumasi' && c.spot === ch.id && villagerProgress(w.id).invited && vReady(w) ? `[E] Help out (${villagerProgress(w.id).chore}/${c.steps.length})` : ({ steamer: 'Rice-cake steamer', forge: 'Forge and bellows', briquettes: 'Coal briquettes', sled: 'Ice sled' })[ch.id]; } }
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) return G.market.haggled ? 'The old farmer is done haggling for today' : '[E] Haggle with the old farmer';
-    if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade at the stall';
+    if (near(STORE_KEEPER[0], STORE_KEEPER[1] - 0.9, 1.4)) return '[E] Buy and sell';
+    { const r = !roomAt(G.px, G.py) && ROOMS.find(r => near(r.entranceX, r.entranceY, 1.0)); if (r) return `[E] Go into ${r.nameEn}`; }
+    { const r = roomAt(G.px, G.py); if (r) { const d0 = roomW(r, r.doorX0, 0)[0], d1 = roomW(r, r.doorX1, 0)[0], front = roomW(r, 0, r.h - r.frontH)[1]; if (G.px > d0 - 0.4 && G.px < d1 + 0.4 && G.py < front + 1.0) return 'Out to the lane'; } }
     if (G.px < -7) return 'Back to the farm';
   } else if (G.scene === 'sunset') {
     if (near(HRACK[0], HRACK[1], 1.5)) { const h = Hl(); return h.drying.some(d => G.day >= d) ? '[E] Take down the dried persimmons' : has('Persimmon') ? '[E] Hang your persimmons' : h.drying.length ? 'The persimmons are drying' : 'A drying rack for persimmons'; }
