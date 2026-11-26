@@ -28,7 +28,7 @@ public static class ItemNames
         { "Wood", "나무" }, { "Stone", "돌" }, { "Campfire", "모닥불" }, { "Compost", "퇴비" }, { "Agungi", "아궁이" },
         // 장 담그기
         { "Soybeans", "메주콩" }, { "Salt", "소금" }, { "Fresh Meju", "생메주" }, { "Dried Meju", "마른 메주" },
-        { "Doenjang", "된장" }, { "Ganjang", "간장" }, { "Doenjang Stew", "된장찌개" }, { "Braised Potatoes", "감자조림" },
+        { "Doenjang", "된장" }, { "Ganjang", "간장" }, { "Doenjang Stew", "된장찌개" }, { "Braised Potatoes", "감자조림" }, { "Red Bean Porridge", "팥죽" },
         { "Sunshine Shard", "햇살 조각" }, { "Earth's Breath", "대지의 숨결" }, { "Star Fragment", "별 조각" },
     };
 
@@ -66,6 +66,7 @@ public static class ItemNames
         { "Ganjang", "내 장독에서 가른 간장." },
         { "Doenjang Stew", "감자, 당근 넣고 보글보글 끓인 된장찌개. 집밥 맛이에요." },
         { "Braised Potatoes", "내가 담근 간장에 졸인 알감자." },
+        { "Red Bean Porridge", "새알심이 든 동짓날 팥죽. 집집마다 한 그릇씩." },
     };
 
     public static string Description(ItemDef def)

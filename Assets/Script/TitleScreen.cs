@@ -13,7 +13,7 @@ public class TitleScreen : MonoBehaviour
 {
     public static bool Open => instance != null && instance.root != null && instance.root.gameObject.activeSelf;
     // 타이틀이나 오프닝이 떠 있는 동안에는 다른 키(가방, 지도, 앨범, 제작...)를 받지 않음
-    public static bool Blocking => Open || Opening.Open;
+    public static bool Blocking => Open || Opening.Open || ChoiceMenu.Open;
 
     static TitleScreen instance;
     static bool shownThisSession;

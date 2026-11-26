@@ -10,6 +10,8 @@ public class DayFacts
     public bool drank, exhausted, starved, rested;
     public bool warm;            // 아궁이에 불을 때서 방이 뜨끈했음 (K-2)
     public bool pumasi, saecham, masil;   // 이웃 일을 거듦, 새참을 같이 먹음, 마실을 감 (K-3)
+    public string riteNote;      // 절기 의식에서 남은 한 줄 (K-4)
+    public string wishLine;      // 소원지대로 된 날의 한 줄
     public float delta;          // 마음 변화 (일기 문장 고르기에만 씀, 화면에는 숫자를 안 보임)
 }
 
@@ -44,6 +46,8 @@ public static class DayDiary
 
         // 마음에 남은 일: 나쁜 일을 먼저 (그래야 다음 날 고칠 수 있음), 그다음 좋은 일
         var notes = new List<string>();
+        if (!string.IsNullOrEmpty(f.riteNote)) notes.Add(f.riteNote);       // 절기 의식이 있던 날은 그 일이 먼저
+        if (!string.IsNullOrEmpty(f.wishLine)) notes.Add(f.wishLine);
         if (f.starved) notes.Add(Pick(day, ("I skipped meals again.", "또 끼니를 걸렀다."), ("My stomach growled all afternoon.", "오후 내내 배가 고팠다.")));
         if (f.exhausted && !f.passedOut) notes.Add(Pick(day, ("I worked until I had nothing left. Like back in the city.", "기력이 바닥날 때까지 일했다. 도시에서처럼."),
                                                            ("I pushed too hard again.", "또 무리했다.")));

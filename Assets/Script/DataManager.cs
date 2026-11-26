@@ -640,12 +640,13 @@ public class DataManager : MonoBehaviour
     public void NotePumasi() { today.pumasi = true; }
     public void NoteSaecham() { today.saecham = true; }
     public void NoteMasil() { today.masil = true; }
+    public void NoteRite(string diaryLine) { today.riteNote = diaryLine; }
 
     void EndDay(bool passedOut)
     {
         var facts = new DayFacts { passedOut = passedOut, meals = today.mealsEaten, harvested = today.harvested, talked = today.talked,
                                    drank = today.drankWater, exhausted = today.exhausted, starved = today.starved, rested = today.rested,
-                                   pumasi = today.pumasi, saecham = today.saecham, masil = today.masil };
+                                   pumasi = today.pumasi, saecham = today.saecham, masil = today.masil, riteNote = today.riteNote };
         bool forestWas = story.forest != null && story.forest.open, lakeWas = story.lake != null && story.lake.open, hillWas = story.hill != null && story.hill.open;
         int hour = timeManager != null ? timeManager.hour : 22;
         var lines = new List<string>();
@@ -686,6 +687,9 @@ public class DataManager : MonoBehaviour
         story.jang.Ensure();
         if (story.jang.fireToday && !passedOut) { facts.warm = true; delta += 2f; lines.Add(Loc.T("Slept on a warm floor", "뜨끈한 방바닥에서 잤어요") + "  <color=#9dff9d>+2</color>"); }
         story.jang.AdvanceNight(raining || snowing);
+        // K-4: 대보름 소원지에 쓴 대로 산 날
+        story.rites.Ensure();
+        if (Rites.WishKept(story.rites.wish, facts)) { delta += 1f; facts.wishLine = Rites.WishKeptLine(story.rites.wish); }
 
         ChangeHeart(delta, null);
 
@@ -697,8 +701,15 @@ public class DataManager : MonoBehaviour
         // ---- 마음의 계절: 아침에만 바뀜 ----
         Season before = CurrentSeason;
         Season cap = demoMode ? Season.Winter : Season.Autumn;
-        bool demoEndsNow = demoMode && SeasonSystem.ForHeart(heart) >= Season.Spring && !story.IsUnlocked("demo_end");
-        Season after = SeasonSystem.Evaluate(heart, before, cap);
+        // K-4: 겨울 → 봄은 정월대보름 밤을 보낸 뒤에만. 마음이 봄 문턱에 닿으면 대보름 날이 정해짐
+        bool springReady = SeasonSystem.ForHeart(heart) >= Season.Spring;
+        int newDay = (timeManager != null ? timeManager.day : 0) + 1;
+        bool holdSpring = before == Season.Winter && Rites.HoldSpring(story.rites);
+        if (holdSpring && springReady && Rites.Schedule(story.rites, newDay))
+            lines.Add(Loc.T($"Spring is at the door. The village will greet it on Jeongwol Daeboreum (day {story.rites.boreumDay}).",
+                            $"봄이 문 앞에 와 있어요. 마을은 정월대보름({story.rites.boreumDay}일째)에 봄을 맞아요."));
+        bool demoEndsNow = demoMode && springReady && story.rites.boreumDone && !story.IsUnlocked("demo_end");
+        Season after = holdSpring ? Season.Winter : SeasonSystem.Evaluate(heart, before, cap);
         story.season = (int)after;
         if ((int)after > story.highestSeason) story.highestSeason = (int)after;
         // 색 물결: 아침 요약을 닫으면 퍼짐 (계절이 바뀐 아침은 크게)
@@ -800,6 +811,7 @@ public class DataManager : MonoBehaviour
             mejuSeason = after == Season.Winter && story.jang.Fermenting() == 0 && story.jang.hung.Count == 0,
             lidsOpen = story.jang.lidsOpen,
             helpWanted = Neighbors.HelpWanted(story, VillagerDB.All, day),
+            rite = Rites.Broadcast(story.rites, day),
             forestOpened = !forestWas && story.forest != null && story.forest.open,
             lakeOpened = !lakeWas && story.lake != null && story.lake.open,
             hillOpened = !hillWas && story.hill != null && story.hill.open,

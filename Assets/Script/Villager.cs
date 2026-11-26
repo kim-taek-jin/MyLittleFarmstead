@@ -120,6 +120,16 @@ public class Villager : MonoBehaviour
         UpdatePlace();
         RefreshVisual();
 
+        // 대보름 밤: 미나는 논의 달집 둘레에 가 있음 (RiteSpot이 그림)
+        bool away = villagerId == "mina" && RiteScenes.MinaAtDaljip;
+        body.enabled = !away;
+        if (away)
+        {
+            if (bubble != null) bubble.enabled = false;
+            if (InRange == this) InRange = null;
+            return;
+        }
+
         if (bubble != null)
         {
             bool show = HasSomethingToSay() && !HUD.DialogueOpen;
@@ -166,6 +176,9 @@ public class Villager : MonoBehaviour
             HUD.Say(def.name, first.ToArray(), Portrait);
             return;
         }
+
+        // 절기 의식 (K-4): 동짓날 팥죽, 대보름 아침 부럼
+        if (RiteScenes.TryTalk(def)) return;
 
         // 저녁: 마실
         if (sittingOut)

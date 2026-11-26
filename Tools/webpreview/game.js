@@ -73,6 +73,7 @@ reg('Dried Meju', 'Special', { sell: 40, desc: 'Meju dried in the winter wind. P
 reg('Doenjang', 'Resource', { sell: 60, desc: 'Soybean paste you made yourself.' });
 reg('Ganjang', 'Resource', { sell: 50, desc: 'Soy sauce you made yourself.' });
 reg('Doenjang Stew', 'Food', { sell: 180, hunger: 45, thirst: 10, heart: 5, desc: 'Doenjang, potato and carrot, bubbling in an earthen pot.' });
+reg('Red Bean Porridge', 'Food', { sell: 0, hunger: 40, heart: 3, desc: 'Winter solstice porridge with little rice balls. One bowl for every house.' });
 reg('Braised Potatoes', 'Food', { sell: 160, hunger: 35, heart: 3, desc: 'Potatoes braised sweet and salty in your own ganjang.' });
 reg('Campfire', 'Station', { sell: 20, desc: 'Needed for cooking recipes.' });
 // the forest (map stage 3)
@@ -1162,6 +1163,139 @@ function useChore(s) {
 }
 const helpWanted = () => VILLAGERS.find(v => vNext(v)?.kind === 'Pumasi' && vReady(v))?.id || null;
 
+// ------------------------------------------------------------------ K-4: the winter solstice and Jeongwol Daeboreum (RiteState.cs, RiteScenes.cs)
+function Rt() { const r = G.story.rites || (G.story.rites = {}); return Object.assign(r, Object.assign({ dongjiPrep: 0, dongjiMemory: null, dongjiPot: false, dongjiDelivered: [], dongjiDone: false,
+  boreumDay: -1, daljipWood: 0, bureom: false, jwibul: false, lit: false, burned: null, wish: null, boreumDone: false }, r)); }
+const RITE = { dongji: 7, prepFrom: 5, steps: 3, bowls: 5, earliest: 12, notice: 2 };
+const POT_AT = [-7.6, -0.55], GATE_AT = [2.0, -2.55], DALJIP = ANCHOR('daljip', 6.5, -4.9);
+const woodNeed = () => unlocked('favor_hands') ? 3 : 5;
+const boreumSched = () => Rt().boreumDay >= 0 && !Rt().boreumDone;
+const daljipBuilt = () => Rt().daljipWood >= woodNeed();
+const boreumNight = () => boreumSched() && G.day >= Rt().boreumDay && G.hour >= 19;
+const gathering = () => boreumNight() && daljipBuilt();
+const dongjiWindow = () => G.day >= RITE.prepFrom && G.day <= RITE.dongji;
+const canDeliver = who => G.day === RITE.dongji && Rt().dongjiPot && !Rt().dongjiDone && !Rt().dongjiDelivered.includes(who);
+const MEMORY = { dinner: ['Convenience-store dinners, eaten alone', 'Rolling rice balls, I remembered all those dinners eaten alone. Tonight I ate with someone.'],
+  train: ['The last train home', "Rolling rice balls, I remembered the last train home. I won't need to run for it anymore."],
+  office: ['Office lights that never went off', 'Rolling rice balls, I remembered the office lights that never went off. Here, the lights go out at night.'] };
+const BURN = { badge: ['My company ID badge', 'The badge that hung around my neck curls up in the fire. My neck feels lighter.'],
+  overtime: ['My overtime log', 'Page after page of late nights goes up in sparks. Every one of those hours was mine.'],
+  mail: ['A printout of unread emails', 'Three hundred unread emails, and none of them can reach me here.'] };
+const WISH = { sleep: ['I want to sleep well', 'Just like I wrote on my wish paper, I slept well.'], laugh: ['I want to laugh with someone', 'Just like I wrote on my wish paper, I laughed with someone.'],
+  eat: ['I want to eat slowly', 'Just like I wrote on my wish paper, I ate slowly.'], rest: ["It's okay to do nothing", 'Just like I wrote on my wish paper, I did nothing for a while. It was fine.'] };
+const DONGJI_LINE = { rosa: "Me too? Ha, first time in years someone's served me a bowl. ...It's sweet.", theo: "Red beans keep the bad stuff away, they say. ...Thanks. I'll eat it while it's hot.",
+  mina: "Grandma says I have to eat as many rice balls as I am old! ...That's nine. I can do it.", mayor: 'Ah, patjuk on the winter solstice! Now it really feels like the village is alive.' };
+const vName = id => VILLAGERS.find(v => v.id === id).name, vFace = id => `Villagers/${id}_${Math.min(3, villagerProgress(id).wish)}`;
+const wishKept = (w, f) => w === 'sleep' ? f.onTime && !f.passedOut : w === 'laugh' ? !!f.masil : w === 'eat' ? f.meals >= 1 : w === 'rest' ? !!f.rested : false;
+function choose(title, options, pick) { panel = { kind: 'choice', title, options, pick }; }
+function riteBroadcast(day) {
+  const r = Rt();
+  if (!r.dongjiDone && day === RITE.prepFrom) return 'The winter solstice is the day after tomorrow. Grandma Boksun is making red bean porridge at the mill. Lend a hand sorting beans, eh?';
+  if (!r.dongjiDone && day === RITE.dongji) return "Today is the winter solstice. Share a bowl of red bean porridge, and don't forget to scatter beans at your gate.";
+  if (!boreumSched()) return null;
+  const left = r.boreumDay - day;
+  if (left === 2) return 'The first full moon, Jeongwol Daeboreum, is in two days! Bring wood to the empty paddy south of the new house for the moon-house bonfire.';
+  if (left === 1) return 'Tomorrow is Daeboreum. Anyone helping stack the moon house, head down to the paddy.';
+  if (left === 0) return 'Today is Jeongwol Daeboreum! Crack your nuts this morning, and at seven tonight we light the moon house in the paddy!';
+  return left < 0 ? 'The moon house is still standing. Come down to the paddy this evening, even if it\'s a day late.' : null;
+}
+function riteTalk(v) {
+  const r = Rt();
+  if (v.id === 'rosa' && G.day === RITE.dongji && r.dongjiPrep >= RITE.steps && !r.dongjiPot && !r.dongjiDone) { takePot(); return true; }
+  if (canDeliver(v.id) && has('Red Bean Porridge')) {
+    remove('Red Bean Porridge', 1); r.dongjiDelivered.push(v.id); r.dongjiDone = r.dongjiDelivered.length >= RITE.bowls;
+    say(v.name, [DONGJI_LINE[v.id]], villagerSprite(v), r.dongjiDone ? finishDongji : null); return true;
+  }
+  if (v.id === 'mina' && boreumSched() && G.day >= r.boreumDay && G.hour >= 6 && G.hour < 18 && !r.bureom) {
+    say(v.name, ['Grandma says to bite these. Walnuts and peanuts. They\'re called bureom.',
+      "If you crack something hard with your teeth on the morning of Daeboreum, you won't get boils all year. ...I don't know what boils are either.",
+      'On three, together! One, two, three... *crack!*'], villagerSprite(v), () => { r.bureom = true; changeHeart(1, 'Crack! No boils this year.'); G.log.riteNote = 'Mina and I cracked walnuts with our teeth this morning. Hers went flying.'; });
+    return true;
+  }
+  return false;
+}
+function takePot() {
+  Rt().dongjiPot = true; add('Red Bean Porridge', RITE.bowls);
+  say(vName('rosa'), ['Five bowls. One for each house: the Dongsu place, little Mina, the village head... and me, of course.', 'And the last one, scatter it at your own gate. Red beans keep the bad things out.'], vFace('rosa'));
+}
+function finishDongji() {
+  G.log.riteNote = "On the solstice I carried porridge from house to house. The longest night, and I wasn't cold.";
+  changeHeart(4, 'Every house got a bowl of porridge.'); requestWave(false);
+  showAnnounce('[#ffd84a]Winter solstice[/]\n\nThe longest night of the year.\nFrom tomorrow, the days grow longer again.', 6);
+}
+function useRitePot() {
+  const r = Rt();
+  if (dongjiWindow() && G.hour >= 6 && G.hour < 20 && r.dongjiPrep < RITE.steps && !r.dongjiDone) {
+    if (!useEnergy(2)) return; r.dongjiPrep++; doAction('harvest', POT_AT[0], POT_AT[1]); burst('dust', POT_AT[0], POT_AT[1]);
+    toast(['You sort the red beans, picking out the little stones.', 'You press the boiled beans through a sieve. The kitchen smells sweet.', 'You roll little rice-flour balls (saealsim) between your palms.'][r.dongjiPrep - 1] + `  (${r.dongjiPrep}/${RITE.steps})`, 2.5);
+    if (r.dongjiPrep >= RITE.steps) choose('Rolling rice balls, something from the city comes back to you...', Object.values(MEMORY).map(m => m[0]), i => {
+      const id = Object.keys(MEMORY)[i]; r.dongjiMemory = id; G.log.riteNote = MEMORY[id][1];
+      say(vName('rosa'), ["You've gone quiet. ...You don't have to say. Rice balls are for rolling things up and letting them go.", 'Come back on the solstice. I\'ll ladle you out the porridge.'], vFace('rosa'));
+    });
+    return;
+  }
+  if (G.day === RITE.dongji && r.dongjiPrep >= RITE.steps && !r.dongjiPot && !r.dongjiDone) { takePot(); return; }
+  toast(r.dongjiPrep >= RITE.steps && !r.dongjiPot ? 'The porridge will be ready on the solstice (day 7).' : 'A big pot of red bean porridge, bubbling.', 2.5);
+}
+function useGate() {
+  const r = Rt(); if (!canDeliver('gate') || !has('Red Bean Porridge')) return false;
+  remove('Red Bean Porridge', 1); r.dongjiDelivered.push('gate'); r.dongjiDone = r.dongjiDelivered.length >= RITE.bowls; doAction('water', GATE_AT[0], GATE_AT[1]);
+  toast('You scatter red beans at the gate. Bad memories stop here.', 3); if (r.dongjiDone) finishDongji(); return true;
+}
+function useDaljip() {
+  const r = Rt();
+  if (boreumSched() && G.day >= r.boreumDay - RITE.notice && !daljipBuilt()) {
+    const have = G.inv.Wood || 0; if (!have) { toast(`The moon house needs wood. (${r.daljipWood}/${woodNeed()})`, 3); return; }
+    const n = Math.min(have, woodNeed() - r.daljipWood); r.daljipWood += n; remove('Wood', n); doAction('harvest', DALJIP[0], DALJIP[1]); burst('dust', DALJIP[0], DALJIP[1]);
+    if (!daljipBuilt()) { toast(`You stack the wood. (${r.daljipWood}/${woodNeed()})`, 2.5); return; }
+    G.log.pumasi = true;
+    say(vName('mayor'), [...(unlocked('favor_hands') ? ['See? One announcement and the whole village came out. Pumasi pays back.'] : []),
+      "Grandma Boksun brought straw, Dongsu brought pine branches, and Mina tied the rope. It's a fine moon house.", `Seven o'clock on Daeboreum night (day ${r.boreumDay}). Don't be late.`], vFace('mayor'));
+    return;
+  }
+  if (daljipBuilt() && boreumNight()) { ceremony(); return; }
+  if (daljipBuilt() && boreumSched()) { toast(G.day < r.boreumDay ? `The moon house is ready. Daeboreum is day ${r.boreumDay}, at seven in the evening.` : 'Come back at seven this evening.', 3); return; }
+  if (r.boreumDone) toast('Where the moon house burned. The ashes are still warm.', 2.5);
+}
+let jwibul = null;
+function ceremony() {
+  const r = Rt();
+  if (!r.jwibul) { say(vName('mina'), ['I put embers in the can! Swing it round and round, like this!', '(Hold the wire and swing. A ring of fire spins in the dark.)'], vFace('mina'), () => { jwibul = { t: 0, done: () => { r.jwibul = true; moonrise(); } }; }); return; }
+  moonrise();
+}
+function moonrise() {
+  say(vName('mayor'), ["There! The moon's up! Light it, light it!", 'Everyone, make a wish when the flames go up.'], vFace('mayor'), () => {
+    Rt().lit = true;
+    panel = { kind: 'view', layers: ['rite_moon'], caption: '[#ffd84a]The first full moon of the year[/]   The moon house burns, and the village stands around it.', onClose: burnChoice };
+  });
+}
+function burnChoice() {
+  choose('You brought something from the city. What goes into the fire?', Object.values(BURN).map(b => b[0]), i => {
+    const id = Object.keys(BURN)[i]; Rt().burned = id; say('Me', [BURN[id][1]], null, wishChoice);
+  });
+}
+function wishChoice() {
+  choose('A wish paper. One wish, just for you.', Object.values(WISH).map(w => w[0]), i => {
+    const r = Rt(); r.wish = Object.keys(WISH)[i]; r.lit = true; r.boreumDone = true;
+    G.log.riteNote = `I put ${BURN[r.burned][0][0].toLowerCase() + BURN[r.burned][0].slice(1)} in the moon house fire, and wrote "${WISH[r.wish][0]}" on a wish paper.`;
+    say(vName('rosa'), [`Tied your wish on? "${WISH[r.wish][0]}"... good. The fire will carry it up.`], vFace('rosa'),
+      () => say(vName('mayor'), ["Well then. Spring will be here tomorrow morning. You'll see."], vFace('mayor'), () => { changeHeart(6, 'The village greeted the first full moon together.'); requestWave(true); }));
+  });
+}
+function riteNear() {
+  if (G.scene === 'market' && dongjiWindow() && !Rt().dongjiDone && near(POT_AT[0], POT_AT[1] + 0.3, 1.5)) return 'pot';
+  if (G.scene === 'farm' && canDeliver('gate') && has('Red Bean Porridge') && near(GATE_AT[0], GATE_AT[1] + 0.3, 1.5)) return 'gate';
+  if (G.scene === 'farm' && (boreumSched() && G.day >= Rt().boreumDay - RITE.notice || Rt().boreumDone && S().season === 0) && near(DALJIP[0], DALJIP[1] - 0.2, 1.6)) return 'daljip';
+  return null;
+}
+function ritePrompt() {
+  const n = riteNear(), r = Rt(); if (!n) return null;
+  if (n === 'pot') return r.dongjiPrep < RITE.steps ? `[E] Help with the porridge (${r.dongjiPrep}/${RITE.steps})` : G.day === RITE.dongji && !r.dongjiPot ? '[E] Take the porridge' : 'Red bean porridge pot';
+  if (n === 'gate') return '[E] Scatter red beans at the gate';
+  if (!daljipBuilt() && boreumSched()) return `[E] Stack wood on the moon house (${r.daljipWood}/${woodNeed()})`;
+  return boreumNight() ? '[#ffd84a][E] Join the Daeboreum rite[/]' : 'The moon house';
+}
+
 // ------------------------------------------------------------------ day end (DataManager.EndDay)
 function trySleep() {
   if (G.hour < 18 && G.energy > maxEnergy() * 0.25) { toast("It's too early to sleep. (You can sleep after 18:00)"); return; }
@@ -1171,7 +1305,7 @@ function endDay(passedOut) {
   const lines = []; let delta = 0;
   const facts = { passedOut, lateNight: !passedOut && G.hour >= 24, onTime: !passedOut && G.hour < 24, meals: G.log.meals, harvested: G.log.harvested,
                   talked: G.log.talked || 0, drank: G.log.drank, exhausted: G.log.exhausted, starved: G.log.starved, rested: !!G.log.rested,
-                  pumasi: !!G.log.pumasi, saecham: !!G.log.saecham, masil: !!G.log.masil };
+                  pumasi: !!G.log.pumasi, saecham: !!G.log.saecham, masil: !!G.log.masil, riteNote: G.log.riteNote };
   const wasOpen = [F().open, Lk().open, Hl().open], seasonBefore = S().season;
   if (passedOut) { delta -= 8; lines.push('Passed out from exhaustion  [#ff8080]-8[/]'); const lost = Math.min(Math.floor(G.gold / 10), 100); if (lost) { G.gold -= lost; lines.push(`Someone carried you home... you lost ${lost}G`); } }
   else if (G.hour < 24) { delta += 4; lines.push('Went to bed on time  [#9dff9d]+4[/]'); report('sleep_early'); }
@@ -1185,12 +1319,16 @@ function endDay(passedOut) {
     if (j.fireToday && !passedOut) { facts.warm = true; delta += 2; lines.push('Slept on a warm floor  [#9dff9d]+2[/]'); }
     if (j.lidsOpen) for (const jar of j.jars) if (jar.start >= 0) { if (G.raining || G.snowing) jar.rain++; else jar.care++; }
     j.fireToday = false; }
+  if (wishKept(Rt().wish, facts)) { delta += 1; facts.wishLine = WISH[Rt().wish][1]; }
   changeHeart(delta);
   G.hunger = Math.max(0, G.hunger - 15); G.thirst = Math.max(0, G.thirst - 20); G.health = Math.min(100, G.health + 30);
 
   // seasons of the heart
   const before = S().season; let after = before; const target = THRESH.filter(t => G.heart >= t).length - 1;
-  if (target > before) after = target; else if (target < before && G.heart < THRESH[before] - 5) after = before - 1;
+  const holdSpring = before === 0 && !Rt().boreumDone;   // K-4: spring only after the Daeboreum night
+  if (holdSpring && target >= 1 && Rt().boreumDay < 0) { Rt().boreumDay = Math.max(G.day + 1 + RITE.notice, RITE.earliest); lines.push(`Spring is at the door. The village will greet it on Jeongwol Daeboreum (day ${Rt().boreumDay}).`); }
+  if (holdSpring) after = 0;
+  else if (target > before) after = target; else if (target < before && G.heart < THRESH[before] - 5) after = before - 1;
   S().season = after; S().highest = Math.max(S().highest, after); if (after >= 3) unlock('season_autumn');
   if (after > before) requestWave(true); else if (delta >= 4) requestWave(false);
   // weather follows mood
@@ -1240,7 +1378,7 @@ function endDay(passedOut) {
                (notes.length ? `\n\n[#c8c0b0]${notes.join('\n')}[/]` : '') + todayPreview(after), 10);
   queueBroadcast(broadcastLines({ day: G.day, before: seasonBefore, after, raining: G.raining, snowing: G.snowing,
     forestOpened: !wasOpen[0] && F().open, lakeOpened: !wasOpen[1] && Lk().open, hillOpened: !wasOpen[2] && Hl().open,
-    mejuSeason: after === 0 && !Jg().jars.some(x => x.start >= 0) && !Jg().hung.length, lidsOpen: Jg().lidsOpen, helpWanted: helpWanted() }));
+    mejuSeason: after === 0 && !Jg().jars.some(x => x.start >= 0) && !Jg().hung.length, lidsOpen: Jg().lidsOpen, helpWanted: helpWanted(), rite: riteBroadcast(G.day) }));
   letters();
   save();
 }
@@ -1331,7 +1469,8 @@ function interact() {
     return;
   }
   if (G.scene === 'farm') {
-    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) { talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; } }
+    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0) && !(v.id === 'mina' && gathering())); if (v) { if (!riteTalk(v)) talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; }
+      const rn = riteNear(); if (rn === 'pot') { useRitePot(); return; } if (rn === 'gate') { useGate(); return; } if (rn === 'daljip') { useDaljip(); return; } }
     if (near(COMPOST[0], COMPOST[1], 1.4)) { useHeap(); return; }
     { const s = jangSpot(); if (s === 'agungi') { useAgungi(); return; } if (s === 'rack') { useMejuRack(); return; } if (s === 'jars') { useJangdok(); return; } }
     if (near(WELL[0], WELL[1] - 0.4, 1.3)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
@@ -1340,7 +1479,8 @@ function interact() {
   } else if (G.scene === 'home') {
     if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) { trySleep(); return; }
   } else if (G.scene === 'market') {
-    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) { talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; } }
+    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0) && !(v.id === 'mina' && gathering())); if (v) { if (!riteTalk(v)) talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; }
+      const rn = riteNear(); if (rn === 'pot') { useRitePot(); return; } if (rn === 'gate') { useGate(); return; } if (rn === 'daljip') { useDaljip(); return; } }
     if (near(-4.2, -2.0, 1.1)) { share(); return; }
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) { if (G.market.haggled) toast('"We\'ve struck our deal for today. Come back next market day!"', 2.5); else go('haggle', 0, 0); return; }
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) { panel = { kind: 'shop', tab: 'buy' }; return; }
@@ -1522,6 +1662,12 @@ function drawPanel() {
     L.push(`\n[#8fb8ff]Fish caught[/]  ` + ['Minnow', 'Carp', 'Golden Koi', 'Bluegill', 'Moonfin', 'Glassfish'].map(f => s.fish[f] ? `${f} x${s.fish[f]}` : '???').join('   '));
     drawRich(L.join('\n'), x + 30, y + 24, 20, 840);
     drawRich('[J] or [Esc] Close', x + w - 24, y + h - 40, 18, 400, 'right', '#c8c0b0');
+  } else if (panel.kind === 'choice') {
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, CW, CH);
+    const bw = 760, bh = 420, bx = (CW - bw) / 2, by = (CH - bh) / 2; box(bx, by, bw, bh);
+    drawRich(`[#ffd84a]${panel.title}[/]`, CW / 2, by + 28, 22, 700, 'center');
+    panel.options.forEach((o, i) => { const oy = by + 100 + i * 68; box(bx + 50, oy, bw - 100, 56, 'rgba(32,24,18,0.95)', '#735638');
+      drawRich(`[#ffd84a][${i + 1}][/]  ${o}`, bx + 72, oy + 16, 20, bw - 140); hit(bx + 50, oy, bw - 100, 56, () => { const pk = panel.pick; panel = null; pk(i); }); });
   } else if (panel.kind === 'view') {
     ctx.fillStyle = 'rgba(10,8,12,0.94)'; ctx.fillRect(0, 0, CW, CH);
     const vw = 1024, vh = 576, vx = (CW - vw) / 2, vy = 14;
@@ -1572,6 +1718,7 @@ function drawPanel() {
 // ------------------------------------------------------------------ update
 let frame = 0, speed = 1, last = 0;
 function update(dt) {
+  if (jwibul) { jwibul.t += dt; if (jwibul.t >= 2.6) { const d = jwibul.done; jwibul = null; d(); } }   // K-4: jwibul ring
   frame++;
   if (screen) { updateScreen(dt); clearPressed(); return; }
   updateBroadcast(dt, pressed.Space || pressed.Enter);
@@ -1589,6 +1736,11 @@ function update(dt) {
     }
     clearPressed(); return;
   }
+  if (panel && panel.kind === 'choice') {
+    for (let i = 0; i < panel.options.length; i++) if (pressed['Digit' + (i + 1)]) { const pk = panel.pick; panel = null; pk(i); break; }
+    clearPressed(); return;
+  }
+  if (panel && panel.kind === 'view' && panel.onClose && (pressed.Escape || pressed.KeyE || pressed.Space)) { const cb = panel.onClose; panel = null; clearPressed(); cb(); return; }
   if (panel) {
     if (pressed.Escape || (panel.kind === 'view' && (pressed.KeyE || pressed.Space)) || (panel.kind === 'shop' && pressed.KeyE) || (panel.kind === 'craft' && pressed.KeyC) || (panel.kind === 'journal' && pressed.KeyJ) || (panel.kind === 'album' && pressed.KeyP) || (panel.kind === 'map' && pressed.KeyM)) panel = null;
     else if (panel.kind === 'album') { if (pressed.ArrowLeft) panel.page = (panel.page + 3) % 4; if (pressed.ArrowRight) panel.page = (panel.page + 1) % 4; }
@@ -1921,7 +2073,19 @@ function renderWorld() {
     draws.push([0, () => sprite(c, G.story.season === 0 ? 'World/exit_sign_winter' : 'World/exit_sign', -8.27, -0.05)]);
   }
   if (G.scene === 'hill') for (const s of G.stars) draws.push([s.y, () => sprite(c, 'Items/star_fragment', s.x, s.y, 0.5 * (1 + Math.sin(performance.now() / 160 + s.x) * 0.1))]);
-  for (const v of VILLAGERS) if (v.scene === G.scene) {
+  if (G.scene === 'market' && dongjiWindow() && !Rt().dongjiDone) draws.push([POT_AT[1], () => sprite(c, 'World/rite_pot', POT_AT[0], POT_AT[1], 1, 'bottom')]);
+  if (G.scene === 'farm') {
+    const r = Rt();
+    if (r.dongjiDelivered.includes('gate') && S().season === 0) draws.push([-997, () => sprite(c, 'World/rite_redbeans', GATE_AT[0], GATE_AT[1], 1, 'bottom')]);
+    let dk = null; const fire = Math.floor(performance.now() / 160) % 2 ? 'World/daljip_fire_1' : 'World/daljip_fire_0';
+    if (r.boreumDone) dk = S().season === 0 ? (G.hour >= 19 && G.day <= r.boreumDay + 1 ? fire : 'World/daljip_ash') : null;
+    else if (r.lit) dk = fire;
+    else if (boreumSched() && G.day >= r.boreumDay - RITE.notice) dk = daljipBuilt() ? 'World/daljip_built' : 'World/daljip_frame';
+    if (dk) draws.push([DALJIP[1], () => sprite(c, dk, DALJIP[0], DALJIP[1], 1, 'bottom')]);
+    if (gathering() && !r.boreumDone) [['rosa', -1.5, -0.2], ['theo', 1.5, -0.1], ['mayor', -0.9, -0.95], ['mina', 0.95, -0.95]].forEach(([id, dx, dy]) =>
+      draws.push([DALJIP[1] + dy, () => sprite(c, vFace(id), DALJIP[0] + dx, DALJIP[1] + dy + 0.45)]));
+  }
+  for (const v of VILLAGERS) if (v.scene === G.scene && !(v.id === 'mina' && gathering())) {
     const [vx, vy] = vPos(v);
     draws.push([vy - 0.45, () => {
       const k = 1 + Math.sin((v.pulse || 0) * Math.PI) * 0.15; sprite(c, villagerSprite(v), vx, vy, k);
@@ -1935,6 +2099,7 @@ function renderWorld() {
   }
   if (G.scene !== 'haggle') {
     const frameIdx = G.step === 1 ? 1 : G.step === 3 ? 2 : 0;
+    if (jwibul) for (let i = 0; i < 10; i++) { const a = jwibul.t * 9 - i * 0.22; draws.push([-900, () => sprite(c, 'World/jwibul_spark', G.px + Math.cos(a) * 0.75, G.py + 0.1 + Math.sin(a) * 0.75, 1, 'center', false, Math.max(0, 1 - i / 10) * Math.min(1, (2.6 - jwibul.t) * 2))]); }
     const pkey = G.sitting ? 'Player/player_sit' : act ? `Player/player_${act.kind}_${G.dir}_${act.t > 0.2 ? 0 : 1}` : `Player/player_${G.dir}_${frameIdx}`;
     draws.push([G.py - 0.45, () => sprite(c, pkey, G.px, G.py, 1, 'center', G.dir === 'side' && G.facingLeft)]);
     for (const f of fx) draws.push([-900, () => {
@@ -2049,7 +2214,8 @@ function renderUI() {
 }
 function promptText() {
   if (G.scene === 'farm') {
-    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
+    { const rp = ritePrompt(); if (rp && !VILLAGERS.some(v => v.scene === G.scene && near(...vPos(v), 1.0))) return rp;
+      const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
       const ch = choreNear(); if (ch) { const w = VILLAGERS.find(x => x.id === ch.who), c = vNext(w); return c?.kind === 'Pumasi' && c.spot === ch.id && villagerProgress(w.id).invited && vReady(w) ? `[E] Help out (${villagerProgress(w.id).chore}/${c.steps.length})` : ({ steamer: 'Rice-cake steamer', forge: 'Forge and bellows', briquettes: 'Coal briquettes', sled: 'Ice sled' })[ch.id]; } }
     if (near(3.68, -0.4, 1.2)) return '[E] Drink and refill your watering can';
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
@@ -2065,7 +2231,8 @@ function promptText() {
     }
   } else if (G.scene === 'home') { if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) return '[E] Sleep and end the day'; if (G.px > 6.8) return 'Back to the farm';
   } else if (G.scene === 'market') {
-    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
+    { const rp = ritePrompt(); if (rp && !VILLAGERS.some(v => v.scene === G.scene && near(...vPos(v), 1.0))) return rp;
+      const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
       const ch = choreNear(); if (ch) { const w = VILLAGERS.find(x => x.id === ch.who), c = vNext(w); return c?.kind === 'Pumasi' && c.spot === ch.id && villagerProgress(w.id).invited && vReady(w) ? `[E] Help out (${villagerProgress(w.id).chore}/${c.steps.length})` : ({ steamer: 'Rice-cake steamer', forge: 'Forge and bellows', briquettes: 'Coal briquettes', sled: 'Ice sled' })[ch.id]; } }
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) return G.market.haggled ? 'The old farmer is done haggling for today' : '[E] Haggle with the old farmer';
@@ -2285,6 +2452,8 @@ function diaryLines(f, day) {
   else if (f.delta >= 0) lines.push(pickLine(day, ["An ordinary day. That's fine too.", 'A quiet day.', "Nothing special happened. I'm still here."]));
   else lines.push(pickLine(day, ['A hard day.', 'Today felt heavy.', "I didn't take care of myself today."]));
   const notes = [];
+  if (f.riteNote) notes.push(f.riteNote);
+  if (f.wishLine) notes.push(f.wishLine);
   if (f.starved) notes.push(pickLine(day, ['I skipped meals again.', 'My stomach growled all afternoon.']));
   if (f.exhausted && !f.passedOut) notes.push(pickLine(day, ['I worked until I had nothing left. Like back in the city.', 'I pushed too hard again.']));
   if (f.lateNight) notes.push(pickLine(day, ['I stayed up far too late.', 'Midnight came and went.']));
@@ -2311,6 +2480,7 @@ function broadcastLines(n) {
   if (n.lakeOpened) body.push('The reeds by the reservoir have cleared. You can walk down there now.');
   if (n.hillOpened) body.push('The lane up to Sunset Hill is open.');
   if (isMarketDay(n.day)) body.push('Today is market day. The stalls are up in the lane, so drop by.'); else if (daysUntilMarket(n.day) === 1) body.push('Tomorrow is market day. Get your things ready to sell.');
+  if (n.rite) body.push(n.rite);
   if (n.snowing) body.push('Snow tonight made the roads slippery. Careful out there, especially our elders.'); else if (n.raining) body.push("It's raining, so keep your sauce jar lids closed.");
   if ((n.raining || n.snowing) && n.lidsOpen) body.push('And whoever left their jar lids open, close them quick!');
   if (n.mejuSeason && n.day >= 3 && n.day % 4 === 3) body.push('Winter is meju season. Soybeans and salt are at the corner store in the market lane.');

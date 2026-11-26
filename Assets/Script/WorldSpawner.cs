@@ -40,7 +40,8 @@ public static class WorldSpawner
             MarketFair.Create(scene, mat);   // 장날이면 노점과 흥정 할아버지
         }
 
-        NeighborScenes.CreateSpots(scene, mat);   // K-3: 품앗이 자리 (떡 시루, 화덕, 연탄, 썰매) + 마을회관
+        NeighborScenes.CreateSpots(scene, mat);
+        RiteScenes.Create(scene, mat);            // K-4: 팥죽 솥, 대문, 달집   // K-3: 품앗이 자리 (떡 시루, 화덕, 연탄, 썰매) + 마을회관
 
         Spirit.EnsureSpawned();
     }

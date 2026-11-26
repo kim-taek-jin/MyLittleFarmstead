@@ -12,6 +12,7 @@ public class MorningNews
     public bool mejuSeason;        // 겨울인데 아직 장을 안 담갔음 (K-2)
     public bool lidsOpen;          // 장독 뚜껑이 열려 있음
     public string helpWanted;      // 일손이 필요한 이웃 id (K-3 품앗이)
+    public string rite;            // 절기 의식 소식 (K-4, Rites.Broadcast)
 }
 
 public static class VillageBroadcast
@@ -37,6 +38,7 @@ public static class VillageBroadcast
             body.Add(Loc.T("Today is market day. The stalls are up in the lane, so drop by.", "오늘은 오일장 서는 날입니다. 장터에 한번들 들러 보세요."));
         else if (MarketState.DaysUntilMarket(n.day) == 1)
             body.Add(Loc.T("Tomorrow is market day. Get your things ready to sell.", "내일은 장날입니다. 내다 팔 것들 미리 챙겨 두시고요."));
+        if (!string.IsNullOrEmpty(n.rite)) body.Add(n.rite);
         if (n.snowing) body.Add(Loc.T("Snow tonight made the roads slippery. Careful out there, especially our elders.", "눈이 와서 길이 미끄럽습니다. 어르신들 특히 조심하십시오."));
         else if (n.raining) body.Add(Loc.T("It's raining, so keep your sauce jar lids closed.", "비가 오니 장독 뚜껑들 꼭 덮어 두시고요."));
         if ((n.raining || n.snowing) && n.lidsOpen)

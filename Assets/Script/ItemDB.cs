@@ -110,6 +110,8 @@ public static class ItemDB
         Register(new ItemDef { name = "Ganjang", category = ItemCategory.Resource, sellPrice = 50, color = new Color(0.2f, 0.1f, 0.05f), description = "Soy sauce from your own jar." });
         Register(new ItemDef { name = "Doenjang Stew", category = ItemCategory.Food, sellPrice = 180, hunger = 45f, thirst = 10f, heart = 5f, color = new Color(0.6f, 0.4f, 0.2f), description = "Bubbling doenjang stew with potato and carrot. Tastes like home." });
         Register(new ItemDef { name = "Braised Potatoes", category = ItemCategory.Food, sellPrice = 160, hunger = 35f, heart = 3f, color = new Color(0.7f, 0.5f, 0.25f), description = "Little potatoes simmered in your own soy sauce." });
+        // K-4: 동지 팥죽 (할머니에게 받아 이웃에게 나름)
+        Register(new ItemDef { name = "Red Bean Porridge", category = ItemCategory.Food, sellPrice = 0, hunger = 40f, heart = 3f, color = new Color(0.55f, 0.15f, 0.15f), description = "Winter solstice porridge with little rice balls. One bowl for every house." });
         Register(new ItemDef { name = "Compost", category = ItemCategory.Special, sellPrice = 0, color = new Color(0.4f, 0.3f, 0.2f), description = "Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life." });
         Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. The dokkaebi fire loves it (all four colors)." });
 

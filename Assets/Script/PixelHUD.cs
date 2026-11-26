@@ -196,7 +196,9 @@ public class PixelHUD : MonoBehaviour
         view.SetActive(false);
     }
 
-    public static void ShowView(List<string> layers, string caption, string closeHint = null)
+    // onClose: 닫을 때 한 번 (K-4 달맞이 그림 다음에 이어지는 장면)
+    private System.Action viewClosed;
+    public static void ShowView(List<string> layers, string caption, string closeHint = null, System.Action onClose = null)
     {
         PixelHUD hud = Ensure();
         foreach (Transform child in hud.viewLayers) Destroy(child.gameObject);
@@ -211,6 +213,7 @@ public class PixelHUD : MonoBehaviour
         }
         hud.viewCaption.text = caption + "\n<size=20><color=#c8c0b0>" + (closeHint ?? Loc.T("[E] or [Esc] Close", "[E] 또는 [Esc] 닫기")) + "</color></size>";
         hud.view.SetActive(true);
+        hud.viewClosed = onClose;
         hud.viewOpenedFrame = Time.frameCount;
         hud.mapShown = false;
         hud.mapPin = null;
@@ -373,6 +376,9 @@ public class PixelHUD : MonoBehaviour
         {
             view.SetActive(false);
             mapShown = false;
+            System.Action closed = viewClosed;
+            viewClosed = null;
+            closed?.Invoke();
             return;
         }
         if (MapOpen && mapPin != null)
