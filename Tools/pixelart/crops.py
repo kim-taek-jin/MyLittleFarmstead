@@ -173,37 +173,46 @@ def dirt_tile(seed=1):
 
 
 def tilled_tile(wet=False, seed=2):
-    """One dug garden bed per cell: a soft, rounded mound of loose soil in a darker trench,
-    so every tilled cell reads as its own plot (no straight plank-like lines)."""
+    """A dug stretch of ridge (K-farm plots are ridges and furrows, one ridge per tile row).
+    Same bands as the ridge painted in the background (furrow rows 0-3, crest 4-5, body 6-23, foot 24-31),
+    but freshly turned: darker, crumbly soil. Edge to edge with no border, so neighbouring tilled
+    cells join into one continuous ridge instead of separate boxes."""
+    import kvillage as K
+    soil = K.SOIL
+    if wet:
+        soil = [darken_c(soil[0], 0.7), darken_c(soil[1], 0.72), darken_c(soil[2], 0.74), darken_c(soil[3], 0.78)]
     c = Canvas(S, S)
-    d = P['dirt']
-    if wet:
-        d = [darken_c(d[0], 0.62), darken_c(d[1], 0.66), darken_c(d[2], 0.68), darken_c(d[3], 0.72)]
-    trench, low, mid, high = d[0], d[1], d[2], d[3]
+    turned = tuple((soil[1][i] + soil[2][i]) // 2 for i in range(3)) + (255,)   # freshly turned: a shade darker than the ridge
     for y in range(S):
         for x in range(S):
-            c.set(x, y, low)
-    cx, cy, rx, ry = 15.5, 15.5, 13.5, 13.0
-    for y in range(S):
-        for x in range(S):
-            nx, ny = (x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry
-            v = nx ** 4 + ny ** 4                    # superellipse: a rounded-square mound
-            if v <= 1:
-                col = mid
-                if ny < -0.78 or (nx < -0.86 and ny < 0.3):
-                    col = high                       # lit top / upper-left rim
-                elif ny > 0.82 or nx > 0.88:
-                    col = trench                     # shaded bottom / right rim
-                c.set(x, y, col)
-    # loose clods in staggered rows (broken, not straight furrows)
-    for row, y in enumerate((9, 16, 23)):
-        for x in range(6 + (row % 2) * 3, 26, 6):
-            c.set(x, y, trench); c.set(x + 1, y, trench)
-            c.set(x, y - 1, high)
+            if y < 4:
+                col = soil[0]                                  # the furrow between ridges
+            elif y < 6:
+                col = soil[3] if (x * 5 + y) % 7 else soil[2]  # crest catching the light
+            elif y < 24:
+                col = turned                                   # loose turned soil
+            else:
+                col = soil[1]                                  # shaded foot of the ridge
+            c.set(x, y, col)
+    # a few clods (2 px, lit on top) and short hoe marks, sparse and irregular
+    for by in range(7, 22, 3):
+        for bx in range(0, S, 4):
+            h = _hh(bx, by, seed + 7) % 9
+            ox, oy = bx + _hh(bx, by, seed) % 3, by + _hh(by, bx, seed) % 2
+            if h == 0:
+                c.set(ox, oy, soil[3]); c.set(ox + 1, oy, soil[2]); c.set(ox, oy + 1, soil[1]); c.set(ox + 1, oy + 1, soil[1])
+            elif h == 1:
+                for k in range(3 + _hh(ox, oy, 3) % 3):
+                    c.set(ox + k, oy, soil[1])
     if wet:
-        for (x, y) in [(8, 6), (9, 6), (19, 12), (20, 12), (12, 20), (13, 20), (23, 25)]:
-            c.set(x, y, (112, 136, 160, 255))
+        for x in range(0, S, 5):
+            if _hh(x, 2, seed) % 2:
+                c.set(x, 2, (98, 122, 146, 255)); c.set(x + 1, 2, (120, 146, 170, 255))   # water standing in the furrow
     return c
+
+
+def _hh(x, y, s):
+    return (x * 73856093 ^ y * 19349663 ^ s * 83492791) & 0xffff
 
 
 TILES = {

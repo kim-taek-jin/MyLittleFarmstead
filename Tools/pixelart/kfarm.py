@@ -220,32 +220,54 @@ def farmmap(season='spring'):
 
     # lanes and the yard (packed earth); in winter trampled snow
     lane = K.YARD if not snow else B.TRAMPLED
-    path(bg, [rect(c, r) for (c, r) in cells('=s')], r=lane)
+    # the road: rounded corners where it turns (no stair-step rectangles), the yard as before (walls frame it)
+    road = B.smooth_tile_mask(bg, W, H, lambda c, r: 0 <= r < H and 0 <= c < W and rows[r][c] in '=s', threshold=0.5, wobble=0.18)
+    B.path_mask(bg, road, lane)
     path(bg, [rect(c, r) for (c, r) in cells('yHJKBW')], r=lane)
 
-    # the stream (frozen at the edges in winter), stepping stones on the forest path
+    # the stream: one continuous band. Each map row gives its left/right edge (in tiles); between rows the edges
+    # ease across with a smoothstep, so where the stream shifts a column it bends instead of stepping.
     water = ICE if snow else WATER
-    wcells = cells('ws')
-    wset = set(wcells)
-    for (c, r) in wcells:
-        x0, y0, x1, y1 = rect(c, r)
-        # a gentle wobble on the open sides so the stream doesn't look like stacked squares
-        for y in range(y0, y1 + 1):
-            wob = int(2.5 + 2.5 * math.sin((y + c * 7) / 9.0))
-            lx = x0 + (wob if (c - 1, r) not in wset else 0)
-            rx = x1 - (4 - wob if (c + 1, r) not in wset else 0)
-            for x in range(lx, rx + 1):
-                bg.c.set(x, y, water[2] if (x + y // 3) % 23 else water[1])
-    for (c, r) in wcells:                                       # banks where the stream meets land
-        for dc in (-1, 1):
-            if (c + dc, r) not in wset:
-                for y in range(r * 32, r * 32 + 32):
-                    wob = int(2.5 + 2.5 * math.sin((y + c * 7) / 9.0))
-                    xe = c * 32 + wob - 1 if dc < 0 else c * 32 + 31 - (4 - wob) + 1
-                    bg.c.set(xe, y, lane[1]); bg.c.set(xe + dc, y, lane[2] if _h(xe, y, 3) % 4 else K.WALLSTONE[2])
-        for y in range(r * 32, r * 32 + 32, 5):
-            x = c * 32 + 6 + _h(c, y, 2) % 18
-            bg.c.set(x, y, water[3]); bg.c.set(x + 1, y, water[3])
+    span = {}
+    for (c, r) in cells('ws'):
+        lo, hi = span.get(r, (c, c + 1))
+        span[r] = (min(lo, c), max(hi, c + 1))
+    srows = sorted(span)
+
+    def edges(y):
+        v = (y + 0.5) / 32 - 0.5
+        r0 = int(math.floor(v))
+        t = v - r0
+        a_ = span.get(min(max(r0, srows[0]), srows[-1]), span[srows[0]])
+        b_ = span.get(min(max(r0 + 1, srows[0]), srows[-1]), span[srows[-1]])
+        if r0 not in span: a_ = b_
+        if r0 + 1 not in span: b_ = a_
+        k = t * t * (3 - 2 * t)
+        return (a_[0] + (b_[0] - a_[0]) * k) * 32, (a_[1] + (b_[1] - a_[1]) * k) * 32
+
+    rnd = seeded(23)
+    for y in range(srows[0] * 32, (srows[-1] + 1) * 32):
+        L, R = edges(y)
+        lx = int(L + 2.5 + 2.5 * math.sin(y / 9.0))
+        rx = int(R - 2.5 - 2.5 * math.sin(y / 11.0 + 2.0))
+        for x in range(lx, rx + 1):
+            col = water[2]
+            if x - lx < 3 or rx - x < 3:
+                col = water[3] if snow else water[1]                  # shallow / frosted edge
+            bg.c.set(x, y, col)
+        for (xe, d) in ((lx - 1, -1), (rx + 1, 1)):                  # banks
+            bg.c.set(xe, y, lane[1]); bg.c.set(xe + d, y, lane[2] if _h(xe, y, 3) % 4 else K.WALLSTONE[2])
+    # surface: short glints on water, thin wandering cracks on ice (never straight parallel lines)
+    for y in range(srows[0] * 32, (srows[-1] + 1) * 32, 7):
+        L, R = edges(y)
+        x = int(L + 6 + _h(y, 3, 2) % max(1, int(R - L - 14)))
+        if snow:
+            cx, cy = x, y
+            for _ in range(6 + _h(x, y, 5) % 6):
+                bg.c.set(cx, cy, water[1])
+                cx += rnd.choice((-1, 0, 1)); cy += 1
+        else:
+            bg.c.set(x, y, water[3]); bg.c.set(x + 1, y, water[3]); bg.c.set(x + 2, y, water[3])
     for (c, r) in cells('s'):
         bx, by = bottom(c, r)
         bg.prop(K.stepping_stone(), x=bx - 6 + (r % 2) * 10, y=by - 8)
@@ -307,8 +329,12 @@ def farmmap(season='spring'):
             col = K.STUBBLE[0]
         elif k % 5 == 1 and (x // 2) % 3 == 0:
             col = K.STUBBLE[3]
-        if snow and _h(x, y, 4) % 3:
-            col = SNOW[2] if _h(x, y, 6) % 4 else SNOW[3]
+        if snow:
+            # snow lying over the field: soft drifts, and the stubble poking through in uneven rows
+            col = SNOW[3] if _h(x // 6 + (y * 5) % 7, y, 4) % 23 == 0 else SNOW[2]   # flat snow, a few short wind streaks
+            band, lean = k % 8, (k // 8) * 4
+            if band in (3, 4) and (x + lean) % 9 == 0 and _h(x // 9, k // 8 + y0, 9) % 3 == 0:
+                col = K.STUBBLE[1] if band == 2 else K.STUBBLE[0]
         return col
 
     for kind in ('R', 'S'):

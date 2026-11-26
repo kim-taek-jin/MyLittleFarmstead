@@ -404,15 +404,27 @@ public class PixelHUD : MonoBehaviour
     void BuildGuide()
     {
         guideCard = Box("Guide", root, new Vector2(0f, 1f), new Vector2(24f, -140f), new Vector2(640f, 132f));
-        guideTitle = Label("Title", guideCard, 24f, TextAlignmentOptions.Left);
-        Place(guideTitle.rectTransform, 22f, -10f, 600f, 32f);
-        guideTask = Label("Task", guideCard, 28f, TextAlignmentOptions.Left);
-        Place(guideTask.rectTransform, 22f, -44f, 600f, 38f);
-        guideHint = Label("Hint", guideCard, 20f, TextAlignmentOptions.Left);
+        // 위에서부터 차례로 쌓음 (한국어 문장이 두 줄이 되어도 제목·힌트와 겹치지 않게, 카드 높이는 LayoutGuide에서)
+        guideTitle = Label("Title", guideCard, 24f, TextAlignmentOptions.TopLeft);
+        Place(guideTitle.rectTransform, 22f, -12f, 600f, 30f);
+        guideTask = Label("Task", guideCard, 28f, TextAlignmentOptions.TopLeft);
+        Place(guideTask.rectTransform, 22f, -46f, 600f, 38f);
+        guideHint = Label("Hint", guideCard, 20f, TextAlignmentOptions.TopLeft);
         guideHint.color = new Color(0.78f, 0.75f, 0.69f);
         Place(guideHint.rectTransform, 22f, -88f, 600f, 34f);
         guideCard.gameObject.SetActive(false);
         Loc.Changed += () => guideStep = -2;     // 언어가 바뀌면 다시 씀
+    }
+
+    // 글 길이에 맞춰 할 일, 힌트를 아래로 쌓고 카드 높이를 맞춤
+    void LayoutGuide()
+    {
+        const float width = 600f, top = 46f, gap = 6f;
+        float taskH = Mathf.Ceil(guideTask.GetPreferredValues(guideTask.text, width, 0f).y);
+        float hintH = Mathf.Ceil(guideHint.GetPreferredValues(guideHint.text, width, 0f).y);
+        Place(guideTask.rectTransform, 22f, -top, width, taskH);
+        Place(guideHint.rectTransform, 22f, -(top + taskH + gap), width, hintH);
+        guideCard.sizeDelta = new Vector2(guideCard.sizeDelta.x, top + taskH + gap + hintH + 16f);
     }
 
     void UpdateGuide()
@@ -438,6 +450,7 @@ public class PixelHUD : MonoBehaviour
                 guideTitle.text = "<color=#ffd84a>" + Loc.T("Today", "오늘 할 일") + $"</color>  <color=#c8c0b0>{step + 1}/{FirstDayGuide.Steps}</color>";
                 guideTask.text = FirstDayGuide.Task(step);
                 guideHint.text = FirstDayGuide.Hint(step);
+                LayoutGuide();
             }
         }
         UpdateGuideArrow(step);

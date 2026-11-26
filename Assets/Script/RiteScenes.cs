@@ -17,7 +17,7 @@ public static class RiteScenes
 
     public static readonly Vector2 PotAt = new Vector2(-7.6f, -0.55f);     // 장터: 방앗간 앞 길
     public static readonly Vector2 GateAt = new Vector2(2.0f, -2.55f);     // 농장: 마당 돌담의 열린 곳
-    public static Vector2 DaljipAt => FarmMap.Anchor("daljip", new Vector2(6.5f, -4.9f));   // 농장 남쪽 빈 논
+    public static Vector2 DaljipAt => FarmMap.Anchor("daljip", new Vector2(18.5f, -9.4f));   // 농장 남동쪽, 벼를 벤 빈 논 (그루터기 S)
 
     // 대보름 밤에는 미나도 달집 둘레에 (마당 평상에는 없음)
     public static bool MinaAtDaljip => Data != null && Rites.Gathering(R, Today, Hour, Helped);

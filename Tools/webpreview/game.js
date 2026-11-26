@@ -1167,7 +1167,7 @@ const helpWanted = () => VILLAGERS.find(v => vNext(v)?.kind === 'Pumasi' && vRea
 function Rt() { const r = G.story.rites || (G.story.rites = {}); return Object.assign(r, Object.assign({ dongjiPrep: 0, dongjiMemory: null, dongjiPot: false, dongjiDelivered: [], dongjiDone: false,
   boreumDay: -1, daljipWood: 0, bureom: false, jwibul: false, lit: false, burned: null, wish: null, boreumDone: false }, r)); }
 const RITE = { dongji: 7, prepFrom: 5, steps: 3, bowls: 5, earliest: 12, notice: 2 };
-const POT_AT = [-7.6, -0.55], GATE_AT = [2.0, -2.55], DALJIP = ANCHOR('daljip', 6.5, -4.9);
+const POT_AT = [-7.6, -0.55], GATE_AT = [2.0, -2.55], DALJIP = ANCHOR('daljip', 18.5, -9.4);
 const woodNeed = () => unlocked('favor_hands') ? 3 : 5;
 const boreumSched = () => Rt().boreumDay >= 0 && !Rt().boreumDone;
 const daljipBuilt = () => Rt().daljipWood >= woodNeed();
@@ -2153,10 +2153,13 @@ function renderUI() {
   box(12, 10, 300, 74, 'rgba(20,14,11,0.78)', '#6a4f36');
   drawRich(`[${SEASON_COLOR[s.season]}]${SEASONS[s.season]}[/] Day ${G.day}  ${time}`, 26, 20, 22, 290);
   { const st = guideStep(); if (st >= 0 && st < 3) {                       // first-day guide card
-    box(12, 90, 470, 76, 'rgba(20,14,11,0.86)', '#c89552');
+    // stack from the top so a wrapped task line never runs into the hint (the card grows to fit)
+    const tl = richLines(GUIDE[st][0], 18, 450, '#f6efe2').length, hl = richLines(GUIDE[st][1], 13, 450, '#c8c0b0').length;
+    const taskY = 118, hintY = taskY + Math.round(tl * 18 * 1.3) + 4, cardH = hintY - 90 + Math.round(hl * 13 * 1.3) + 10;
+    box(12, 90, 470, cardH, 'rgba(20,14,11,0.86)', '#c89552');
     drawRich(`[#ffd84a]Today[/]  [#c8c0b0]${st + 1}/3[/]`, 24, 98, 15, 440);
-    drawRich(GUIDE[st][0], 24, 118, 18, 450);
-    drawRich(GUIDE[st][1], 24, 142, 13, 450, 'left', '#c8c0b0');
+    drawRich(GUIDE[st][0], 24, taskY, 18, 450);
+    drawRich(GUIDE[st][1], 24, hintY, 13, 450, 'left', '#c8c0b0');
   } }
   drawRich(`${G.snowing ? '[#e4ecf4]Snow[/]' : G.raining ? '[#8fb8ff]Rain[/]' : '[#ffe28a]Sunny[/]'}   [#ffd84a]${G.gold}G[/]   [#ff8fb1]Heart ${Math.round(G.heart)}[/]`, 26, 50, 18, 290);
   // bars (top right)
