@@ -40,6 +40,7 @@ public class CropManager : MonoBehaviour
     {
         tilemap = GetComponentInChildren<Tilemap>();
         if (tilemap == null && Player != null) tilemap = Player.groundTilemap;
+        FarmMap.AlignTilemap(tilemap);       // 그림의 칸과 같은 격자 (씬의 타일맵은 x로 2.44 밀려 있었음)
 
         // 씬에 미리 놓여 있던 작물은 지우고, 저장된 데이터 기준으로 다시 그립니다.
         foreach (Crop crop in FindObjectsByType<Crop>(FindObjectsSortMode.None)) Destroy(crop.gameObject);

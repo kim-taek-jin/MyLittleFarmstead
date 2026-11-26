@@ -94,11 +94,23 @@ public static class FarmMap
                             $"농장이 바뀌었어요. 새 텃밭 밖에 있던 작물 {removed}개를 씨앗으로 돌려받았어요."), 5f);
     }
 
+    // 흙 타일 격자를 농장 그림의 칸에 딱 맞춤.
+    // 씬의 Tilemap은 예전 "Square" 물체의 자식이라 x로 2.44만큼 밀려 있었음 → 갈아 둔 칸이 그림의 이랑과 어긋나고,
+    // 클릭한 곳과 갈리는 칸도 달랐음. 맵 칸 (원점 기준 정수 좌표) = 타일 칸이 되도록 월드 (0, 0)에 둠.
+    public static void AlignTilemap(Tilemap tilemap)
+    {
+        if (tilemap == null || !Active) return;
+        Vector3 p = tilemap.transform.position;
+        if (Mathf.Abs(p.x) > 0.001f || Mathf.Abs(p.y) > 0.001f) tilemap.transform.position = new Vector3(0f, 0f, p.z);
+        tilemap.transform.localScale = Vector3.one;
+    }
+
     // 씬에 칠해져 있던 예전 흙 타일을 지움 (갈아 둔 밭은 CropManager가 데이터대로 다시 그림)
     static void ClearSceneTiles(MapData map)
     {
         Tilemap tilemap = FindTilemap();
         if (tilemap == null) return;
+        AlignTilemap(tilemap);
         DataManager data = DataManager.instance;
         BoundsInt b = tilemap.cellBounds;
         foreach (Vector3Int cell in b.allPositionsWithin)

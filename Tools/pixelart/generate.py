@@ -220,6 +220,7 @@ def main():
     # ---- the Korean homestead (direction C): plot overlays, compost heap ----
     for v in range(3):
         exported['World'].append(export('World', f'plot_hard_{v}', kfarm.plot_hard(v)))
+        exported['World'].append(export('World', f'plot_hard_{v}_winter', kfarm.plot_hard(v, winter=True)))
         exported['World'].append(export('World', f'plot_straw_{v}', kfarm.plot_straw(v)))
     exported['World'].append(export('World', 'compost_heap', kfarm.compost_heap()))
     exported['Items'].append(export('Items', 'compost', kfarm.compost_icon()))

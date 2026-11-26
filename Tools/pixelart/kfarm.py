@@ -97,34 +97,40 @@ def cottage_color(season):
 
 
 # ---------------------------------------------------------------- small sprites
-def plot_hard(v):
-    """A gray, hardened crust over one ridge cell: cracks, dry stubble, a pebble or two."""
+def plot_hard(v, winter=False):
+    """A ridge gone gray and hard: the same bands as the live ridge painted under it (furrow 0-3, crest 4-5,
+    body 6-23, foot 24-31), edge to edge so neighbouring cells read as one ridge, drained of colour and
+    crusted: hairline cracks across the body, a few dry stalks, a pebble. In winter snow lies on the crest
+    like on the live ridges."""
     rnd = seeded(30 + v)
     c = Canvas(32, 32)
-    crust = ramp('#4a4744', '#6e6a64', '#8f8a82', '#b2ada4')
-    for y in range(2, 30):
-        for x in range(1, 31):
-            k = (y - 2) % 9
-            col = crust[1] if k in (0, 1) else crust[3] if k == 2 else crust[2]
-            if _h(x, y, v) % 23 == 0:
+    crust = ramp('#4c4844', '#68635d', '#86807a', '#a8a29a')
+    for y in range(32):
+        for x in range(32):
+            if y < 4:
+                col = crust[0] if y < 2 else crust[1]
+            elif y < 6:
+                col = crust[3]
+            elif y < 24:
+                col = crust[2]
+            else:
                 col = crust[1]
+            if 6 <= y < 24 and _h(x, y, v + 3) % 41 == 0:
+                col = crust[3]
+            if winter and 4 <= y < 9:
+                col = SNOW[2] if _h(x, y, 1) % 3 else SNOW[3]
             c.set(x, y, col)
-    for i in range(3):                                           # cracks
-        x, y = rnd.randint(4, 26), rnd.randint(4, 24)
-        for t in range(rnd.randint(4, 8)):
-            c.set(x, y, crust[0])
-            x += rnd.choice((-1, 0, 1)); y += 1
-    for i in range(4):                                           # dry stubble
-        x, y = rnd.randint(3, 28), rnd.randint(4, 27)
+    for i in range(2 + v % 2):                                   # hairline cracks wandering across the body
+        x, y = rnd.randint(0, 29), rnd.randint(7, 17)
+        for t in range(rnd.randint(6, 11)):
+            if 6 <= y < 24:
+                c.set(x, y, crust[0])
+            x += rnd.choice((1, 1, 0)); y += rnd.choice((0, 1, 1))
+    for i in range(3):                                           # dry stalks
+        x, y = rnd.randint(2, 29), rnd.randint(10, 22)
         c.line(x, y, x + rnd.choice((-1, 1)), y - 3, ramp('#5a5444', '#80785e', '#a49a78', '#c8bea0')[2])
-    x, y = rnd.randint(6, 24), rnd.randint(8, 24)
-    c.rect(x, y, x + 2, y + 1, crust[3]); c.rect(x, y + 2, x + 2, y + 2, crust[0])
-    # ragged edge so cells don't read as squares
-    for x in range(1, 31):
-        if _h(x, 0, v) % 3 == 0:
-            c.set(x, 2, None)
-        if _h(x, 1, v) % 3 == 0:
-            c.set(x, 29, None)
+    x, y = rnd.randint(6, 24), rnd.randint(12, 20)               # a pebble
+    c.rect(x, y, x + 1, y, crust[3]); c.rect(x, y + 1, x + 1, y + 1, crust[0])
     return c
 
 

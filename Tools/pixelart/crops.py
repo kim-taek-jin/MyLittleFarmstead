@@ -173,41 +173,45 @@ def dirt_tile(seed=1):
 
 
 def tilled_tile(wet=False, seed=2):
-    """A dug stretch of ridge (K-farm plots are ridges and furrows, one ridge per tile row).
-    Same bands as the ridge painted in the background (furrow rows 0-3, crest 4-5, body 6-23, foot 24-31),
-    but freshly turned: darker, crumbly soil. Edge to edge with no border, so neighbouring tilled
-    cells join into one continuous ridge instead of separate boxes."""
+    """A dug stretch of ridge, made to sit inside the field painted in the background (kfarm plots).
+    It uses exactly the background ridge: the same palette (kvillage.SOIL) and the same bands per tile row
+    (furrow 0-3, lit crest 4-5, body 6-23, shaded foot 24-31), so a tilled cell never looks pasted on.
+    What digging changes, and nothing else:
+      - the crest is bare soil (in winter the background crest is under snow)
+      - the body is turned over: small lumps, each lit on top with a shadow under it, in loose rows
+      - watered: everything one shade darker, a little water standing in the furrow."""
     import kvillage as K
-    soil = K.SOIL
+    soil = list(K.SOIL)
     if wet:
-        soil = [darken_c(soil[0], 0.7), darken_c(soil[1], 0.72), darken_c(soil[2], 0.74), darken_c(soil[3], 0.78)]
+        soil = [darken_c(col, 0.8) for col in soil]
     c = Canvas(S, S)
-    turned = tuple((soil[1][i] + soil[2][i]) // 2 for i in range(3)) + (255,)   # freshly turned: a shade darker than the ridge
     for y in range(S):
         for x in range(S):
             if y < 4:
-                col = soil[0]                                  # the furrow between ridges
+                col = soil[0] if y < 2 else soil[1]            # the furrow (same as the background)
             elif y < 6:
-                col = soil[3] if (x * 5 + y) % 7 else soil[2]  # crest catching the light
+                col = soil[3]                                   # the crest, bare
             elif y < 24:
-                col = turned                                   # loose turned soil
+                col = soil[2]
             else:
-                col = soil[1]                                  # shaded foot of the ridge
+                col = soil[1]
+            if 6 <= y < 24 and _hh(x, y, seed + 5) % 37 == 0:
+                col = soil[3]                                   # the same light grit the background has
             c.set(x, y, col)
-    # a few clods (2 px, lit on top) and short hoe marks, sparse and irregular
-    for by in range(7, 22, 3):
-        for bx in range(0, S, 4):
-            h = _hh(bx, by, seed + 7) % 9
-            ox, oy = bx + _hh(bx, by, seed) % 3, by + _hh(by, bx, seed) % 2
-            if h == 0:
-                c.set(ox, oy, soil[3]); c.set(ox + 1, oy, soil[2]); c.set(ox, oy + 1, soil[1]); c.set(ox + 1, oy + 1, soil[1])
-            elif h == 1:
-                for k in range(3 + _hh(ox, oy, 3) % 3):
-                    c.set(ox + k, oy, soil[1])
+    # turned-over lumps scattered over the ridge body: varied size, lit on the upper left, shadow underneath
+    for i in range(26):
+        x = _hh(i, 1, seed) % (S - 3)
+        y = 8 + _hh(i, 2, seed) % 14
+        w = 1 + _hh(i, 3, seed) % 3
+        for k in range(w):
+            c.set(x + k, y, soil[3] if k == 0 or _hh(i, k, seed) % 2 else soil[2])
+            c.set(x + k, y + 1, soil[1])
+        if w >= 2:
+            c.set(x + w, y + 1, soil[1])                       # the shadow falls a little to the right
     if wet:
-        for x in range(0, S, 5):
-            if _hh(x, 2, seed) % 2:
-                c.set(x, 2, (98, 122, 146, 255)); c.set(x + 1, 2, (120, 146, 170, 255))   # water standing in the furrow
+        for x in range(1, S - 1):
+            if _hh(x, 1, seed + 9) % 5 == 0:
+                c.set(x, 2, (92, 112, 130, 255)); c.set(x + 1, 2, (110, 132, 150, 255))   # water in the furrow
     return c
 
 

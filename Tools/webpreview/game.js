@@ -1983,7 +1983,7 @@ function renderWorld() {
       const open = plotOpen(p), rest = open && plotRested(p); if (open && !rest) continue;
       for (let x = p.x0; x <= p.x1; x++) for (let y = p.y0; y <= p.y1; y++) {
         if (rest && cropAt(x, y)) continue;
-        const key = open ? 'World/plot_straw_' + (((x * 5 + y * 11) % 3 + 3) % 3) : 'World/plot_hard_' + (((x * 7 + y * 13) % 3 + 3) % 3);
+        const key = open ? 'World/plot_straw_' + (((x * 5 + y * 11) % 3 + 3) % 3) : 'World/plot_hard_' + (((x * 7 + y * 13) % 3 + 3) % 3) + (G.story.season === 0 ? '_winter' : '');
         const [sx, sy] = toScreen(x, y + 1); if (sx < -64 || sy < -64 || sx > CW || sy > CH) continue; c.drawImage(IMG[key], Math.round(sx), Math.round(sy), 64, 64);
       }
     }
