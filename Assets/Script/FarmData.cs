@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 // 밭 한 칸의 상태 (갈아둔 땅 / 젖은 땅)
 [System.Serializable]
@@ -106,6 +106,20 @@ public class FarmData
             changed = true;
         }
         return changed;
+    }
+
+    // 미나의 품 (K-3): 물을 못 받은 작물 몇 개에 물을 줌. 준 개수
+    public int WaterSome(int max)
+    {
+        int n = 0;
+        foreach (var crop in crops)
+        {
+            if (n >= max) break;
+            if (crop.isWatered || crop.IsMature) continue;
+            Water(crop.cellX, crop.cellY);
+            n++;
+        }
+        return n;
     }
 
     // 수확: 수확량을 돌려주고, 다시 자라는 작물이 아니면 밭에서 제거

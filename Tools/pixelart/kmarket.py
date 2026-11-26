@@ -439,7 +439,18 @@ def market(season='summer'):
     bg.prop(plastic_chair(P['cloth']), wx=8.7, wy=0.9)
     for (wx, wy, fn) in [(1.6, 1.4, items.carrot), (6.0, 2.0, items.apple)]:
         bg.prop(basin_of(fn), wx=wx, wy=wy)
-    bg.prop(hand_cart(), wx=8.2, wy=-4.0)
+    bg.prop(hand_cart(), wx=8.4, wy=-4.3)
+    # K-3: the village hall in the lower-right corner, a bench out front (the village head's evening seat),
+    # and Grandma Boksun's pyeong-sang in front of the mill (her evening seat)
+    import k3
+    bg.prop(k3.village_hall(), wx=6.85, wy=-2.85)
+    bg.prop(k3.hall_bench(), wx=5.9, wy=-3.0)
+    gp = K.pyeongsang()
+    for x in range(10, 31):
+        for y in range(9, 13):
+            if gp.get(x, y) in (P['red'][2], P['red'][1], P['straw'][2], P['straw'][3]):
+                gp.set(x, y, P['woodlight'][2])
+    bg.prop(gp, wx=-6.34, wy=0.5)
 
     # styrofoam-box vegetable beds along the bottom (where the old planters were)
     for i, wx in enumerate((-6.0, -3.0, 0.0, 3.0, 6.0)):
@@ -457,11 +468,11 @@ def market_fair():
     bg.c = Canvas(585, 328)
     bg.prop(popped_rice_cart(), wx=-1.6, wy=-2.7)
     bg.prop(tarp_stall(84, tarp=ramp('#1a4a1a', '#2a7a2a', '#40a840', '#8ad88a'), goods=[items.corn, items.potato, items.carrot]), wx=2.6, wy=-3.0)
-    bg.prop(clothes_stall(), wx=6.4, wy=-2.6)
+    bg.prop(clothes_stall(), wx=-5.6, wy=-2.6)      # moved left for the village hall (K-3)
     return bg.image()
 
 
-FAIR_SPOTS = [(-1.6, -2.7, 1.0), (2.6, -3.0, 1.3), (6.4, -2.6, 1.1)]   # world x, y (bottom middle), half width: colliders in the game
+FAIR_SPOTS = [(-1.6, -2.7, 1.0), (2.6, -3.0, 1.3), (-5.6, -2.6, 1.1)]   # world x, y (bottom middle), half width: colliders in the game
 HAGGLER_AT = (2.6, -2.2)
 
 

@@ -1,21 +1,31 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-// 회색 주민. E키로 대화하고, 소원(필요한 아이템)을 가져다주면 색이 1/3씩 돌아옵니다.
+// 회색 주민 (K-3: 이웃). E로 말을 걸면, 그 사람과 "같이 하는 일"로 이야기가 한 장씩 넘어가고 색이 1/3씩 돌아옵니다.
+//  - 낮: 이야기 장의 부탁 (품앗이 / 새참 / 그 사람만의 일). 음식을 들고 말을 걸면 새참을 같이 먹음
+//  - 저녁 (18~22시): 그 사람의 자리(평상, 의자)에 앉아 있음 → 마실 (하룻저녁에 한 집)
+// 규칙은 Neighbors (유니티 없이 테스트됨), 보상과 장면은 NeighborScenes.
 // WorldSpawner가 씬이 열릴 때 코드로 생성하므로 씬에 따로 배치할 필요가 없습니다.
 public class Villager : MonoBehaviour
 {
     public string villagerId;
 
     public static Villager InRange { get; private set; }
+    static readonly List<Villager> all = new List<Villager>();
+    public static Villager Find(string id) { foreach (Villager v in all) if (v != null && v.villagerId == id) return v; return null; }
 
     // 주민 정의는 언어가 바뀌면 다시 만들어지므로, 매번 ID로 찾습니다.
     private VillagerDef def => VillagerDB.Get(villagerId);
     private SpriteRenderer body;
     private SpriteRenderer bubble;
+    private BoxCollider2D feet;
+    private string shownKey;
     private int shownStage = -1;
     private int idleLine;
     private float pulse;
     private float baseScale = 1f;
+    private Vector2 dayPos;
+    private bool sittingOut;        // 저녁 자리에 나와 앉아 있음
 
     public static Villager Create(VillagerDef def, Material material, float characterScale)
     {
@@ -50,49 +60,64 @@ public class Villager : MonoBehaviour
         v.villagerId = def.id;
         v.body = sr;
         v.bubble = bsr;
+        v.feet = feet;
         v.baseScale = characterScale;
+        v.dayPos = at;
         v.RefreshVisual();
         return v;
     }
 
+    void Awake() { all.Add(this); }
+
     DataManager Data => DataManager.instance;
     VillagerProgress Progress => Data != null ? Data.story.Get(villagerId) : null;
-    bool Restored => Progress != null && Progress.wishIndex >= def.wishes.Length;
-    WishDef CurrentWish => Restored || Progress == null ? null : def.wishes[Progress.wishIndex];
+    static int Today => GameTimeManager.instance != null ? GameTimeManager.instance.day : 1;
+    static int Hour => GameTimeManager.instance != null ? GameTimeManager.instance.hour : 12;
+    public Sprite Portrait => body != null ? body.sprite : null;
+
+    public void Pulse() { pulse = 1f; RefreshVisual(); }
 
     void RefreshVisual()
     {
-        if (Progress == null || body == null) return;
+        if (Progress == null || body == null || def == null) return;
         int stage = Mathf.Clamp(Progress.wishIndex, 0, 3);
-        if (stage != shownStage)
+        string key = sittingOut ? $"Villagers/{villagerId}_sit_{stage}" : $"Villagers/{villagerId}_{stage}";
+        if (key != shownKey)
         {
-            Sprite s = PixelArt.Load($"Villagers/{villagerId}_{stage}");
+            Sprite s = PixelArt.Load(key) ?? PixelArt.Load($"Villagers/{villagerId}_{stage}");
             if (s != null) body.sprite = s;
             if (shownStage >= 0 && stage > shownStage) pulse = 1f;
             shownStage = stage;
+            shownKey = key;
         }
+    }
+
+    // 저녁이면 자기 자리(평상, 의자)로 나가 앉음
+    void UpdatePlace()
+    {
+        bool evening = def.eveningPosition != Vector2.zero && Neighbors.IsEvening(Hour);
+        if (evening == sittingOut) return;
+        sittingOut = evening;
+        Vector2 at = evening ? def.eveningPosition : dayPos;
+        transform.position = new Vector3(at.x, at.y, 0f);
+        if (feet != null) feet.enabled = !evening;      // 앉아 있을 땐 옆자리를 막지 않음
+        RefreshVisual();
     }
 
     bool HasSomethingToSay()
     {
-        if (Progress == null) return false;
-        if (!Progress.met) return true;
-        WishDef wish = CurrentWish;
-        return wish != null && HasItems(wish);
-    }
-
-    bool HasItems(WishDef wish)
-    {
-        foreach (var s in wish.items)
-        {
-            if (!Data.HasItem(s.itemName, s.count)) return false;
-        }
-        return true;
+        VillagerProgress p = Progress;
+        if (p == null) return false;
+        if (!p.met) return true;
+        if (sittingOut) return Neighbors.CanMasil(Data.story, p, Today, Hour) && Neighbors.MasilChapter(def, p, Today);
+        ChapterDef c = Neighbors.Next(def, p);
+        return c != null && c.kind != ChapterKind.Masil && Neighbors.Ready(def, p, Today) && !(c.kind == ChapterKind.Pumasi && p.invited);
     }
 
     void Update()
     {
         if (def == null || Data == null) return;
+        UpdatePlace();
         RefreshVisual();
 
         if (bubble != null)
@@ -110,84 +135,114 @@ public class Villager : MonoBehaviour
             body.transform.localScale = new Vector3(baseScale * k, baseScale * k, 1f);
         }
 
-        bool canTalk = InRange == this && !HUD.DialogueOpen && Time.frameCount - HUD.DialogueClosedFrame > 1 && !Data.IsGameOver;
+        bool canTalk = InRange == this && !HUD.DialogueOpen && Time.frameCount - HUD.DialogueClosedFrame > 1 && !Data.IsGameOver && !TitleScreen.Blocking;
         if (canTalk && Input.GetKeyDown(KeyCode.E)) Talk();
+    }
+
+    string IdleLine()
+    {
+        string seasonLine = def.seasonLines != null && def.seasonLines.Length == 4 ? def.seasonLines[Data.story.season] : null;
+        bool restored = Neighbors.Restored(def, Progress);
+        string[] pool = restored ? def.colorIdle : def.grayIdle;
+        string line = seasonLine != null && idleLine % 2 == 1 ? seasonLine : pool[idleLine % pool.Length];
+        idleLine++;
+        return line;
     }
 
     void Talk()
     {
         Data.NoteTalk();                       // 일기: "이웃과 이야기를 나눴다"
         VillagerProgress p = Progress;
-        Sprite portrait = body.sprite;
+        int today = Today, hour = Hour;
+        ChapterDef c = Neighbors.Next(def, p);
 
-        string seasonLine = def.seasonLines != null && def.seasonLines.Length == 4 ? def.seasonLines[Data.story.season] : null;
-        bool useSeason = seasonLine != null && idleLine % 2 == 1;
-
-        if (Restored)
-        {
-            HUD.Say(def.name, new[] { useSeason ? seasonLine : def.colorIdle[idleLine % def.colorIdle.Length] }, portrait);
-            idleLine++;
-            return;
-        }
-
-        WishDef wish = CurrentWish;
+        // 처음 만남
         if (!p.met)
         {
-            p.met = true;
+            Neighbors.Meet(p);
             Album.Report("villager_met", villagerId);
-            HUD.Say(def.name, new[] { def.intro, wish.request }, portrait);
+            var first = new List<string> { def.intro };
+            if (c != null && c.kind != ChapterKind.Letter) first.AddRange(Invite(c, p));
+            HUD.Say(def.name, first.ToArray(), Portrait);
             return;
         }
 
-        if (HasItems(wish))
+        // 저녁: 마실
+        if (sittingOut)
         {
-            HUD.Ask(def.name, $"{wish.request}\n<color=#ffd84a>" + Loc.T($"Give {VillagerDB.ItemsText(wish.items)}?", $"{VillagerDB.ItemsText(wish.items)}을(를) 줄까요?") + "</color>", portrait,
-                () => Fulfill(wish), null, Loc.T("Give", "주기"), Loc.T("Not yet", "아직"));
+            if (Neighbors.CanMasil(Data.story, p, today, hour))
+                HUD.Ask(def.name, Loc.T($"Sit with {def.name} for a while? (masil: one house a night)", $"{def.name} 옆에 앉아 있다 갈까요? (마실: 하룻저녁에 한 집)"), Portrait,
+                        () => NeighborScenes.Masil(def, p, this), () => HUD.Say(def.name, new[] { IdleLine() }, Portrait),
+                        Loc.T("Sit down", "앉기"), Loc.T("Just say hi", "인사만"));
+            else
+                HUD.Say(def.name, new[] { Loc.T("Already been visiting tonight? Go get some sleep.", "오늘 마실은 벌써 다녀왔지? 들어가 자.") }, Portrait);
+            return;
         }
-        else
+
+        // 낮: 음식을 들고 왔으면 새참
+        string held = Hotbar.SelectedItem;
+        ItemDef heldDef = string.IsNullOrEmpty(held) ? null : ItemDB.Get(held);
+        bool food = heldDef != null && heldDef.category == ItemCategory.Food && Data.HasItem(held);
+        if (Neighbors.SaechamChapter(def, p, today, hour, held, food))
         {
-            string idle = useSeason ? seasonLine : def.grayIdle[idleLine % def.grayIdle.Length];
-            idleLine++;
-            HUD.Say(def.name, new[] { idle, wish.request + "\n<color=#c8c0b0>" + Loc.T($"(Needs: {VillagerDB.ItemsText(wish.items)})", $"(필요한 것: {VillagerDB.ItemsText(wish.items)})") + "</color>" }, portrait);
+            HUD.Ask(def.name, c.invite + "\n<color=#ffd84a>" + Loc.T($"Share your {ItemNames.Display(held)} as a work-break meal?", $"{ItemNames.With(held, "을", "를")} 새참으로 같이 먹을까요?") + "</color>", Portrait,
+                    () => NeighborScenes.Saecham(def, p, held, true), null, Loc.T("Eat together", "같이 먹기"), Loc.T("Not now", "나중에"));
+            return;
         }
+
+        // 이야기 장의 부탁
+        if (c != null && Neighbors.Ready(def, p, today) && c.kind != ChapterKind.Masil)
+        {
+            if (c.kind == ChapterKind.Letter)
+            {
+                HUD.Say(def.name, new[] { c.invite }, Portrait, () => NeighborScenes.Letter(def, p));
+                return;
+            }
+            if (!(c.kind == ChapterKind.Pumasi && p.invited) || idleLine % 2 == 0)
+            {
+                idleLine++;
+                HUD.Say(def.name, Invite(c, p), Portrait);
+                return;
+            }
+        }
+
+        // 그냥 새참 (이야기와 상관없이, 주민마다 하루 한 번)
+        if (Neighbors.CanSaecham(p, today, hour, food))
+        {
+            HUD.Ask(def.name, IdleLine() + "\n<color=#ffd84a>" + Loc.T($"Share your {ItemNames.Display(held)}?", $"{ItemNames.With(held, "을", "를")} 같이 나눠 먹을까요?") + "</color>", Portrait,
+                    () => NeighborScenes.Saecham(def, p, held, false), null, Loc.T("Eat together", "같이 먹기"), Loc.T("Not now", "나중에"));
+            return;
+        }
+
+        var lines = new List<string> { IdleLine() };
+        if (c != null && c.kind == ChapterKind.Masil && Neighbors.Ready(def, p, today)) lines.Add(c.invite);
+        HUD.Say(def.name, lines.ToArray(), Portrait);
     }
 
-    void Fulfill(WishDef wish)
+    // 부탁하는 말 + 무엇을 하면 되는지 (회색 글씨)
+    string[] Invite(ChapterDef c, VillagerProgress p)
     {
-        if (!HasItems(wish)) return;
-        foreach (var s in wish.items) Data.RemoveItem(s.itemName, s.count);
-
-        VillagerProgress p = Progress;
-        p.wishIndex++;
-        Data.AddKindness(3);
-        Album.Report("wish", villagerId);
-        if (p.wishIndex >= def.wishes.Length) Album.Report("restored", villagerId);
-
-        var rewards = new System.Collections.Generic.List<string>();
-        if (wish.gold > 0) { Data.AddGold(wish.gold); rewards.Add($"{wish.gold}G"); }
-        foreach (var s in wish.rewardItems)
+        var lines = new List<string> { c.invite };
+        switch (c.kind)
         {
-            Data.AddItem(s.itemName, s.count);
-            rewards.Add($"{ItemNames.Display(s.itemName)} x{s.count}");
+            case ChapterKind.Pumasi:
+                p.invited = true;
+                break;
+            case ChapterKind.Fish:
+                if (!Data.HasItem("Fishing Rod"))
+                {
+                    Data.AddItem("Fishing Rod", 1);
+                    Data.story.Unlock("fishing");
+                    lines.Add("<color=#9dff9d>" + Loc.T("Received:", "받은 것:") + "</color> " + ItemNames.Display("Fishing Rod"));
+                }
+                break;
+            case ChapterKind.Saecham:
+                if (!string.IsNullOrEmpty(c.needItem) && !Data.HasItem(c.needItem))
+                    lines.Add("<color=#c8c0b0>" + Loc.T($"(Hold a {ItemNames.Display(c.needItem)} and talk to them.)", $"({ItemNames.Display(c.needItem)}을(를) 손에 들고 말을 걸어요.)") + "</color>");
+                break;
         }
-        if (Data.story.Unlock(wish.unlock) && !string.IsNullOrEmpty(wish.unlockText)) rewards.Add(wish.unlockText);
-        if (wish.heart > 0f) Data.ChangeHeart(wish.heart, Loc.T($"{def.name} smiled.", $"{def.name}의 얼굴에 웃음이 번졌어요."));
-
-        RefreshVisual();
-        var lines = new System.Collections.Generic.List<string> { wish.thanks };
-        if (rewards.Count > 0) lines.Add("<color=#9dff9d>" + Loc.T("Received:", "받은 것:") + "</color> " + string.Join(", ", rewards));
-        if (Restored) lines.Add(def.restored);
-
-        HUD.Say(def.name, lines.ToArray(), body.sprite, () =>
-        {
-            if (Restored)
-            {
-                HUD.Announce("<size=40>" + Loc.T($"{def.name}'s colors have returned!", $"{def.name}에게 색이 돌아왔어요!") + "</size>\n\n"
-                    + Loc.T($"{Data.story.RestoredVillagers} / {VillagerDB.All.Count} villagers restored", $"색을 되찾은 주민 {Data.story.RestoredVillagers} / {VillagerDB.All.Count}"), 5f);
-                Data.ChangeHeart(5f, Loc.T("The village feels a little brighter.", "마을이 조금 더 환해진 것 같아요."));
-            }
-            StoryEvents.CheckEnding();
-        });
+        lines[lines.Count - 1] += "\n<color=#c8c0b0>" + c.hint + "</color>";
+        return lines.ToArray();
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -204,6 +259,7 @@ public class Villager : MonoBehaviour
 
     void OnDestroy()
     {
+        all.Remove(this);
         if (InRange == this) InRange = null;
     }
 }

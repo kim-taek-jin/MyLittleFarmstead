@@ -5,8 +5,12 @@ using System.Collections.Generic;
 public class VillagerProgress
 {
     public string id;
-    public int wishIndex;   // 이뤄준 소원 수 (= 색이 돌아온 단계, 0 = 회색)
+    public int wishIndex;   // 넘긴 이야기 장 수 (= 색이 돌아온 단계, 0 = 회색). 옛 이름 그대로 (저장 호환)
     public bool met;        // 처음 인사를 나눴는지
+    public int lastDay = Neighbors.NeverDay;   // 지난 장을 넘긴 날 (K-3)
+    public bool invited;    // 품앗이 부탁을 들었는지
+    public int chore;       // 품앗이를 몇 번 거들었는지
+    public int saechamDay = -1;   // 마지막으로 새참을 같이 먹은 날
 }
 
 // 색을 먹는 정령의 상태
@@ -36,6 +40,7 @@ public class StoryState
     public SpiritState spirit = new SpiritState();
 
     // 나눔 → 별의 언덕
+    public int masilDay = -1;        // 마지막으로 마실 간 날 (하룻저녁에 한 집, K-3)
     public int kindness;
     public int donationDay = -1;     // 마지막으로 나눔을 한 날 (하루 첫 나눔 보너스용)
     public int shareDay = -1;        // 나눔 상자 점수를 받은 날
@@ -111,7 +116,7 @@ public class StoryState
             int n = 0;
             foreach (VillagerDef def in VillagerDB.All)
             {
-                if (Get(def.id).wishIndex >= def.wishes.Length) n++;
+                if (Get(def.id).wishIndex >= def.chapters.Length) n++;
             }
             return n;
         }

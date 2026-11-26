@@ -26,6 +26,10 @@ public class PlayerPixelAnimator : MonoBehaviour
 
     void Awake() { Instance = this; }
 
+    // 마실 (K-3): 평상에 앉은 모습. 끌 때까지 그대로
+    private bool sitting;
+    public static void Sit(bool on) { if (Instance != null) Instance.sitting = on; }
+
     // action: "hoe", "water", "harvest". target: 동작을 하는 곳 (그쪽을 바라봄)
     public static void PlayAction(string action, Vector2 target)
     {
@@ -84,6 +88,12 @@ public class PlayerPixelAnimator : MonoBehaviour
     void Update()
     {
         if (view == null) return;
+
+        if (sitting)
+        {
+            Sprite sit = PixelArt.Load("Player/player_sit");
+            if (sit != null) { view.sprite = sit; view.flipX = false; return; }
+        }
 
         if (actionT > 0f)
         {

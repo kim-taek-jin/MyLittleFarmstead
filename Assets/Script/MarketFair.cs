@@ -9,7 +9,7 @@ public class MarketFair : MonoBehaviour
     static readonly Vector2 BackgroundCenter = new Vector2(0.09f, -0.08f);
     static readonly Vector2 HagglerAt = new Vector2(2.6f, -2.2f);
     // 노점 자리 (밑면 가운데 x, y, 반폭): 지나가지 못하게
-    static readonly Vector3[] Stalls = { new Vector3(-1.6f, -2.7f, 1.0f), new Vector3(2.6f, -3.0f, 1.3f), new Vector3(6.4f, -2.6f, 1.1f) };
+    static readonly Vector3[] Stalls = { new Vector3(-1.6f, -2.7f, 1.0f), new Vector3(2.6f, -3.0f, 1.3f), new Vector3(-5.6f, -2.6f, 1.1f) };
     const float Reach = 1.3f;
 
     public static void Create(Scene scene, Material mat)

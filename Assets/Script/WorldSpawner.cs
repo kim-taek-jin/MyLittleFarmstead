@@ -38,9 +38,9 @@ public static class WorldSpawner
             DonationBox box = DonationBox.Create(new Vector2(-4.2f, -2.0f), mat, PixelArt.CharacterScale);
             SceneManager.MoveGameObjectToScene(box.gameObject, scene);
             MarketFair.Create(scene, mat);   // 장날이면 노점과 흥정 할아버지
-            Mayor mayor = Mayor.Create(mat, PixelArt.CharacterScale);   // 박 이장님 (확성기 전봇대 앞)
-            SceneManager.MoveGameObjectToScene(mayor.gameObject, scene);
         }
+
+        NeighborScenes.CreateSpots(scene, mat);   // K-3: 품앗이 자리 (떡 시루, 화덕, 연탄, 썰매) + 마을회관
 
         Spirit.EnsureSpawned();
     }

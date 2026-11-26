@@ -637,11 +637,15 @@ public class DataManager : MonoBehaviour
     // 일기에 쓰려고 기록: 이웃과 이야기, 쉼터에서 쉼
     public void NoteTalk() { today.talked++; }
     public void NoteRest() { today.rested = true; }
+    public void NotePumasi() { today.pumasi = true; }
+    public void NoteSaecham() { today.saecham = true; }
+    public void NoteMasil() { today.masil = true; }
 
     void EndDay(bool passedOut)
     {
         var facts = new DayFacts { passedOut = passedOut, meals = today.mealsEaten, harvested = today.harvested, talked = today.talked,
-                                   drank = today.drankWater, exhausted = today.exhausted, starved = today.starved, rested = today.rested };
+                                   drank = today.drankWater, exhausted = today.exhausted, starved = today.starved, rested = today.rested,
+                                   pumasi = today.pumasi, saecham = today.saecham, masil = today.masil };
         bool forestWas = story.forest != null && story.forest.open, lakeWas = story.lake != null && story.lake.open, hillWas = story.hill != null && story.hill.open;
         int hour = timeManager != null ? timeManager.hour : 22;
         var lines = new List<string>();
@@ -710,6 +714,13 @@ public class DataManager : MonoBehaviour
         // 새로운 날
         int earthLevel = SpiritDB.PerkLevel(story.spirit, "earth");
         int matured = farm.AdvanceDay(raining, 0.1f * earthLevel, rng, after);
+        // 미나의 품 (K-3): 맑은 아침이면 가끔 몰래 밭에 물을 주고 감
+        int nextDay = (timeManager != null ? timeManager.day : 0) + 1;
+        if (!raining && story.IsUnlocked("favor_water") && Neighbors.MinaWatersToday(nextDay))
+        {
+            int w = farm.WaterSome(Neighbors.MinaWaters);
+            if (w > 0) lines.Add(Loc.T($"Small footprints by the field: Mina watered {w} crop(s) this morning", $"밭가에 작은 발자국: 미나가 아침에 작물 {w}개에 물을 주고 갔어요"));
+        }
         // 텃밭: 작물 없이 밤을 보낸 뙈기는 쉰 땅, 퇴비 더미는 두 개마다 퇴비 한 포대
         int compostBefore = farm.compostReady;
         int rested = Plots.AdvanceNight(farm, FarmMap.PlotList);
@@ -788,6 +799,7 @@ public class DataManager : MonoBehaviour
             day = day, before = before, after = after, raining = raining, snowing = snowing,
             mejuSeason = after == Season.Winter && story.jang.Fermenting() == 0 && story.jang.hung.Count == 0,
             lidsOpen = story.jang.lidsOpen,
+            helpWanted = Neighbors.HelpWanted(story, VillagerDB.All, day),
             forestOpened = !forestWas && story.forest != null && story.forest.open,
             lakeOpened = !lakeWas && story.lake != null && story.lake.open,
             hillOpened = !hillWas && story.hill != null && story.hill.open,
@@ -843,14 +855,9 @@ public class DataManager : MonoBehaviour
         int toNext = SeasonSystem.HeartToNext(heart, season);
         if (toNext > 0 && toNext <= 8 && !(demoMode && season == Season.Winter && story.IsUnlocked("demo_end")))
             tips.Add(Loc.T($"{SeasonSystem.Name(season + 1)} feels close", $"{SeasonSystem.Name(season + 1)}이 가까이 와 있어요"));
-        foreach (VillagerDef v in VillagerDB.All)
-        {
-            VillagerProgress p = story.Get(v.id);
-            if (!p.met || p.wishIndex >= v.wishes.Length) continue;
-            bool ready = true;
-            foreach (var it in v.wishes[p.wishIndex].items) if (!HasItem(it.itemName, it.count)) { ready = false; break; }
-            if (ready) { tips.Add(Loc.T($"You have everything for {v.name}'s wish", $"{v.name}의 소원 물건을 다 가지고 있어요")); break; }
-        }
+        int todayN = timeManager != null ? timeManager.day : 0;
+        string masil = Neighbors.MasilTonight(story, VillagerDB.All, todayN);
+        if (masil != null) tips.Add(Loc.T($"{masil} would like a visit this evening (masil)", $"저녁에 {masil}에게 마실 가 볼까요"));
         if (StarHill.IsUnlocked && !raining && !snowing) tips.Add(Loc.T("Clear skies tonight: the star vine will grow", "오늘 밤 맑음: 별 덩굴이 자라요"));
         int left = AlbumDB.PerSeason - Album.Count(story, season);
         if (left > 0) tips.Add(Loc.T($"{left} {SeasonSystem.Name(season)} photo(s) left in your album [P]", $"앨범에 남은 {SeasonSystem.Name(season)} 사진 {left}장 [P]"));

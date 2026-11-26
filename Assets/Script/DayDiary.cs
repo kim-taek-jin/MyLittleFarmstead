@@ -9,6 +9,7 @@ public class DayFacts
     public int meals, harvested, talked;
     public bool drank, exhausted, starved, rested;
     public bool warm;            // 아궁이에 불을 때서 방이 뜨끈했음 (K-2)
+    public bool pumasi, saecham, masil;   // 이웃 일을 거듦, 새참을 같이 먹음, 마실을 감 (K-3)
     public float delta;          // 마음 변화 (일기 문장 고르기에만 씀, 화면에는 숫자를 안 보임)
 }
 
@@ -47,7 +48,13 @@ public static class DayDiary
         if (f.exhausted && !f.passedOut) notes.Add(Pick(day, ("I worked until I had nothing left. Like back in the city.", "기력이 바닥날 때까지 일했다. 도시에서처럼."),
                                                            ("I pushed too hard again.", "또 무리했다.")));
         if (f.lateNight) notes.Add(Pick(day, ("I stayed up far too late.", "너무 늦게까지 깨어 있었다."), ("Midnight came and went.", "자정이 넘도록 잠들지 못했다.")));
-        if (f.talked > 0) notes.Add(Pick(day, ("I talked with the neighbors for a while.", "이웃과 한참 이야기를 나눴다."),
+        if (f.masil) notes.Add(Pick(day, ("I sat out with a neighbor in the evening. We didn't need to say much.", "저녁에 이웃과 평상에 앉아 있었다. 말이 많지 않아도 좋았다."),
+                                        ("I heard someone's story tonight. I think they needed to tell it.", "오늘 밤 누군가의 이야기를 들었다. 하고 싶었던 말이었나 보다.")));
+        if (f.pumasi) notes.Add(Pick(day, ("I helped a neighbor with their work. Tired body, light heart.", "이웃의 일을 거들었다. 몸은 고단한데 마음이 가볍다."),
+                                         ("Working side by side, the time flew.", "나란히 일하니 시간이 금방 갔다.")));
+        if (f.saecham) notes.Add(Pick(day, ("We shared a meal in the middle of the day.", "한낮에 새참을 나눠 먹었다."),
+                                          ("Food tastes better eaten together.", "같이 먹으니 더 맛있었다.")));
+        if (f.talked > 0 && !f.masil && !f.saecham) notes.Add(Pick(day, ("I talked with the neighbors for a while.", "이웃과 한참 이야기를 나눴다."),
                                               ("Someone smiled at me today.", "오늘 누군가 나를 보고 웃었다.")));
         if (f.rested) notes.Add(Pick(day, ("I sat down for a while and just watched. The wind was nice.", "잠깐 앉아서 그냥 바라봤다. 바람이 좋았다."),
                                           ("I let myself rest for a bit.", "잠시 쉬어도 된다고 나에게 말해 줬다.")));

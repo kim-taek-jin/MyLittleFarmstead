@@ -169,7 +169,8 @@ public class CropManager : MonoBehaviour
             return false;
         }
 
-        if (!Data.UseEnergy(tier >= 2 ? tillEnergy * 1.5f : tillEnergy)) return false;
+        float till = (tier >= 2 ? tillEnergy * 1.5f : tillEnergy) * (Data.story.IsUnlocked("favor_hoe") ? 0.6f : 1f);   // 동수 아저씨가 벼려 준 괭이 (K-3)
+        if (!Data.UseEnergy(till)) return false;
         foreach (var cell in targets)
         {
             Farm.Till(cell.x, cell.y);

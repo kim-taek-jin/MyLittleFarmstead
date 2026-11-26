@@ -91,4 +91,7 @@ public class DayLog
     public bool drankWater;
     public int talked;          // 이웃과 이야기한 횟수 (일기)
     public bool rested;         // 쉼터에서 쉬었는지 (일기)
+    public bool pumasi;         // 이웃 일을 거들었는지 (K-3)
+    public bool saecham;        // 새참을 같이 먹었는지
+    public bool masil;          // 저녁에 마실을 갔는지
 }

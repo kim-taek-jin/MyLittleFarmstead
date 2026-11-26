@@ -11,6 +11,7 @@ public class MorningNews
     public bool forestOpened, lakeOpened, hillOpened;
     public bool mejuSeason;        // 겨울인데 아직 장을 안 담갔음 (K-2)
     public bool lidsOpen;          // 장독 뚜껑이 열려 있음
+    public string helpWanted;      // 일손이 필요한 이웃 id (K-3 품앗이)
 }
 
 public static class VillageBroadcast
@@ -42,6 +43,17 @@ public static class VillageBroadcast
             body.Add(Loc.T("And whoever left their jar lids open, close them quick!", "장독 뚜껑 열어 둔 집은 얼른 가서 덮으시고요!"));
         if (n.mejuSeason && n.day >= 3 && n.day % 4 == 3)
             body.Add(Loc.T("Winter is meju season. Soybeans and salt are at the corner store in the market lane.", "겨울은 메주 쑤는 철입니다. 메주콩이랑 소금은 장터 행복슈퍼에 있습니다."));
+
+        if (!string.IsNullOrEmpty(n.helpWanted) && n.day % 2 == 0)
+        {
+            switch (n.helpWanted)
+            {
+                case "rosa": body.Add(Loc.T("Grandma Boksun at the mill could use a hand with her rice-cake steamer.", "방앗간 복순 할매가 떡 시루 올릴 일손이 필요하답니다.")); break;
+                case "theo": body.Add(Loc.T("Dongsu's forge needs someone to work the bellows. Lend him a hand, eh?", "동수네 대장간에 풀무질할 사람이 없답니다. 좀 거들어 주쇼.")); break;
+                case "mina": body.Add(Loc.T("Little Mina's looking for someone to push her sled on the stream.", "미나가 개울에서 썰매 밀어 줄 사람을 찾는답니다.")); break;
+                case "mayor": body.Add(Loc.T("The village hall needs its coal briquettes carried in. ...Yes, it's me asking.", "마을회관 연탄 들일 일손 좀 부탁합니다. ...네, 저요.")); break;
+            }
+        }
 
         // 할 말이 없는 날에도 가끔 (사흘에 한 번) 안부 한 마디
         if (body.Count == 0 && n.day > 2 && n.day % 3 == 0)

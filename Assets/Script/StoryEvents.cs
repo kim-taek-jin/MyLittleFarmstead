@@ -131,15 +131,15 @@ public static class StoryEvents
                   (toNext > 0 ? " <size=22>(" + Loc.T($"{SeasonSystem.Name(season + 1)} at {toNext} more Heart", $"{SeasonSystem.Name(season + 1)}까지 마음 {toNext}") + ")</size>" : "") +
                   "    " + Loc.T("Album", "앨범") + $" {story.photos.Count}/{AlbumDB.All.Count} [P]\n\n");
 
-        sb.Append("<color=#ffd84a>Villagers</color>\n");
+        sb.Append("<color=#ffd84a>" + Loc.T("Neighbors", "이웃") + "</color>\n");
         foreach (VillagerDef def in VillagerDB.All)
         {
             VillagerProgress p = story.Get(def.id);
-            string dots = new string('#', p.wishIndex) + new string('-', def.wishes.Length - p.wishIndex);
-            string status;
-            if (!p.met) status = "<color=#a0a0a0>" + Loc.T("not met yet", "아직 못 만났어요") + "</color>";
-            else if (p.wishIndex >= def.wishes.Length) status = "<color=#9dff9d>" + Loc.T("colors restored", "색을 되찾았어요") + "</color>";
-            else status = Loc.T("wants ", "소원: ") + VillagerDB.ItemsText(def.wishes[p.wishIndex].items);
+            int n = def.chapters.Length, done = System.Math.Min(p.wishIndex, n);
+            string dots = new string('#', done) + new string('-', n - done);
+            string status = Neighbors.Status(def, p, day);
+            if (!p.met) status = "<color=#a0a0a0>" + status + "</color>";
+            else if (Neighbors.Restored(def, p)) status = "<color=#9dff9d>" + status + "</color>";
             sb.Append($"{def.name}  [{dots}]  {status}\n");
         }
 

@@ -92,9 +92,10 @@ public class JangState
     }
 
     // 장 가르기: 된장, 간장 개수. 돌본 날이 많을수록 늘고, 빗물이 두 번 넘게 들면 하나 줄어듦 (최소 1)
-    public static (int doenjang, int ganjang) Yield(JarState j)
+    // helper: 복순 할머니가 같이 돌봐 주면 (K-3 품앗이) 한 단계 더
+    public static (int doenjang, int ganjang) Yield(JarState j, int helper = 0)
     {
-        int bonus = (j.care >= 3 ? 1 : 0) + (j.care >= 6 ? 1 : 0) - (j.rain >= 2 ? 1 : 0);
+        int bonus = (j.care >= 3 ? 1 : 0) + (j.care >= 6 ? 1 : 0) - (j.rain >= 2 ? 1 : 0) + helper;
         int d = System.Math.Max(1, 2 + bonus);
         int g = System.Math.Max(1, 1 + bonus);
         return (d, g);
@@ -109,9 +110,9 @@ public class JangState
         return Loc.T("Mild. Next time I'll let it see more sun.", "순한 맛. 다음엔 볕을 더 쬐어 줘야지.");
     }
 
-    public int Split(int i, out int doenjang, out int ganjang)
+    public int Split(int i, out int doenjang, out int ganjang, int helper = 0)
     {
-        (doenjang, ganjang) = Yield(jars[i]);
+        (doenjang, ganjang) = Yield(jars[i], helper);
         jars[i] = new JarState();
         return i;
     }

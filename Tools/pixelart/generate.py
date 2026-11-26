@@ -223,6 +223,13 @@ def main():
         exported['World'].append(export('World', f'plot_straw_{v}', kfarm.plot_straw(v)))
     exported['World'].append(export('World', 'compost_heap', kfarm.compost_heap()))
     exported['Items'].append(export('Items', 'compost', kfarm.compost_icon()))
+    # ---- K-3: neighbours (sitting poses, pumasi spots, the village head in gray stages) ----
+    import k3
+    for name, canvas in k3.villager_sits().items():
+        exported['Villagers'].append(export('Villagers', name, canvas))
+    exported['Player'].append(export('Player', 'player_sit', k3.player_sit()))
+    for name, canvas in k3.world_sprites().items():
+        exported['World'].append(export('World', name, canvas))
     # ---- K-2: making sauces (agungi, meju rack, open jar lids) and its items ----
     import jang
     for name, canvas in jang.world_sprites().items():

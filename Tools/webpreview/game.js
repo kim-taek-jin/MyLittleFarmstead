@@ -115,7 +115,7 @@ const isMarketDay = d => d > 0 && d % MARKET_CYCLE === 3;
 const daysUntilMarket = d => { for (let i = 0; i < MARKET_CYCLE; i++) if (isMarketDay(d + i)) return i; return MARKET_CYCLE; };
 const FAIR_STOCK = [['Compost', 30], ["Earth's Breath", 180], ['Sunshine Shard', 200]];
 const HAGGLER = [2.6, -2.2];
-const FAIR_STALLS = [[-1.6, -2.7, 1.0], [2.6, -3.0, 1.3], [6.4, -2.6, 1.1]];
+const FAIR_STALLS = [[-1.6, -2.7, 1.0], [2.6, -3.0, 1.3], [-5.6, -2.6, 1.1]];
 const ALIASES = { Bread: 'Rice Cake', 'Corn Soup': 'Steamed Corn', 'Carrot Cake': 'Carrot Pancake', 'Pumpkin Pie': 'Pumpkin Porridge' };
 
 const RECIPES = [
@@ -145,6 +145,9 @@ const VILLAGERS = [
   "scene": "market",
   "x": -6.0,
   "y": 1.0,
+  "ex": -6.7,
+  "ey": 0.75,
+  "place": "the bench in front of the mill",
   "intro": "Oh my, a new face! Forgive me, dear... Since my husband passed, the mill has gone quiet and everything faded. Even my rice cakes taste gray.",
   "gray": [
    "The mill used to rumble from dawn. Now it's just me and the clock.",
@@ -162,17 +165,27 @@ const VILLAGERS = [
    "Autumn was his favorite. New rice, new rice cakes."
   ],
   "restored": "I can see the colors again... Thank you, dear. Truly.",
-  "wishes": [
+  "masil": [
+   "Sit, sit. The night's long anyway. ...He used to sit right where you are.",
+   "Look at the stars. In the city you can't see them, can you?",
+   "Did you eat dinner? Don't lie to me."
+  ],
+  "chapters": [
    {
-    "items": [
-     [
-      "Carrot",
-      3
-     ]
+    "kind": "Pumasi",
+    "invite": "Oh, perfect timing. I'm about to set rice cakes in the steamer, but these old arms aren't what they were. Would you lend me a hand?",
+    "scene": [
+     "Look at you, quick hands. Strange... someone doing what he used to do.",
+     "Here, take some rice cakes. And I'll show you how I fry carrot pancakes.",
+     "Pumasi gets paid back in work, you know. When your sauce jars need looking after, I'll come by."
     ],
-    "req": "Would you bring me 3 Carrots? I haven't fried a pancake in so long.",
-    "thanks": "Lovely carrots! Here, some rice cakes. And let me show you my carrot pancakes.",
-    "heart": 3.0,
+    "hint": "By day, help steam rice cakes at the mill (the steamer by the door)",
+    "spot": "steamer",
+    "steps": [
+     "You stoke the fire under the pot.",
+     "You spread the rice flour in the steamer, layer by layer.",
+     "Steam rises. You lift the lid together."
+    ],
     "reward": [
      [
       "Rice Cake",
@@ -180,41 +193,39 @@ const VILLAGERS = [
      ]
     ],
     "unlock": "recipe_carrot_cake",
-    "unlockText": "New recipe: Carrot Pancake (needs a Campfire)"
+    "unlockText": "New recipe: Carrot Pancake",
+    "favor": "favor_jang",
+    "favorText": "Grandma Boksun will help look after your sauce jars (deeper taste)",
+    "heart": 3.0
    },
    {
-    "items": [
-     [
-      "Corn",
-      2
-     ],
-     [
-      "Apple",
-      2
-     ]
+    "kind": "Saecham",
+    "invite": "These days I can't bring myself to eat alone. If someone brought me a pot of doenjang stew, maybe...",
+    "scene": [
+     "You made this? With sauce you put down yourself? ...(She takes a spoonful and says nothing for a long while.)",
+     "First time since he passed. Sitting across from someone, eating.",
+     "It's good. Truly."
     ],
-    "req": "The children used to come for snacks after school. I'd need 2 Corn and 2 Apples.",
-    "thanks": "The whole market smells sweet again! Take this for your trouble.",
-    "heart": 3.0,
-    "gold": 150
+    "hint": "Bring her a doenjang stew for a work-break meal (saecham)",
+    "need": "Doenjang Stew",
+    "heart": 4.0
    },
    {
-    "items": [
-     [
-      "Strawberry Jam",
-      1
-     ]
+    "kind": "Masil",
+    "invite": "Come by in the evening, if you like. I sit out on the bench in front of the mill.",
+    "scene": [
+     "He never said much. When he opened the mill before dawn, all he'd say was \"It's cold, sleep a bit more.\"",
+     "I wanted to hear that so badly. Every morning.",
+     "But since you started coming by... the evenings aren't so long."
     ],
-    "req": "Strawberry jam... he made it every summer. Could you make some? I'd like to taste it once more.",
-    "thanks": "...It tastes just like his. Look at me, crying like a girl. Here, take these.",
-    "heart": 8.0,
-    "gold": 300,
+    "hint": "In the evening, visit her on the bench in front of the mill (masil)",
     "reward": [
      [
       "Carrot Pancake",
       2
      ]
-    ]
+    ],
+    "heart": 6.0
    }
   ]
  },
@@ -224,6 +235,9 @@ const VILLAGERS = [
   "scene": "market",
   "x": -1.4,
   "y": 1.0,
+  "ex": 6.3,
+  "ey": 1.35,
+  "place": "the plastic chairs outside the corner store",
   "intro": "Hmph. The forge behind the store's been cold for a year. Nothing worth making anymore.",
   "gray": [
    "Hmph.",
@@ -241,53 +255,59 @@ const VILLAGERS = [
    "Autumn's for sharp sickles. Fields need them before the frost."
   ],
   "restored": "Listen to that. The forge is singing again.",
-  "wishes": [
+  "masil": [
+   "Sit. ...Want a sip? It's just sikhye. Don't look at me like that.",
+   "Quiet night. I like it.",
+   "The forge is banked for the night. It'll still be warm in the morning."
+  ],
+  "chapters": [
    {
-    "items": [
-     [
-      "Wood",
-      10
-     ]
+    "kind": "Pumasi",
+    "invite": "I'm thinking of lighting the forge again... but there's no one to work the bellows. You know how? Doesn't matter. You just pump.",
+    "scene": [
+     "...Good fire. First in a year.",
+     "Pumasi's got to be paid back. Give me your hoe. ...There, sharpened. The ground won't feel so heavy now.",
+     "And I'll show you how to make a copper watering can, while the fire's hot."
     ],
-    "req": "If you want to be useful, bring 10 Wood. Maybe I'll light the forge.",
-    "thanks": "...Fire's going. Strange feeling. Here, I'll show you how to make a copper watering can.",
-    "heart": 2.0,
+    "hint": "By day, work the bellows at the forge by the hardware store",
+    "spot": "forge",
+    "steps": [
+     "You pump the bellows. The coals glow.",
+     "Again. Sparks fly up.",
+     "The fire roars. Mr. Dongsu picks up his hammer."
+    ],
     "unlock": "recipe_copper_can",
-    "unlockText": "New recipe: Copper Watering Can"
+    "unlockText": "New recipe: Copper Watering Can",
+    "favor": "favor_hoe",
+    "favorText": "Your hoe is sharpened: tilling takes less energy",
+    "heart": 3.0
    },
    {
-    "items": [
-     [
-      "Stone",
-      15
-     ]
+    "kind": "Masil",
+    "invite": "...If you're not busy tonight, I sit outside the corner store. Not that I'm asking.",
+    "scene": [
+     "I've got a daughter. In Seoul. Does design, or something like that.",
+     "We had a big fight. She asked what's the point of being a blacksmith these days. I said things too. Three years, no word.",
+     "...You came from the city too. Is it a place where you hold on alone?"
     ],
-    "req": "The chimney's cracked. Need 15 Stone to rebuild it.",
-    "thanks": "Solid stone. I made this with the first good fire in a year.",
-    "heart": 3.0,
-    "gold": 200,
+    "hint": "In the evening, sit with him outside the corner store (masil)",
+    "heart": 3.0
+   },
+   {
+    "kind": "Letter",
+    "invite": "I tried to write her a letter. These hands are good with iron, not with words. ...Would you write it for me?",
+    "scene": [
+     "...So I just post this. That's it?",
+     "Thanks. Here, the first decent hoe I've made in a year. It's yours. Don't argue."
+    ],
+    "hint": "By day, help him write a letter to his daughter",
     "reward": [
      [
       "Fertile Hoe",
       1
      ]
-    ]
-   },
-   {
-    "items": [
-     [
-      "Sunshine Shard",
-      1
-     ],
-     [
-      "Earth's Breath",
-      1
-     ]
     ],
-    "req": "My daughter used to say the forge sings when nature's spirit touches it. Bring me a Sunshine Shard and an Earth's Breath.",
-    "thanks": "...She was right. You hear that? Here. Don't argue, just take it.",
-    "heart": 8.0,
-    "gold": 500
+    "heart": 6.0
    }
   ]
  },
@@ -297,6 +317,9 @@ const VILLAGERS = [
   "scene": "farm",
   "x": 5.0,
   "y": -2.4,
+  "ex": -2.35,
+  "ey": -1.65,
+  "place": "the bench in your yard",
   "intro": "...Hi. Grandma says not to talk to strangers. Everything here is boring. Everything's gray.",
   "gray": [
    "The stream is boring. The fish are boring.",
@@ -314,57 +337,58 @@ const VILLAGERS = [
    "The leaves are crunchy! Listen! *crunch crunch*"
   ],
   "restored": "Everything looks so bright now! Is this what you see all the time?",
-  "wishes": [
+  "masil": [
+   "Grandma's snoring already. Hehe.",
+   "Do you think the fish sleep under the ice?",
+   "When I grow up I'll live in the city. ...Or maybe not."
+  ],
+  "chapters": [
    {
-    "items": [
-     [
-      "Apple",
-      2
-     ]
+    "kind": "Fish",
+    "invite": "Grandpa's got an old fishing rod. Wanna fish together? Alone is boring. Stand close to the stream and press E. Catch one and show me!",
+    "scene": [
+     "Woah! You really caught one! Next time I'll catch a bigger one.",
+     "Here, I found these seeds in Grandpa's shed. Plant them in spring!"
     ],
-    "req": "If you give me 2 Apples, I'll give you Grandpa's old fishing rod. He doesn't use it anymore.",
-    "thanks": "Deal! Here! You can fish in the stream. Stand close and press E!",
-    "heart": 2.0,
-    "reward": [
-     [
-      "Fishing Rod",
-      1
-     ]
-    ],
-    "unlock": "fishing",
-    "unlockText": "Fishing unlocked! New recipe: Grilled Fish"
-   },
-   {
-    "items": [
-     [
-      "Carp",
-      1
-     ]
-    ],
-    "req": "Can you catch a Carp? A big orange one. I want to show Grandpa!",
-    "thanks": "Woah, it's huge! Grandpa's gonna flip! Here, I found these seeds in his shed.",
-    "heart": 3.0,
+    "hint": "Catch a fish in the stream with Mina's rod",
     "reward": [
      [
       "Strawberry Seed",
       3
      ]
-    ]
+    ],
+    "unlock": "fishing",
+    "unlockText": "Fishing! New recipe: Grilled Fish",
+    "heart": 2.0
    },
    {
-    "items": [
-     [
-      "Sunshine Shard",
-      1
-     ],
-     [
-      "Strawberry",
-      2
-     ]
+    "kind": "Pumasi",
+    "invite": "The stream froze! Grandpa made me a sled, but there's no one to push me... Push me? Please?",
+    "scene": [
+     "One more! ...No, you're tired, right? Hehe.",
+     "To say thanks, I'll water your field in the mornings sometimes. Secretly."
     ],
-    "req": "Grandma says sunflowers follow the sun. Bring me a Sunshine Shard and 2 Strawberries and I'll show you something!",
-    "thanks": "Look! Sunflower seeds! Grandpa says they're for you. And the market will sell them now too!",
-    "heart": 8.0,
+    "hint": "Push Mina's sled on the frozen stream",
+    "spot": "sled",
+    "steps": [
+     "You give the sled a push. Mina squeals.",
+     "Faster! She digs in with her ice picks.",
+     "One last long glide down the stream."
+    ],
+    "favor": "favor_water",
+    "favorText": "Mina will sometimes water your crops in the morning",
+    "heart": 3.0
+   },
+   {
+    "kind": "Masil",
+    "invite": "Grandma goes to sleep at nine. ...Can I come sit on your bench in the evening?",
+    "scene": [
+     "I snuck out. Grandma doesn't know.",
+     "Mom and Dad work in the city. They said they'd come for New Year. They said that last year too.",
+     "You came from the city too. Why is everyone there so busy?",
+     "...Anyway. Now I've got somewhere to go in the evening."
+    ],
+    "hint": "In the evening, wait for Mina on the bench in your yard",
     "reward": [
      [
       "Sunflower Seed",
@@ -372,7 +396,79 @@ const VILLAGERS = [
      ]
     ],
     "unlock": "shop_sunflower",
-    "unlockText": "Sunflower Seeds are now sold at the market"
+    "unlockText": "Sunflower Seeds are now sold at the market",
+    "heart": 6.0
+   }
+  ]
+ },
+ {
+  "id": "mayor",
+  "name": "Village Head Park",
+  "scene": "market",
+  "x": -3.9,
+  "y": 0.9,
+  "ex": 5.55,
+  "ey": -3.05,
+  "place": "the bench outside the village hall",
+  "intro": "Well now, you must be the one who moved into the empty house! I'm Park, the village head. Not many young folks left around here... it's good to see a new face. I make the announcements every morning on that loudspeaker.",
+  "gray": [
+   "Eating well? You look thin. City folks always do.",
+   "If you hear the loudspeaker crackle, that's me. Don't laugh at my voice."
+  ],
+  "color": [
+   "This village used to be full of children. Now it's quiet... but you're here now.",
+   "Need a hand with anything? One announcement and the whole village comes running."
+  ],
+  "season": [
+   "Winter's when we make meju for the sauces. Grandma Boksun knows how.",
+   "Spring! Time to open the sauce jars and let the sun in.",
+   "Hot, isn't it? Come sit in the pavilion when it gets too much.",
+   "Autumn's busy. Kimchi-making day is coming, everyone will need a hand."
+  ],
+  "restored": "Ha! Look at that, the village has color in it again.",
+  "masil": [
+   "The hall's warm tonight, thanks to you. The old folks are playing hwatu inside.",
+   "Count the lit windows with me. ...One more than last year."
+  ],
+  "chapters": [
+   {
+    "kind": "Pumasi",
+    "invite": "The old folks at the village hall need coal briquettes in for the winter, but my back, I tell you...",
+    "scene": [
+     "Ah, that's a relief. Young hands are something else.",
+     "Pumasi gets paid back. When you need hands, one announcement and the whole village will come."
+    ],
+    "hint": "By day, carry coal briquettes into the village hall",
+    "spot": "briquettes",
+    "steps": [
+     "You carry a stack of briquettes inside. Your hands go black.",
+     "Another stack. An old man inside says thank you.",
+     "The last one. The hall's stove is lit."
+    ],
+    "favor": "favor_hands",
+    "favorText": "The village head will call the neighbors when you need a hand",
+    "heart": 3.0
+   },
+   {
+    "kind": "Saecham",
+    "invite": "After the broadcast my throat's all scratchy. Came out without breakfast again...",
+    "scene": [
+     "Well I'll be. When did someone last bring me food?",
+     "Being village head, everyone asks me to do something for them. Nobody asks if I've eaten."
+    ],
+    "hint": "Bring the village head something to eat (any food)",
+    "heart": 3.0
+   },
+   {
+    "kind": "Masil",
+    "invite": "I sit out by the village hall of an evening. Come keep an old man company.",
+    "scene": [
+     "Fifteen years I've been village head. In that time, twelve houses went empty.",
+     "The school closed too. Some nights I can't sleep, wondering if the village will just... disappear.",
+     "But you came. A light came on in an empty house... you don't know how good that felt."
+    ],
+    "hint": "In the evening, visit him outside the village hall (masil)",
+    "heart": 6.0
    }
   ]
  }
@@ -526,7 +622,7 @@ function add(n, c = 1) { if (c <= 0) return; G.inv[n] = (G.inv[n] || 0) + c; if 
 function remove(n, c = 1) { if (!G.inv[n]) return; G.inv[n] -= c; if (G.inv[n] <= 0) delete G.inv[n]; G.water = Math.min(G.water, waterCap()); }
 const unlocked = k => S().unlocks.includes(k);
 function unlock(k) { if (unlocked(k)) return false; S().unlocks.push(k); return true; }
-function villagerProgress(id) { return S().villagers[id] || (S().villagers[id] = { wish: 0, met: false }); }
+function villagerProgress(id) { const p = S().villagers[id] || (S().villagers[id] = { wish: 0, met: false }); if (p.lastDay === undefined) Object.assign(p, { lastDay: -99, invited: false, chore: 0, saechamDay: -1 }); return p; }
 function waterCap() { let c = 0; for (const n in G.inv) { const d = ITEMS[n]; if (d && d.tool === 'can') c = Math.max(c, d.cap); } return c; }
 
 // spirit math (SpiritDB)
@@ -767,7 +863,7 @@ function worldClick(wx, wy) {
   if (d.tool === 'hoe') {
     const t = cellsFor(cx, cy, d.tier).filter(([x, y]) => tillable(x, y) && !debrisAt(x, y) && !tileAt(x, y));
     if (!t.length) { toast(tileAt(cx, cy) ? 'This ridge is already tilled. Plant a seed here!' : 'You can only farm on the ridges of an open plot.'); return; }
-    if (!useEnergy(d.tier >= 2 ? 6 : 4)) return; t.forEach(([x, y]) => G.tiles[x + ',' + y] = { wet: false }); doAction('hoe', cx, cy); burst('dust', cx, cy);
+    if (!useEnergy((d.tier >= 2 ? 6 : 4) * (unlocked('favor_hoe') ? 0.6 : 1))) return; t.forEach(([x, y]) => G.tiles[x + ',' + y] = { wet: false }); doAction('hoe', cx, cy); burst('dust', cx, cy);
   } else if (d.tool === 'can') {
     if (G.water <= 0) { toast('Your watering can is empty. Refill it at the well (E).'); return; }
     const t = cellsFor(cx, cy, d.tier).filter(([x, y]) => { const tl = tileAt(x, y); const c = cropAt(x, y); return tl && (!tl.wet || (c && !c.watered)); });
@@ -969,32 +1065,102 @@ function feedSpirit() {
 }
 
 // ------------------------------------------------------------------ villagers
-function villagerSprite(v) { return `Villagers/${v.id}_${Math.min(3, villagerProgress(v.id).wish)}`; }
-function wishReady(v) { const p = villagerProgress(v.id); if (p.wish >= 3) return false; return v.wishes[p.wish].items.every(([n, c]) => has(n, c)); }
-const itemsText = arr => arr.map(([n, c]) => `${c} ${n}`).join(', ');
+// K-3: neighbours (pumasi, saecham, masil). Rules = Neighbors.cs, scenes = NeighborScenes.cs
+const isEvening = h => h >= 18 && h < 22, isDay = h => h >= 6 && h < 18;
+const vRestored = v => villagerProgress(v.id).wish >= v.chapters.length;
+const vNext = v => vRestored(v) ? null : v.chapters[villagerProgress(v.id).wish];
+const vReady = v => { const p = villagerProgress(v.id); return p.met && !vRestored(v) && G.day >= p.lastDay + 2; };
+const sittingOut = v => !!v.ex && isEvening(G.hour);
+const vPos = v => sittingOut(v) ? [v.ex, v.ey] : [v.x, v.y];
+function villagerSprite(v) { const st = Math.min(3, villagerProgress(v.id).wish); return sittingOut(v) ? `Villagers/${v.id}_sit_${st}` : `Villagers/${v.id}_${st}`; }
+function hasBubble(v) {
+  const p = villagerProgress(v.id); if (!p.met) return true;
+  if (sittingOut(v)) return S().masilDay !== G.day && vNext(v)?.kind === 'Masil' && vReady(v);
+  const c = vNext(v); return !!c && c.kind !== 'Masil' && vReady(v) && !(c.kind === 'Pumasi' && p.invited);
+}
+function idleLine(v) { v.idle = (v.idle || 0) + 1; const pool = vRestored(v) ? v.color : v.gray; return v.idle % 2 === 1 ? v.season[S().season] : pool[v.idle % pool.length]; }
+function invite(v, c) {
+  const p = villagerProgress(v.id), lines = [c.invite];
+  if (c.kind === 'Pumasi') p.invited = true;
+  if (c.kind === 'Fish' && !has('Fishing Rod')) { add('Fishing Rod'); unlock('fishing'); lines.push('[#9dff9d]Received:[/] Fishing Rod'); }
+  if (c.kind === 'Saecham' && c.need && !has(c.need)) lines.push(`[#c8c0b0](Hold a ${c.need} and talk to them.)[/]`);
+  lines[lines.length - 1] += `\n[#c8c0b0]${c.hint}[/]`;
+  return lines;
+}
 function talk(v) {
   G.log.talked = (G.log.talked || 0) + 1;
-  const p = villagerProgress(v.id); const portrait = villagerSprite(v);
-  v.idle = (v.idle || 0) + 1; const seasonal = v.idle % 2 === 1;
-  if (p.wish >= 3) { say(v.name, [seasonal ? v.season[S().season] : v.color[v.idle % v.color.length]], portrait); return; }
-  const w = v.wishes[p.wish];
-  if (!p.met) { p.met = true; report('villager_met'); say(v.name, [v.intro, w.req], portrait); return; }
-  if (wishReady(v)) { ask(v.name, `${w.req}\n[#ffd84a]Give ${itemsText(w.items)}?[/]`, portrait, () => fulfill(v), null, 'Give', 'Not yet'); return; }
-  say(v.name, [seasonal ? v.season[S().season] : v.gray[v.idle % v.gray.length], `${w.req}\n[#c8c0b0](Needs: ${itemsText(w.items)})[/]`], portrait);
+  const p = villagerProgress(v.id), portrait = villagerSprite(v), c = vNext(v);
+  if (!p.met) { p.met = true; p.lastDay = -99; report('villager_met'); say(v.name, [v.intro, ...(c && c.kind !== 'Letter' ? invite(v, c) : [])], portrait); return; }
+  if (sittingOut(v)) {
+    if (S().masilDay !== G.day) ask(v.name, `Sit with ${v.name} for a while? (masil: one house a night)`, portrait, () => masil(v), () => say(v.name, [idleLine(v)], portrait), 'Sit down', 'Just say hi');
+    else say(v.name, ['Already been visiting tonight? Go get some sleep.'], portrait);
+    return;
+  }
+  const held = selectedItem(), food = !!held && ITEMS[held]?.cat === 'Food' && has(held), day = isDay(G.hour);
+  if (c && c.kind === 'Saecham' && vReady(v) && day && food && (!c.need || c.need === held)) {
+    ask(v.name, `${c.invite}\n[#ffd84a]Share your ${held} as a work-break meal?[/]`, portrait, () => saecham(v, held, true), null, 'Eat together', 'Not now'); return;
+  }
+  if (c && vReady(v) && c.kind !== 'Masil') {
+    if (c.kind === 'Letter') { say(v.name, [c.invite], portrait, () => letter(v)); return; }
+    v.idle = (v.idle || 0) + 1;
+    if (!(c.kind === 'Pumasi' && p.invited) || v.idle % 2 === 0) { say(v.name, invite(v, c), portrait); return; }
+  }
+  if (food && day && p.saechamDay !== G.day) { ask(v.name, `${idleLine(v)}\n[#ffd84a]Share your ${held}?[/]`, portrait, () => saecham(v, held, false), null, 'Eat together', 'Not now'); return; }
+  const lines = [idleLine(v)]; if (c && c.kind === 'Masil' && vReady(v)) lines.push(c.invite);
+  say(v.name, lines, portrait);
 }
-function fulfill(v) {
-  const p = villagerProgress(v.id); const w = v.wishes[p.wish];
-  w.items.forEach(([n, c]) => remove(n, c)); p.wish++; v.pulse = 1;
-  addKindness(3); report('wish'); if (p.wish >= 3) report('restored');
-  const rw = []; if (w.gold) { addGold(w.gold); rw.push(w.gold + 'G'); }
-  (w.reward || []).forEach(([n, c]) => { add(n, c); rw.push(`${n} x${c}`); });
-  if (w.unlock && unlock(w.unlock)) rw.push(w.unlockText);
-  changeHeart(w.heart, `${v.name} smiled.`);
-  const lines = [w.thanks]; if (rw.length) lines.push('[#9dff9d]Received:[/] ' + rw.join(', ')); if (p.wish >= 3) lines.push(v.restored);
+function finishChapter(v, done, before) {
+  const p = villagerProgress(v.id), c = vNext(v);
+  p.wish++; p.lastDay = G.day; p.invited = false; p.chore = 0; v.pulse = 1;
+  addKindness(3); report('wish'); const restored = vRestored(v); if (restored) report('restored');
+  const rw = []; if (c.gold) { addGold(c.gold); rw.push(c.gold + 'G'); }
+  (c.reward || []).forEach(([n, k]) => { add(n, k); rw.push(`${n} x${k}`); });
+  if (c.unlock && unlock(c.unlock) && c.unlockText) rw.push(c.unlockText);
+  const lines = [...(before || []), ...c.scene]; if (rw.length) lines.push('[#9dff9d]Received:[/] ' + rw.join(', '));
+  if (c.favor && unlock(c.favor) && c.favorText) lines.push('[#ffd84a]Pumasi returned:[/] ' + c.favorText);
+  if (restored) lines.push(v.restored);
+  if (c.heart) changeHeart(c.heart, `${v.name} smiled.`);
   say(v.name, lines, villagerSprite(v), () => {
-    if (p.wish >= 3) { showAnnounce(`[#ffd84a]${v.name}'s colors have returned![/]`, 4); changeHeart(5, 'The village feels a little brighter.'); }
+    if (restored) { showAnnounce(`[#ffd84a]${v.name}'s colors have returned![/]\n\n${VILLAGERS.filter(vRestored).length} / ${VILLAGERS.length} neighbors`, 4); changeHeart(5, 'The village feels a little brighter.'); }
+    if (done) done();
   });
 }
+function saecham(v, food, chapter) {
+  if (!has(food)) return; remove(food, 1); villagerProgress(v.id).saechamDay = G.day; G.log.saecham = true;
+  if (chapter) { finishChapter(v); return; }
+  addKindness(1); changeHeart(2, 'You shared a work-break meal.');
+  say(v.name, [`(You sit down together and share the ${food}.)`, 'Food tastes better when someone brings it. Thank you.'], villagerSprite(v));
+}
+function masil(v) {
+  S().masilDay = G.day; G.log.masil = true;
+  const stood = [G.px, G.py]; G.px = v.ex + 0.72; G.py = v.ey; G.sitting = true;
+  const standUp = () => { G.sitting = false; [G.px, G.py] = stood; G.hour = Math.min(G.hour + 1, 23); };
+  if (vNext(v)?.kind === 'Masil' && vReady(v)) { finishChapter(v, standUp); return; }
+  changeHeart(1, 'A quiet evening with a neighbor.');
+  say(v.name, ['(You sit side by side for a while.)', v.masil[G.day % v.masil.length]], villagerSprite(v), standUp);
+}
+function letter(v) {
+  const face = villagerSprite(v);
+  const write = (first, last) => { showAnnounce(`[#ffd84a]A letter[/]\n\n${first}\nI lit the forge again. A neighbor worked the bellows for me. I remembered what you used to say, that it sings.\n${last}`, 9); finishChapter(v); };
+  const second = first => ask(v.name, '...And how should it end?', face, () => write(first, '"I miss you."'), () => write(first, '"Come anytime. I\'ll keep the fire going."'), 'I miss you', 'Come anytime');
+  ask(v.name, 'How should it start? You write, I\'ll talk.', face, () => second('"How are you doing? It\'s Dad."'), () => second('"I\'m sorry. It\'s Dad."'), 'How are you?', "I'm sorry.");
+}
+function onFishCaught() { const m = VILLAGERS.find(v => v.id === 'mina'); if (m && villagerProgress('mina').met && vNext(m)?.kind === 'Fish') finishChapter(m); }
+const CHORES = [{ id: 'steamer', who: 'rosa', scene: 'market', x: -7.8, y: 0.95 }, { id: 'forge', who: 'theo', scene: 'market', x: 1.15, y: 0.85 },
+                { id: 'briquettes', who: 'mayor', scene: 'market', x: 4.35, y: -3.35 }, { id: 'sled', who: 'mina', scene: 'farm', x: -6.0, y: -3.55 }];
+const choreNear = () => CHORES.find(s => s.scene === G.scene && near(s.x, s.y + 0.3, 1.4));
+function useChore(s) {
+  const v = VILLAGERS.find(x => x.id === s.who), p = villagerProgress(v.id), c = vNext(v);
+  const mine = c && c.kind === 'Pumasi' && c.spot === s.id;
+  if (!mine || !p.invited || !vReady(v) || !isDay(G.hour)) {
+    toast(mine && !p.invited ? `Talk to ${v.name} first.` : mine && !isDay(G.hour) ? "It's too late for that today." : { steamer: `${v.name}'s rice-cake steamer.`, forge: `${v.name}'s forge and bellows.`, briquettes: 'Coal briquettes for the village hall.', sled: "Mina's wooden ice sled." }[s.id], 2.5); return;
+  }
+  if (!useEnergy(3)) return;
+  p.chore++; doAction(s.id === 'sled' ? 'harvest' : 'hoe', s.x, s.y); burst('dust', s.x, s.y);
+  toast(`${c.steps[p.chore - 1]}  (${p.chore}/${c.steps.length})`, 2.5);
+  if (p.chore >= c.steps.length) { G.log.pumasi = true; finishChapter(v); }
+}
+const helpWanted = () => VILLAGERS.find(v => vNext(v)?.kind === 'Pumasi' && vReady(v))?.id || null;
 
 // ------------------------------------------------------------------ day end (DataManager.EndDay)
 function trySleep() {
@@ -1004,7 +1170,8 @@ function trySleep() {
 function endDay(passedOut) {
   const lines = []; let delta = 0;
   const facts = { passedOut, lateNight: !passedOut && G.hour >= 24, onTime: !passedOut && G.hour < 24, meals: G.log.meals, harvested: G.log.harvested,
-                  talked: G.log.talked || 0, drank: G.log.drank, exhausted: G.log.exhausted, starved: G.log.starved, rested: !!G.log.rested };
+                  talked: G.log.talked || 0, drank: G.log.drank, exhausted: G.log.exhausted, starved: G.log.starved, rested: !!G.log.rested,
+                  pumasi: !!G.log.pumasi, saecham: !!G.log.saecham, masil: !!G.log.masil };
   const wasOpen = [F().open, Lk().open, Hl().open], seasonBefore = S().season;
   if (passedOut) { delta -= 8; lines.push('Passed out from exhaustion  [#ff8080]-8[/]'); const lost = Math.min(Math.floor(G.gold / 10), 100); if (lost) { G.gold -= lost; lines.push(`Someone carried you home... you lost ${lost}G`); } }
   else if (G.hour < 24) { delta += 4; lines.push('Went to bed on time  [#9dff9d]+4[/]'); report('sleep_early'); }
@@ -1037,6 +1204,10 @@ function endDay(passedOut) {
     c.watered = G.raining;
   }
   for (const k in G.tiles) G.tiles[k].wet = G.raining;
+  if (!G.raining && unlocked('favor_water') && ((G.day + 1) * 7 + 3) % 2 === 0) {   // Mina's pumasi: some mornings she waters a few crops
+    let w = 0; for (const k in G.crops) { const c = G.crops[k]; if (w >= 6 || c.watered || mature(c)) continue; c.watered = true; if (G.tiles[k]) G.tiles[k].wet = true; w++; }
+    if (w) lines.push(`Small footprints by the field: Mina watered ${w} crop(s) this morning`);
+  }
   // plots: an open plot left empty overnight rests (rich soil); the compost heap turns every two things into a bag
   let rested = 0;
   for (const p of PLOTS) { if (!plotOpen(p)) continue; const has = Object.keys(G.crops).some(k => { const [x, y] = k.split(',').map(Number); return plotAt(x, y) === p; });
@@ -1047,7 +1218,7 @@ function endDay(passedOut) {
   // market + resources + log
   const cands = Object.values(CROPS).filter(c => c.season <= after).map(c => c.harvest);
   G.market = { demand: cands[Math.floor(Math.random() * cands.length)], haggle: 0, haggled: false, sold: {} };
-  G.cleared = []; G.log = { harvested: 0, meals: 0, exhausted: false, starved: false, drank: false, talked: 0, rested: false };
+  G.cleared = []; G.log = { harvested: 0, meals: 0, exhausted: false, starved: false, drank: false, talked: 0, rested: false, pumasi: false, saecham: false, masil: false };
   G.energy = passedOut ? maxEnergy() * 0.5 : maxEnergy();
   G.day++; G.hour = 6; G.minute = 0; G.warnedMid = false;
 
@@ -1069,7 +1240,7 @@ function endDay(passedOut) {
                (notes.length ? `\n\n[#c8c0b0]${notes.join('\n')}[/]` : '') + todayPreview(after), 10);
   queueBroadcast(broadcastLines({ day: G.day, before: seasonBefore, after, raining: G.raining, snowing: G.snowing,
     forestOpened: !wasOpen[0] && F().open, lakeOpened: !wasOpen[1] && Lk().open, hillOpened: !wasOpen[2] && Hl().open,
-    mejuSeason: after === 0 && !Jg().jars.some(x => x.start >= 0) && !Jg().hung.length, lidsOpen: Jg().lidsOpen }));
+    mejuSeason: after === 0 && !Jg().jars.some(x => x.start >= 0) && !Jg().hung.length, lidsOpen: Jg().lidsOpen, helpWanted: helpWanted() }));
   letters();
   save();
 }
@@ -1079,7 +1250,7 @@ function todayPreview(season) {
   const tm = Object.values(G.crops).filter(c => !mature(c) && season >= CROPS[c.id].season && c.days + 1 >= CROPS[c.id].days).length;
   if (tm) tips.push(`${tm} crop(s) ripen tomorrow if watered`);
   if (season < 3 && THRESH[season + 1] - G.heart <= 8) tips.push(`${SEASONS[season + 1]} feels close`);
-  const ready = VILLAGERS.find(v => villagerProgress(v.id).met && wishReady(v)); if (ready) tips.push(`You have everything for ${ready.name}'s wish`);
+  const ms = VILLAGERS.find(v => vNext(v)?.kind === 'Masil' && vReady(v)); if (ms) tips.push(`${ms.name} would like a visit this evening (masil)`);
   if (unlocked('starhill') && !G.raining && !G.snowing) tips.push('Clear skies tonight: the star vine will grow');
   const left = 6 - PHOTOS.filter(p => p.season === season && S().photos.includes(p.id)).length; if (left) tips.push(`${left} ${SEASONS[season]} photo(s) left [P]`);
   return tips.length ? '\n\n[#ffd84a]Today[/]  ' + tips.slice(0, 3).join('  ·  ') : '';
@@ -1160,7 +1331,7 @@ function interact() {
     return;
   }
   if (G.scene === 'farm') {
-    const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.0)) { talk(mina); return; }
+    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) { talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; } }
     if (near(COMPOST[0], COMPOST[1], 1.4)) { useHeap(); return; }
     { const s = jangSpot(); if (s === 'agungi') { useAgungi(); return; } if (s === 'rack') { useMejuRack(); return; } if (s === 'jars') { useJangdok(); return; } }
     if (near(WELL[0], WELL[1] - 0.4, 1.3)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
@@ -1169,8 +1340,7 @@ function interact() {
   } else if (G.scene === 'home') {
     if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) { trySleep(); return; }
   } else if (G.scene === 'market') {
-    for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) { talk(v); return; }
-    if (near(MAYOR[0], MAYOR[1], 1.0)) { talkMayor(); return; }
+    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) { talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; } }
     if (near(-4.2, -2.0, 1.1)) { share(); return; }
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) { if (G.market.haggled) toast('"We\'ve struck our deal for today. Come back next market day!"', 2.5); else go('haggle', 0, 0); return; }
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) { panel = { kind: 'shop', tab: 'buy' }; return; }
@@ -1183,7 +1353,7 @@ function interact() {
 const JANG = { jars: 3, rack: 4, dry: 3, ferment: 8, salt: 2 };
 function Jg() { if (!G.jang) G.jang = { hung: [], jars: [], lidsOpen: false, fireToday: false };
   while (G.jang.jars.length < JANG.jars) G.jang.jars.push({ start: -1, care: 0, rain: 0 }); return G.jang; }
-const jarYield = j => { const b = (j.care >= 3) + (j.care >= 6) - (j.rain >= 2); return [Math.max(1, 2 + b), Math.max(1, 1 + b)]; };
+const jarYield = (j, helper = 0) => { const b = (j.care >= 3) + (j.care >= 6) - (j.rain >= 2) + helper; return [Math.max(1, 2 + b), Math.max(1, 1 + b)]; };
 const jarTaste = j => j.rain >= 2 ? "A little watery, but it's still yours." : j.care >= 6 ? 'Deep and rich. The sun is in it.' : j.care >= 3 ? 'A good, honest taste.' : "Mild. Next time I'll let it see more sun.";
 function howTo(key, text) { if (unlock('howto_' + key)) showAnnounce(text, 8); }
 function useAgungi() {
@@ -1213,7 +1383,7 @@ function useJangdok() {
   const j = Jg();
   const ready = j.jars.findIndex(x => x.start >= 0 && G.day - x.start >= JANG.ferment);
   if (ready >= 0) {
-    const jar = j.jars[ready], [d, g] = jarYield(jar), taste = jarTaste(jar); j.jars[ready] = { start: -1, care: 0, rain: 0 };
+    const jar = j.jars[ready], [d, g] = jarYield(jar, unlocked('favor_jang') ? 1 : 0), taste = jarTaste(jar); j.jars[ready] = { start: -1, care: 0, rain: 0 };
     add('Doenjang', d); add('Ganjang', g); changeHeart(3, `You split your sauces: ${d} doenjang, ${g} ganjang. ${taste}`); return;
   }
   const empty = j.jars.findIndex(x => x.start < 0);
@@ -1274,7 +1444,7 @@ function fish(at = POND, lake = false) {
   const onLake = fishing.lake; fishing = null;
   const koi = 0.03 + 0.07 * G.heart / 100 + 0.02 * perk('water'); const r = Math.random();
   const f = onLake ? lakeCatch(r) : r < koi ? 'Golden Koi' : r < koi + 0.07 ? 'Old Boot' : r < koi + 0.42 ? 'Carp' : 'Minnow';
-  const first = !S().fish[f]; add(f);
+  const first = !S().fish[f]; add(f); onFishCaught();
   if (f !== 'Old Boot') { S().fish[f] = (S().fish[f] || 0) + 1; report('fish', f); }
   if (f === 'Golden Koi') { showAnnounce('[#ffd84a]Golden Koi![/]\n\nIt shimmers like sunlight on water.', 4); if (first) changeHeart(5, 'A once-in-a-lifetime catch!'); }
   else toast(f === 'Old Boot' ? "You caught... an Old Boot. Well, it's something." : `You caught a ${f}!` + (first ? '  [#9dff9d](new!)[/]' : ''));
@@ -1343,7 +1513,7 @@ function drawPanel() {
     L.push(`[#ffd84a]Journal[/]   Day ${G.day}   [${SEASON_COLOR[s.season]}]${SEASONS[s.season]}[/]` + (s.season < 3 ? `  (${SEASONS[s.season + 1]} at ${Math.ceil(THRESH[s.season + 1] - G.heart)} more Heart)` : ''));
     L.push(`[#ff8fb1]Heart[/] ${Math.round(G.heart)}/100   Gold ${G.gold}   Album ${s.photos.length}/24`);
     L.push(''); L.push('[#ffd84a]Villagers[/]');
-    VILLAGERS.forEach(v => { const p = villagerProgress(v.id); L.push(`${v.name}  [${'#'.repeat(p.wish)}${'-'.repeat(3 - p.wish)}]  ` + (!p.met ? '[#a0a0a0]not met yet[/]' : p.wish >= 3 ? '[#9dff9d]colors restored[/]' : 'wants ' + itemsText(v.wishes[p.wish].items))); });
+    VILLAGERS.forEach(v => { const p = villagerProgress(v.id), n = v.chapters.length, d = Math.min(p.wish, n); L.push(`${v.name}  [${'#'.repeat(d)}${'-'.repeat(n - d)}]  ` + (!p.met ? '[#a0a0a0]not met yet[/]' : vRestored(v) ? '[#9dff9d]colors restored[/]' : 'Next: ' + vNext(v).hint + (vReady(v) ? '' : ' (give it a day or two)'))); });
     if (sp.found) L.push(`\n[#ff9fc4]Spirit[/]  ${FORM_NAMES[spiritForm(sp)]}   [#ffd84a]Sun ${sp.pts[0]}[/]  [#9dff9d]Earth ${sp.pts[1]}[/]  [#8fd0ff]Water ${sp.pts[2]}[/]  [#ff9fc4]Bloom ${sp.pts[3]}[/]   forms ${sp.forms.length}/10`);
     L.push(`\n[#ffb6d0]Kindness[/] ${s.kindness}/60  ` + (unlocked('starhill') ? `Star Hill open on clear nights. Stars caught: ${s.starsTotal}` : `(sharing box today ${S().shareDay === G.day ? S().sharedToday : 0}/5)`));
     if (s.forest.open) L.push(`[#9dff9d]Forest[/]  clearings restored ${forestRestored()}/3   ${s.forest.treeAwake ? 'The old zelkova is awake.' : 'The old zelkova is asleep.'}`);
@@ -1559,7 +1729,7 @@ function clampPlayer() {
   G.px = Math.max(minX, Math.min(maxX, G.px)); G.py = Math.max(minY, Math.min(maxY, G.py));
   const solids = [];
   if (G.scene === 'farm') {
-    solids.push([WELL[0], WELL[1] - 0.45, 0.55]); solids.push([VILLAGERS[2].x, VILLAGERS[2].y - 0.4, 0.25]);
+    solids.push([WELL[0], WELL[1] - 0.45, 0.55]);
     // stumps and boulders near the player block the way (weeds don't)
     const pcx = Math.floor(G.px), pcy = Math.floor(G.py - 0.4);
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const ch = debrisAt(pcx + dx, pcy + dy); if (ch === 'k' || ch === 'o') solids.push([pcx + dx + 0.5, pcy + dy + 0.3, 0.45]); }
@@ -1572,7 +1742,10 @@ function clampPlayer() {
     }
   }
   if (G.scene === 'market' && isMarketDay(G.day)) { FAIR_STALLS.forEach(([x, y, r]) => { for (let dx = -r + 0.25; dx <= r - 0.25; dx += 0.5) solids.push([x + dx, y + 0.3, 0.3]); }); solids.push([HAGGLER[0], HAGGLER[1] - 0.4, 0.3]); }
-  if (G.scene === 'market') { solids.push([MAYOR[0], MAYOR[1] - 0.4, 0.25]); solids.push([-4.2, -2.35, 0.35]); VILLAGERS.slice(0, 2).forEach(v => solids.push([v.x, v.y - 0.4, 0.25])); }
+  if (G.scene === 'market') { solids.push([-4.2, -2.35, 0.35]);
+    for (let x = 5.6; x <= 8.2; x += 0.5) for (const y of [-0.9, -1.5, -2.1, -2.55]) solids.push([x, y, 0.45]);   // the village hall (K-3)
+    for (const ch of CHORES) if (ch.scene === 'market') solids.push([ch.x, ch.y + 0.15, 0.4]); }
+  if (!G.sitting) for (const v of VILLAGERS) if (v.scene === G.scene && !sittingOut(v)) solids.push([v.x, v.y - 0.4, 0.25]);
   const fx = G.px, fy = G.py - 0.4;
   for (const [x, y, r] of solids) { const d = Math.hypot(fx - x, fy - y); if (d < r && d > 0) { G.px += (fx - x) / d * (r - d); G.py += (fy - y) / d * (r - d); } }
 }
@@ -1743,21 +1916,26 @@ function renderWorld() {
   if (G.scene === 'home') { draws.push([0.5, () => sprite(c, 'World/bed', -0.07, 1.26)]); draws.push([0, () => sprite(c, 'World/exit_sign', 8.28, 0.03)]); }
   if (G.scene === 'market') {
     draws.push([2.3, () => sprite(c, 'World/merchant', 3.92, 3.01)]);
-    draws.push([MAYOR[1] - 0.45, () => sprite(c, 'Villagers/mayor', MAYOR[0], MAYOR[1])]);
     if (isMarketDay(G.day)) draws.push([HAGGLER[1], () => sprite(c, 'World/haggler', HAGGLER[0], HAGGLER[1])]);
     draws.push([-2.5, () => sprite(c, 'World/donation_box', -4.2, -2.0)]);
     draws.push([0, () => sprite(c, G.story.season === 0 ? 'World/exit_sign_winter' : 'World/exit_sign', -8.27, -0.05)]);
   }
   if (G.scene === 'hill') for (const s of G.stars) draws.push([s.y, () => sprite(c, 'Items/star_fragment', s.x, s.y, 0.5 * (1 + Math.sin(performance.now() / 160 + s.x) * 0.1))]);
   for (const v of VILLAGERS) if (v.scene === G.scene) {
-    draws.push([v.y - 0.45, () => {
-      const k = 1 + Math.sin((v.pulse || 0) * Math.PI) * 0.15; sprite(c, villagerSprite(v), v.x, v.y, k);
-      if (!villagerProgress(v.id).met || wishReady(v)) sprite(c, 'World/bubble', v.x + 0.19, v.y + 0.62 + Math.sin(performance.now() / 250) * 0.03);
+    const [vx, vy] = vPos(v);
+    draws.push([vy - 0.45, () => {
+      const k = 1 + Math.sin((v.pulse || 0) * Math.PI) * 0.15; sprite(c, villagerSprite(v), vx, vy, k);
+      if (hasBubble(v) && !dialogue) sprite(c, 'World/bubble', vx + 0.19, vy + 0.62 + Math.sin(performance.now() / 250) * 0.03);
     }]);
+  }
+  for (const ch of CHORES) if (ch.scene === G.scene) {
+    const w = VILLAGERS.find(x => x.id === ch.who), nc = vNext(w), working = villagerProgress(w.id).chore > 0 && nc?.spot === ch.id;
+    if (ch.id === 'sled' && G.story.season !== 0 && !working) continue;
+    draws.push([ch.y, () => sprite(c, `World/chore_${ch.id}${working ? '_on' : ''}`, ch.x, ch.y, 1, 'bottom')]);
   }
   if (G.scene !== 'haggle') {
     const frameIdx = G.step === 1 ? 1 : G.step === 3 ? 2 : 0;
-    const pkey = act ? `Player/player_${act.kind}_${G.dir}_${act.t > 0.2 ? 0 : 1}` : `Player/player_${G.dir}_${frameIdx}`;
+    const pkey = G.sitting ? 'Player/player_sit' : act ? `Player/player_${act.kind}_${G.dir}_${act.t > 0.2 ? 0 : 1}` : `Player/player_${G.dir}_${frameIdx}`;
     draws.push([G.py - 0.45, () => sprite(c, pkey, G.px, G.py, 1, 'center', G.dir === 'side' && G.facingLeft)]);
     for (const f of fx) draws.push([-900, () => {
       const a = Math.round(Math.max(0, 1 - f.t / f.life) * 4) / 4;
@@ -1871,7 +2049,8 @@ function renderUI() {
 }
 function promptText() {
   if (G.scene === 'farm') {
-    const mina = VILLAGERS[2]; if (near(mina.x, mina.y, 1.0)) return `[E] Talk to ${mina.name}`;
+    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
+      const ch = choreNear(); if (ch) { const w = VILLAGERS.find(x => x.id === ch.who), c = vNext(w); return c?.kind === 'Pumasi' && c.spot === ch.id && villagerProgress(w.id).invited && vReady(w) ? `[E] Help out (${villagerProgress(w.id).chore}/${c.steps.length})` : ({ steamer: 'Rice-cake steamer', forge: 'Forge and bellows', briquettes: 'Coal briquettes', sled: 'Ice sled' })[ch.id]; } }
     if (near(3.68, -0.4, 1.2)) return '[E] Drink and refill your watering can';
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
     if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The stream is full of fish');
@@ -1886,8 +2065,8 @@ function promptText() {
     }
   } else if (G.scene === 'home') { if (Math.abs(G.px + 0.07) < 1.2 && Math.abs(G.py - 1.26) < 1.5) return '[E] Sleep and end the day'; if (G.px > 6.8) return 'Back to the farm';
   } else if (G.scene === 'market') {
-    for (const v of VILLAGERS.slice(0, 2)) if (near(v.x, v.y, 1.0)) return `[E] Talk to ${v.name}`;
-    if (near(MAYOR[0], MAYOR[1], 1.0)) return '[E] Talk to Village Head Park';
+    { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
+      const ch = choreNear(); if (ch) { const w = VILLAGERS.find(x => x.id === ch.who), c = vNext(w); return c?.kind === 'Pumasi' && c.spot === ch.id && villagerProgress(w.id).invited && vReady(w) ? `[E] Help out (${villagerProgress(w.id).chore}/${c.steps.length})` : ({ steamer: 'Rice-cake steamer', forge: 'Forge and bellows', briquettes: 'Coal briquettes', sled: 'Ice sled' })[ch.id]; } }
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) return G.market.haggled ? 'The old farmer is done haggling for today' : '[E] Haggle with the old farmer';
     if (Math.abs(G.px - 3.92) < 3 && Math.abs(G.py - 3.01) < 4.5) return '[E] Trade at the stall';
@@ -2109,7 +2288,10 @@ function diaryLines(f, day) {
   if (f.starved) notes.push(pickLine(day, ['I skipped meals again.', 'My stomach growled all afternoon.']));
   if (f.exhausted && !f.passedOut) notes.push(pickLine(day, ['I worked until I had nothing left. Like back in the city.', 'I pushed too hard again.']));
   if (f.lateNight) notes.push(pickLine(day, ['I stayed up far too late.', 'Midnight came and went.']));
-  if (f.talked > 0) notes.push(pickLine(day, ['I talked with the neighbors for a while.', 'Someone smiled at me today.']));
+  if (f.masil) notes.push(pickLine(day, ["I sat out with a neighbor in the evening. We didn't need to say much.", 'I heard someone\'s story tonight. I think they needed to tell it.']));
+  if (f.pumasi) notes.push(pickLine(day, ["I helped a neighbor with their work. Tired body, light heart.", 'Working side by side, the time flew.']));
+  if (f.saecham) notes.push(pickLine(day, ['We shared a meal in the middle of the day.', 'Food tastes better eaten together.']));
+  if (f.talked > 0 && !f.masil && !f.saecham) notes.push(pickLine(day, ['I talked with the neighbors for a while.', 'Someone smiled at me today.']));
   if (f.rested) notes.push(pickLine(day, ['I sat down for a while and just watched. The wind was nice.', 'I let myself rest for a bit.']));
   if (f.warm) notes.push(pickLine(day, ['I lit the agungi. The floor was warm under me all night.', 'The warm floor melted something in me.']));
   if (f.harvested > 0) notes.push(pickLine(day, ['I picked something I grew with my own hands.', 'The harvest was small, but it was mine.']));
@@ -2132,6 +2314,8 @@ function broadcastLines(n) {
   if (n.snowing) body.push('Snow tonight made the roads slippery. Careful out there, especially our elders.'); else if (n.raining) body.push("It's raining, so keep your sauce jar lids closed.");
   if ((n.raining || n.snowing) && n.lidsOpen) body.push('And whoever left their jar lids open, close them quick!');
   if (n.mejuSeason && n.day >= 3 && n.day % 4 === 3) body.push('Winter is meju season. Soybeans and salt are at the corner store in the market lane.');
+  if (n.helpWanted && n.day % 2 === 0) body.push({ rosa: 'Grandma Boksun at the mill could use a hand with her rice-cake steamer.', theo: "Dongsu's forge needs someone to work the bellows. Lend him a hand, eh?",
+    mina: "Little Mina's looking for someone to push her sled on the stream.", mayor: "The village hall needs its coal briquettes carried in. ...Yes, it's me asking." }[n.helpWanted]);
   if (!body.length && n.day > 2 && n.day % 3 === 0) body.push('Nothing special today. Just make sure you all eat well.');
   return body.length ? ['Ahem, ahem. Attention, everyone in the village.', ...body, "That's all from your village head."] : [];
 }
@@ -2152,16 +2336,6 @@ function drawBroadcast() {
   drawRich('[#ffd84a]Village broadcast  ·  Village Head Park[/]', x + 72, y + 10, 13, w - 84);
   drawRich(line.slice(0, Math.floor(broadcast.t * 22)), x + 72, y + 30, 16, w - 84);
 }
-const MAYOR = [-3.9, 0.9];
-function talkMayor() {
-  G.log.talked = (G.log.talked || 0) + 1;
-  if (unlock('mayor_met')) { say('Village Head Park', ["Well now, you must be the one who moved into the empty house! I'm Park, the village head.",
-    "Not many young folks left around here. Everyone's gone to the city. ...It's good to see a new face.", "I make the announcements every morning on that loudspeaker. Keep an ear out, eh?"], 'Villagers/mayor'); return; }
-  const lines = ["Eating well? You look thin. City folks always do.", ["Winter's when we make meju for the sauces. Grandma Boksun knows how.", "Spring! Time to open the sauce jars and let the sun in.", "Hot, isn't it? Come sit in the pavilion when it gets too much.", "Autumn's busy. Kimchi-making day is coming, everyone will need a hand."][S().season],
-    "This village used to be full of children. Now it's quiet... but you're here now.", "If you hear the loudspeaker crackle, that's me. Don't laugh at my voice."];
-  G.mayorLine = (G.mayorLine || 0) + 1; say('Village Head Park', [lines[G.mayorLine % lines.length]], 'Villagers/mayor');
-}
-
 // ------------------------------------------------------------------ boot
 function loop(t) {
   const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;

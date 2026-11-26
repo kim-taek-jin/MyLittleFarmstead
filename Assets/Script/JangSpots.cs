@@ -183,7 +183,7 @@ public class JangdokPlatform : JangSpot
         if (ready >= 0)
         {
             string taste = JangState.Taste(j.jars[ready]);
-            j.Split(ready, out int doenjang, out int ganjang);
+            j.Split(ready, out int doenjang, out int ganjang, Data.story.IsUnlocked("favor_jang") ? 1 : 0);   // 복순 할머니의 품
             Data.AddItem("Doenjang", doenjang);
             Data.AddItem("Ganjang", ganjang);
             Sfx.Play("harvest");

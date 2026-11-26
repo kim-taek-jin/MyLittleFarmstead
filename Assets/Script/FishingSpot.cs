@@ -105,6 +105,8 @@ public class FishingSpot : MonoBehaviour
             Album.Report("fish", fish);
         }
 
+        NeighborScenes.OnFishCaught();     // K-3: 미나와 같이 한 낚시 (첫 한 마리)
+
         switch (fish)
         {
             case "Golden Koi":

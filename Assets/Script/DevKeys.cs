@@ -47,7 +47,7 @@ public class DevKeys : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.F6)) Teleport();
         else if (Input.GetKeyDown(KeyCode.F7))
         {
-            foreach (VillagerDef v in VillagerDB.All) { VillagerProgress p = data.story.Get(v.id); p.met = true; p.wishIndex = 3; }
+            foreach (VillagerDef v in VillagerDB.All) { VillagerProgress p = data.story.Get(v.id); p.met = true; p.wishIndex = v.chapters.Length; }
             data.heart = Mathf.Max(data.heart, 95f);
             data.UpdateAllUI();
             HUD.Toast("[DEV] Ending is ready. Go home and sleep (or wake up at home).", 4f);
