@@ -12,7 +12,7 @@ public static class DemoRecap
             lines.Add(Loc.T($"On the solstice, rolling rice balls, you remembered \"{Rites.MemoryText(r.dongjiMemory)}\".",
                             $"동짓날 새알심을 빚으며 '{Rites.MemoryText(r.dongjiMemory)}'을(를) 떠올렸어요."));
         if (r != null && !string.IsNullOrEmpty(r.burned))
-            lines.Add(Loc.T($"You let the moon house fire take {LowerFirst(Rites.BurnText(r.burned))}.", $"달집에 {Rites.BurnText(r.burned)}을(를) 태워 보냈어요."));
+            lines.Add(Loc.T($"You let the moon house fire take {Yours(Rites.BurnText(r.burned))}.", $"달집에 {Rites.BurnText(r.burned)}을(를) 태워 보냈어요."));
         if (r != null && !string.IsNullOrEmpty(r.wish))
             lines.Add(Loc.T($"Your wish paper said: \"{Rites.WishText(r.wish)}\".", $"소원지에는 '{Rites.WishText(r.wish)}'라고 적었어요."));
 
@@ -51,4 +51,6 @@ public static class DemoRecap
     };
 
     static string LowerFirst(string s) => string.IsNullOrEmpty(s) ? s : char.ToLowerInvariant(s[0]) + s.Substring(1);
+    // "My company ID badge" → "your company ID badge" (이 장은 플레이어에게 말하는 글)
+    static string Yours(string s) => s != null && s.StartsWith("My ") ? "your " + s.Substring(3) : LowerFirst(s);
 }

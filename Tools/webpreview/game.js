@@ -1304,7 +1304,7 @@ const STORE = { url: 'https://itch.io/', name: 'itch.io' };
 function demoRecap() {
   const r = Rt(), j = Jg(), L = [`You lived in the village for ${G.day - 1} days.`];
   if (r.dongjiMemory) L.push(`On the solstice, rolling rice balls, you remembered "${MEMORY[r.dongjiMemory][0]}".`);
-  if (r.burned) L.push(`You let the moon house fire take ${BURN[r.burned][0][0].toLowerCase() + BURN[r.burned][0].slice(1)}.`);
+  if (r.burned) { const b = BURN[r.burned][0]; L.push(`You let the moon house fire take ${b.startsWith('My ') ? 'your ' + b.slice(3) : b[0].toLowerCase() + b.slice(1)}.`); }
   if (r.wish) L.push(`Your wish paper said: "${WISH[r.wish][0]}".`);
   const restored = VILLAGERS.filter(vRestored).map(v => v.name), close = VILLAGERS.filter(v => !vRestored(v) && villagerProgress(v.id).wish > 0).length;
   if (restored.length) L.push(`Color came back to ${restored.join(', ')}.`);
