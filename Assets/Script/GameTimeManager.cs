@@ -6,8 +6,8 @@ public class GameTimeManager : MonoBehaviour
     public static GameTimeManager instance;
 
     [Header("시간 설정")]
-    [Tooltip("현실 1초당 흐르는 게임 시간(분). 2 = 하루(06:00~02:00)가 약 10분")]
-    public float minutesPerSecond = 2f;
+    [Tooltip("현실 1초당 흐르는 게임 시간(분). 3 = 아침 6시~자정이 약 6분 (K-5: 9분은 너무 길었음)")]
+    public float minutesPerSecond = 3f;
 
     [Tooltip("이 시각(24 이상 = 다음 날 새벽)이 되면 기절합니다. 26 = 새벽 2시")]
     public int passOutHour = 26;

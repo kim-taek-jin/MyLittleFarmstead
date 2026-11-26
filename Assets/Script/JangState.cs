@@ -6,7 +6,7 @@ using System.Collections.Generic;
 //  3) 장 담그기: 장독대의 빈 독에 마른 메주 1 + 소금 2
 //  4) 장독 돌보기: 맑은 날 뚜껑을 열어 두면 볕을 먹어 맛이 깊어지고(care), 비·눈 오는 날 열어 두면 빗물이 들어감(rain)
 //     뚜껑은 장독대 전체를 한 번에 열고 닫음. 깜빡해도 망하지는 않음 (조금 덜 깊은 맛)
-//  5) 장 가르기: 담근 지 FermentDays일 뒤 → 된장과 간장. 많이 돌볼수록 더 많이
+//  5) 장 가르기: 담근 지 FermentDays(5)일 뒤 → 된장과 간장. 많이 돌볼수록 더 많이
 [System.Serializable]
 public class JarState
 {
@@ -21,8 +21,8 @@ public class JangState
 {
     public const int Jars = 3;
     public const int RackSize = 4;
-    public const int DryDays = 3;
-    public const int FermentDays = 8;
+    public const int DryDays = 2;      // K-5: 3 → 2
+    public const int FermentDays = 4;   // K-5: 8 → 4 (데모 안에 장을 갈라 된장찌개로 할머니 이야기까지)
     public const int SoybeansPerMeju = 4;
     public const int SaltPerJar = 2;
 
@@ -30,6 +30,7 @@ public class JangState
     public JarState[] jars;
     public bool lidsOpen;
     public bool fireToday;                            // 오늘 아궁이에 불을 땠는지 (밤에 방이 뜨끈함)
+    public int madeDoenjang, madeGanjang;             // 지금까지 가른 장 (데모 끝 "올겨울의 나")
 
     public void Ensure()
     {
@@ -113,6 +114,8 @@ public class JangState
     public int Split(int i, out int doenjang, out int ganjang, int helper = 0)
     {
         (doenjang, ganjang) = Yield(jars[i], helper);
+        madeDoenjang += doenjang;
+        madeGanjang += ganjang;
         jars[i] = new JarState();
         return i;
     }

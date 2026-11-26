@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -30,7 +30,8 @@ public class SaveData
 // JSON 파일 저장/불러오기 (Application.persistentDataPath/save.json)
 public static class SaveSystem
 {
-    public static string SavePath => Path.Combine(Application.persistentDataPath, "save.json");
+    // 체험판은 따로 저장 (정식판 저장과 섞이지 않게, K-5)
+    public static string SavePath => Path.Combine(Application.persistentDataPath, DemoConfig.IsDemo ? "save_demo.json" : "save.json");
 
     public static bool HasSave() => File.Exists(SavePath);
 

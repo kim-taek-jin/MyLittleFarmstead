@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 //  F6  농장 → 숲 → 호수 → 언덕 순서로 순간이동 (열린 곳만)
 //  F7  엔딩 조건 맞추기 (주민 3명 색 회복 + 마음 95) → 집에서 자면 엔딩
 //  F8  이 목록 보기
+//  F9  대보름 밤 바로 시작 (오늘 = 대보름, 달집 다 쌓음, 저녁 7시, 마음 30) → 농장 남동쪽 논 달집에서 E (K-5 데모 끝 확인용)
 public class DevKeys : MonoBehaviour
 {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -52,8 +53,19 @@ public class DevKeys : MonoBehaviour
             data.UpdateAllUI();
             HUD.Toast("[DEV] Ending is ready. Go home and sleep (or wake up at home).", 4f);
         }
+        else if (Input.GetKeyDown(KeyCode.F9))
+        {
+            RiteState r = data.story.rites;
+            r.Ensure();
+            r.boreumDay = data.Today;
+            r.daljipWood = Rites.DaljipWood;
+            if (data.heart < 31f) data.ChangeHeart(31f - data.heart, null);
+            GameTimeManager t = GameTimeManager.instance;
+            if (t != null) t.SetTime(t.day, 19, 0f);
+            HUD.Toast("[DEV] Daeboreum night: go to the moon house (south-east paddy) and press E. Sleep after the rite for the demo ending.", 6f);
+        }
         else if (Input.GetKeyDown(KeyCode.F8))
-            HUD.Toast("[DEV] F1 next season  F2 +10 Heart  F3 next day  F4 items  F6 teleport  F7 ending ready", 6f);
+            HUD.Toast("[DEV] F1 next season  F2 +10 Heart  F3 next day  F4 items  F6 teleport  F7 ending ready  F9 Daeboreum night", 6f);
     }
 
     static void Reload()

@@ -734,7 +734,9 @@ function report(evt, arg = null) {
     if (have >= 6 && unlock('album_' + p.season)) { G.gold += 300; changeHeart(5); showAnnounce(`[#ffd84a]${SEASONS[p.season]} page complete![/]\n\nEvery memory of this season is in color now.\n[#9dff9d]+300G  +5 Heart[/]`, 5); }
   }
 }
+const winterHeld = () => G.story.season === 0 && !(G.story.rites && G.story.rites.boreumDone);   // K-5
 function changeHeart(a, reason) {
+  if (a > 0 && winterHeld() && G.heart >= 30) a *= 0.35;   // above the spring threshold, slower while winter is held
   const before = G.heart; G.heart = Math.max(0, Math.min(100, G.heart + a));
   if (a >= 2 && G.heart > before && reason) requestWave(false);
   if (reason && Math.abs(a) >= 0.5) toast((a > 0 ? '[#ff8fb1]♥[/]  ' : '[#9aa4c0]♡[/]  ') + reason);
@@ -1127,13 +1129,13 @@ function finishChapter(v, done, before) {
   });
 }
 function saecham(v, food, chapter) {
-  if (!has(food)) return; remove(food, 1); villagerProgress(v.id).saechamDay = G.day; G.log.saecham = true;
+  if (!has(food)) return; remove(food, 1); villagerProgress(v.id).saechamDay = G.day; G.log.saecham = true; S().saechamCount = (S().saechamCount || 0) + 1;
   if (chapter) { finishChapter(v); return; }
   addKindness(1); changeHeart(2, 'You shared a work-break meal.');
   say(v.name, [`(You sit down together and share the ${food}.)`, 'Food tastes better when someone brings it. Thank you.'], villagerSprite(v));
 }
 function masil(v) {
-  S().masilDay = G.day; G.log.masil = true;
+  S().masilDay = G.day; G.log.masil = true; S().masilCount = (S().masilCount || 0) + 1;
   const stood = [G.px, G.py]; G.px = v.ex + 0.72; G.py = v.ey; G.sitting = true;
   const standUp = () => { G.sitting = false; [G.px, G.py] = stood; G.hour = Math.min(G.hour + 1, 23); };
   if (vNext(v)?.kind === 'Masil' && vReady(v)) { finishChapter(v, standUp); return; }
@@ -1166,7 +1168,7 @@ const helpWanted = () => VILLAGERS.find(v => vNext(v)?.kind === 'Pumasi' && vRea
 // ------------------------------------------------------------------ K-4: the winter solstice and Jeongwol Daeboreum (RiteState.cs, RiteScenes.cs)
 function Rt() { const r = G.story.rites || (G.story.rites = {}); return Object.assign(r, Object.assign({ dongjiPrep: 0, dongjiMemory: null, dongjiPot: false, dongjiDelivered: [], dongjiDone: false,
   boreumDay: -1, daljipWood: 0, bureom: false, jwibul: false, lit: false, burned: null, wish: null, boreumDone: false }, r)); }
-const RITE = { dongji: 7, prepFrom: 5, steps: 3, bowls: 5, earliest: 12, notice: 2 };
+const RITE = { dongji: 7, prepFrom: 5, steps: 3, bowls: 5, earliest: 12, notice: 2, scheduleFrom: 9 };
 const POT_AT = [-7.6, -0.55], GATE_AT = [2.0, -2.55], DALJIP = ANCHOR('daljip', 18.5, -9.4);
 const woodNeed = () => unlocked('favor_hands') ? 3 : 5;
 const boreumSched = () => Rt().boreumDay >= 0 && !Rt().boreumDone;
@@ -1296,6 +1298,37 @@ function ritePrompt() {
   return boreumNight() ? '[#ffd84a][E] Join the Daeboreum rite[/]' : 'The moon house';
 }
 
+// ------------------------------------------------------------------ K-5: the demo ending (DemoEnd.cs, DemoRecap.cs)
+let demoEndPending = false;
+const STORE = { url: 'https://itch.io/', name: 'itch.io' };
+function demoRecap() {
+  const r = Rt(), j = Jg(), L = [`You lived in the village for ${G.day - 1} days.`];
+  if (r.dongjiMemory) L.push(`On the solstice, rolling rice balls, you remembered "${MEMORY[r.dongjiMemory][0]}".`);
+  if (r.burned) L.push(`You let the moon house fire take ${BURN[r.burned][0][0].toLowerCase() + BURN[r.burned][0].slice(1)}.`);
+  if (r.wish) L.push(`Your wish paper said: "${WISH[r.wish][0]}".`);
+  const restored = VILLAGERS.filter(vRestored).map(v => v.name), close = VILLAGERS.filter(v => !vRestored(v) && villagerProgress(v.id).wish > 0).length;
+  if (restored.length) L.push(`Color came back to ${restored.join(', ')}.`);
+  if (close) L.push(`You grew closer to ${close} more neighbor(s). Their stories go on in spring.`);
+  if ((j.madeD || 0) + (j.madeG || 0)) L.push(`You made your own sauces: ${j.madeD || 0} doenjang, ${j.madeG || 0} ganjang.`); else if (j.jars.some(x => x.start >= 0)) L.push('Sauce is still ripening in your jars.');
+  if (S().saechamCount || S().masilCount) L.push(`You shared ${S().saechamCount || 0} work-break meal(s) and spent ${S().masilCount || 0} evening(s) visiting.`);
+  return L;
+}
+function drawDemoEnd() {
+  ctx.fillStyle = '#0d0a0a'; ctx.fillRect(0, 0, CW, CH); ctx.imageSmoothingEnabled = false;
+  const pg = panel.page, pic = pg === 0 ? 'World/bg_farmmap_spring' : pg === 2 ? 'World/bg_lake_summer' : null;
+  if (pic && IMG[pic]) ctx.drawImage(IMG[pic], CW / 2 - 400, 16, 800, 444);
+  box(CW / 2 - 470, pic ? 470 : 140, 940, pic ? 190 : 420);
+  const ty = pic ? 486 : 170;
+  const T = ['Spring has come', 'Me, this winter', 'The rest of the year, in the full game', 'Thank you for playing the demo'][pg];
+  const B = [ "The snow on the ridges melts. The stream runs again.\nThe village you came to with a gray heart is green this morning.", demoRecap().join('\n'),
+    '· Spring: flower pancakes on Samjinnal, the back hill wakes up\n· Summer: washing your hair in iris water on Dano, the reservoir\n· Autumn: the Chuseok full moon, Sunset Hill, kimchi-making with the whole village\n· Every neighbor\'s spring, summer and autumn stories',
+    `If you'd like to see the rest of the year, follow the game on ${STORE.name}.\nIt helps a small developer more than you know.\n\n[#ffd84a][1][/] Follow on ${STORE.name}     [#ffd84a][2][/] Back to title` ][pg];
+  drawRich(`[#ffd84a]${T}[/]`, CW / 2, ty, 26, 900, 'center');
+  drawRich(B, CW / 2, ty + 44, 17, 880, 'center');
+  drawRich(pg < 3 ? '[E] / Space / click: next' : '[1] or [2]', CW / 2, CH - 30, 14, 600, 'center', '#c8c0b0');
+  hit(0, 0, CW, CH, () => { if (panel.page < 3) panel.page++; });
+}
+
 // ------------------------------------------------------------------ day end (DataManager.EndDay)
 function trySleep() {
   if (G.hour < 18 && G.energy > maxEnergy() * 0.25) { toast("It's too early to sleep. (You can sleep after 18:00)"); return; }
@@ -1326,11 +1359,12 @@ function endDay(passedOut) {
   // seasons of the heart
   const before = S().season; let after = before; const target = THRESH.filter(t => G.heart >= t).length - 1;
   const holdSpring = before === 0 && !Rt().boreumDone;   // K-4: spring only after the Daeboreum night
-  if (holdSpring && target >= 1 && Rt().boreumDay < 0) { Rt().boreumDay = Math.max(G.day + 1 + RITE.notice, RITE.earliest); lines.push(`Spring is at the door. The village will greet it on Jeongwol Daeboreum (day ${Rt().boreumDay}).`); }
+  if (holdSpring && target >= 1 && Rt().boreumDay < 0 && G.day + 1 >= RITE.scheduleFrom) { Rt().boreumDay = Math.max(G.day + 1 + RITE.notice, RITE.earliest); lines.push(`Spring is at the door. The village will greet it on Jeongwol Daeboreum (day ${Rt().boreumDay}).`); }
   if (holdSpring) after = 0;
-  else if (target > before) after = target; else if (target < before && G.heart < THRESH[before] - 5) after = before - 1;
+  else if (target > before) after = Math.min(target, before + 1); else if (target < before && G.heart < THRESH[before] - 5) after = before - 1;   // one season per morning
   S().season = after; S().highest = Math.max(S().highest, after); if (after >= 3) unlock('season_autumn');
   if (after > before) requestWave(true); else if (delta >= 4) requestWave(false);
+  if (before === 0 && after >= 1 && Rt().boreumDone && unlock('demo_end')) demoEndPending = true;   // K-5: the demo ending
   // weather follows mood
   let chance = [0.3, 0.3, 0.15, 0.25][after]; if (delta >= 6) chance *= 0.5; else if (delta < 0) chance = Math.min(0.9, chance + 0.3);
   const wet = Math.random() < chance; G.snowing = wet && after === 0; G.raining = wet && after !== 0;
@@ -1490,7 +1524,7 @@ function interact() {
   }
 }
 // ------------------------------------------------------------------ K-2: making sauces (agungi, meju rack, jangdokdae)
-const JANG = { jars: 3, rack: 4, dry: 3, ferment: 8, salt: 2 };
+const JANG = { jars: 3, rack: 4, dry: 2, ferment: 4, salt: 2 };
 function Jg() { if (!G.jang) G.jang = { hung: [], jars: [], lidsOpen: false, fireToday: false };
   while (G.jang.jars.length < JANG.jars) G.jang.jars.push({ start: -1, care: 0, rain: 0 }); return G.jang; }
 const jarYield = (j, helper = 0) => { const b = (j.care >= 3) + (j.care >= 6) - (j.rain >= 2) + helper; return [Math.max(1, 2 + b), Math.max(1, 1 + b)]; };
@@ -1524,7 +1558,7 @@ function useJangdok() {
   const ready = j.jars.findIndex(x => x.start >= 0 && G.day - x.start >= JANG.ferment);
   if (ready >= 0) {
     const jar = j.jars[ready], [d, g] = jarYield(jar, unlocked('favor_jang') ? 1 : 0), taste = jarTaste(jar); j.jars[ready] = { start: -1, care: 0, rain: 0 };
-    add('Doenjang', d); add('Ganjang', g); changeHeart(3, `You split your sauces: ${d} doenjang, ${g} ganjang. ${taste}`); return;
+    add('Doenjang', d); add('Ganjang', g); j.madeD = (j.madeD || 0) + d; j.madeG = (j.madeG || 0) + g; changeHeart(3, `You split your sauces: ${d} doenjang, ${g} ganjang. ${taste}`); return;
   }
   const empty = j.jars.findIndex(x => x.start < 0);
   if (empty >= 0 && has('Dried Meju') && has('Salt', JANG.salt)) {
@@ -1662,6 +1696,7 @@ function drawPanel() {
     L.push(`\n[#8fb8ff]Fish caught[/]  ` + ['Minnow', 'Carp', 'Golden Koi', 'Bluegill', 'Moonfin', 'Glassfish'].map(f => s.fish[f] ? `${f} x${s.fish[f]}` : '???').join('   '));
     drawRich(L.join('\n'), x + 30, y + 24, 20, 840);
     drawRich('[J] or [Esc] Close', x + w - 24, y + h - 40, 18, 400, 'right', '#c8c0b0');
+  } else if (panel.kind === 'demoEnd') { drawDemoEnd();
   } else if (panel.kind === 'choice') {
     ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, CW, CH);
     const bw = 760, bh = 420, bx = (CW - bw) / 2, by = (CH - bh) / 2; box(bx, by, bw, bh);
@@ -1736,6 +1771,13 @@ function update(dt) {
     }
     clearPressed(); return;
   }
+  if (panel && panel.kind === 'demoEnd') {
+    if (panel.page < 3 && (pressed.KeyE || pressed.Space || pressed.Enter)) panel.page++;
+    else if (panel.page >= 3 && pressed.Digit1) window.open(STORE.url, '_blank');
+    else if (panel.page >= 3 && pressed.Digit2) { panel = null; screen = { kind: 'title', sel: 0, confirm: false }; }
+    clearPressed(); return;
+  }
+  if (!panel && demoEndPending && !announce && !dialogue) { demoEndPending = false; panel = { kind: 'demoEnd', page: 0 }; }
   if (panel && panel.kind === 'choice') {
     for (let i = 0; i < panel.options.length; i++) if (pressed['Digit' + (i + 1)]) { const pk = panel.pick; panel = null; pk(i); break; }
     clearPressed(); return;
@@ -1764,8 +1806,8 @@ function update(dt) {
   }
 
   // time + needs
-  const hours = dt * 2 * speed / 60;
-  G.minute += dt * 2 * speed; while (G.minute >= 60) { G.minute -= 60; G.hour++; }
+  const hours = dt * 3 * speed / 60;   // K-5: 3 game minutes per second (a day ~6 min)
+  G.minute += dt * 3 * speed; while (G.minute >= 60) { G.minute -= 60; G.hour++; }
   if (G.hour >= 24 && !G.warnedMid) { G.warnedMid = true; toast("It's midnight. You should go to bed soon."); }
   if (G.hour >= 26) { endDay(true); go('home', 0, -3.5); clearPressed(); return; }
   G.hunger = Math.max(0, G.hunger - 5 * hours); G.thirst = Math.max(0, G.thirst - 7 * hours);
@@ -2119,7 +2161,7 @@ function renderWorld() {
   if (G.scene === 'lake') drawFireflies(c);
 
   // seasons of the heart: the world's saturation follows Heart (UI layer is not affected)
-  let sat = 1 + (-80 + 95 * G.heart / 100) / 100;
+  let sat = 1 + (-80 + 95 * G.heart / 100 * (winterHeld() ? 0.5 : 1)) / 100;   // K-5: half the color until Daeboreum
 
   worldCanvas.style.filter = `saturate(${sat.toFixed(2)})`;
 }

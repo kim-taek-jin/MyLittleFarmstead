@@ -8,7 +8,7 @@ using System.Collections.Generic;
 //  - 7일: 할머니 팥죽 다섯 그릇 → 이웃 네 집에 한 그릇씩 + 우리 집 대문에 팥 뿌리기 (액막이)
 //  - 놓쳐도 벌 없음
 // 정월대보름 (데모의 마지막)
-//  - 마음이 봄 문턱에 닿으면 봄이 바로 오지 않고, 이틀 뒤(빨라도 12일째)가 대보름으로 정해짐
+//  - 마음이 봄 문턱에 닿으면 (9일째부터) 봄이 바로 오지 않고, 이틀 뒤(빨라도 12일째)가 대보름으로 정해짐
 //  - 그동안 농장 남쪽 빈 논에 달집 쌓기 (나무 5, 이장님 품앗이를 했으면 3)
 //  - 대보름 아침: 미나와 부럼 깨기. 밤(19시~): 쥐불놀이 → 달맞이 → 달집에 도시의 물건 하나 태우기 → 소원지
 //  - 대보름 밤을 보내야 다음 날 아침 봄이 옴. 그날 밤을 놓쳐도 달집은 그대로, 다음 저녁에 해도 됨
@@ -63,6 +63,7 @@ public static class Rites
 
     // ---------------------------------------------------------------- 정월대보름
     public const int BoreumEarliest = 12, Notice = 2, DaljipWood = 5, DaljipWoodHelped = 3;
+    public const int ScheduleFrom = 9;   // K-5: 봄 문턱 소식은 9일째부터 (마음이 빨리 올라도 겨울을 충분히 보내게)
 
     // 겨울 → 봄은 대보름 밤을 보낸 뒤에만
     public static bool HoldSpring(RiteState r) => !r.boreumDone;
@@ -70,7 +71,7 @@ public static class Rites
     // 마음이 봄 문턱에 닿은 아침: 대보름 날을 정함 (한 번만). newDay = 막 시작된 날
     public static bool Schedule(RiteState r, int newDay)
     {
-        if (r.boreumDay >= 0) return false;
+        if (r.boreumDay >= 0 || newDay < ScheduleFrom) return false;
         r.boreumDay = System.Math.Max(newDay + Notice, BoreumEarliest);
         return true;
     }

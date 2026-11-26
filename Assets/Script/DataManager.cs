@@ -65,7 +65,7 @@ public class DataManager : MonoBehaviour
     [Header("데모 빌드")]
     [Tooltip("켜면 '봄'이 오는 순간 데모가 끝납니다 (계절은 겨울에 머묾). DEMO_BUILD 심볼로도 켤 수 있습니다.")]
     public bool demoMode = false;
-    public string wishlistUrl = "https://store.steampowered.com/";
+    public string wishlistUrl = "https://store.steampowered.com/";   // 안 씀: 링크는 DemoConfig.StoreUrl (K-5)
 
     // --- 이벤트 ---
     public event System.Action OnInventoryChanged;
@@ -133,7 +133,7 @@ public class DataManager : MonoBehaviour
 
         FindUIElements(SceneManager.GetActiveScene());
         ApplyClearedResources(SceneManager.GetActiveScene());
-        WorldColor.SetHeart(heart / maxHeart, true);
+        WorldColor.SetHeart(VisibleColor01, true);
         Spirit.EnsureSpawned();
     }
 
@@ -202,10 +202,6 @@ public class DataManager : MonoBehaviour
             StartNewGame();
         }
         if (Input.GetKeyDown(KeyCode.P) && !HUD.DialogueOpen && !HUD.AlbumOpen) HUD.ToggleAlbum();
-        if (demoMode && story.IsUnlocked("demo_end") && HUD.AnnouncementOpen && Input.GetKeyDown(KeyCode.Return))
-        {
-            Application.OpenURL(wishlistUrl);
-        }
         if (Input.GetKeyDown(KeyCode.J) && !HUD.DialogueOpen)
         {
             if (journalOpen && HUD.AnnouncementOpen)
@@ -338,7 +334,13 @@ public class DataManager : MonoBehaviour
         InventoryChanged();
         Sfx.Play("pickup", 0.8f, 0.12f);
 
-        if ((itemName == "Sunshine Shard" || itemName == "Earth's Breath") && !story.spirit.found) Spirit.Discover();
+        if ((itemName == "Sunshine Shard" || itemName == "Earth's Breath") && !story.spirit.found)
+        {
+            if (!demoMode) Spirit.Discover();
+            else if (story.Unlock("demo_spirit_note"))   // 체험판: 도깨비불은 정식판에서 (K-5)
+                HUD.Toast(Loc.T("For a moment, a tiny flame flickers in the dark... (The dokkaebi fire appears in the full game.)",
+                                "어둠 속에서 작은 불꽃이 잠깐 깜빡였다 사라져요... (도깨비불은 정식판에서 만나요)"), 5f);
+        }
     }
 
     public void RemoveItem(string itemName, int count)
@@ -437,13 +439,21 @@ public class DataManager : MonoBehaviour
         return true;
     }
 
+    // K-5: 겨울이 대보름까지 붙들려 있는 동안 (마음은 봄 문턱을 넘었어도)
+    //  - 세상의 색은 반까지만 돌아옴. 나머지 반은 대보름 밤에 한꺼번에 (데모의 절정)
+    //  - 봄 문턱(30) 위로는 마음이 천천히 오름 (모든 걸 첫날부터 해도 닷새 만에 100이 되지 않게)
+    public bool WinterHeld => CurrentSeason == Season.Winter && Rites.HoldSpring(story.rites);
+    public float VisibleColor01 => heart / maxHeart * (WinterHeld ? 0.5f : 1f);
+    public const float HeldGainScale = 0.35f;
+
     public void ChangeHeart(float amount, string reason)
     {
+        if (amount > 0f && WinterHeld && heart >= SeasonSystem.Thresholds[1]) amount *= HeldGainScale;
         float before = heart;
         heart = Mathf.Clamp(heart + amount, 0f, maxHeart);
         if (amount >= 1f && heart > before) Sfx.Play("heart", 0.8f, 0.5f);
         if (amount >= 2f && heart > before && !string.IsNullOrEmpty(reason)) ColorWave.Request(false);   // 낮에 생긴 좋은 일 (아침 요약은 아래에서)
-        WorldColor.SetHeart(heart / maxHeart);
+        WorldColor.SetHeart(VisibleColor01);
 
         if (!string.IsNullOrEmpty(reason) && Mathf.Abs(amount) >= 0.5f)
         {
@@ -543,6 +553,12 @@ public class DataManager : MonoBehaviour
             ChangeHeart(2f, Loc.T("Sharing warms your heart.", "나누니 마음이 따뜻해져요."));
         }
 
+        if (demoMode && story.kindness >= StarHill.KindnessToUnlock)   // 체험판: 별의 언덕은 정식판에서 (K-5)
+        {
+            if (story.Unlock("demo_starhill_note"))
+                HUD.Toast(Loc.T("Word of your kindness spreads through the village. (Star Hill opens in the full game.)", "나눔 소문이 마을에 퍼졌어요. (별의 언덕은 정식판에서 열려요)"), 5f);
+            return;
+        }
         if (story.kindness >= StarHill.KindnessToUnlock && story.Unlock("starhill"))
         {
             HUD.Announce(
@@ -710,6 +726,7 @@ public class DataManager : MonoBehaviour
                             $"봄이 문 앞에 와 있어요. 마을은 정월대보름({story.rites.boreumDay}일째)에 봄을 맞아요."));
         bool demoEndsNow = demoMode && springReady && story.rites.boreumDone && !story.IsUnlocked("demo_end");
         Season after = holdSpring ? Season.Winter : SeasonSystem.Evaluate(heart, before, cap);
+        if ((int)after > (int)before + 1) after = before + 1;   // 한 아침에 한 계절씩 (대보름 다음 날 바로 가을이 되지 않게)
         story.season = (int)after;
         if ((int)after > story.highestSeason) story.highestSeason = (int)after;
         // 색 물결: 아침 요약을 닫으면 퍼짐 (계절이 바뀐 아침은 크게)
@@ -820,16 +837,11 @@ public class DataManager : MonoBehaviour
         if (demoEndsNow)
         {
             story.Unlock("demo_end");
-            HUD.Announce(Loc.T("<size=44><color=#ffb6d0>Spring is coming...</color></size>\n\n" +
-                               "You made it through the winter.\nThe rest of the year is waiting in the full game.\n\n" +
-                               "<size=28>Thank you for playing the demo!</size>\n<size=24>[Enter] Wishlist on Steam</size>",
-                               "<size=44><color=#ffb6d0>봄이 오고 있어요...</color></size>\n\n" +
-                               "겨울을 잘 견뎌 냈어요.\n남은 한 해는 정식판에서 기다리고 있어요.\n\n" +
-                               "<size=28>데모를 플레이해 주셔서 고마워요!</size>\n<size=24>[Enter] 스팀 찜하기</size>"), 30f);
+            DemoEnd.Show();      // K-5: 봄이 오는 장면 → 올겨울의 나 → 정식판에서 → 팔로우 / 타이틀로
         }
         else if (demoMode && story.IsUnlocked("demo_end"))
         {
-            HUD.Toast(Loc.T("Demo: spring is waiting in the full game. [Enter] while this shows: Wishlist", "데모: 봄은 정식판에서 기다리고 있어요. 이 알림이 보일 때 [Enter]: 찜하기"), 4f);
+            HUD.Toast(Loc.T("The demo's winter goes on. Spring is waiting in the full game.", "체험판의 겨울은 계속돼요. 봄은 정식판에서 기다리고 있어요."), 4f);
         }
         if (after != before) PixelArtWorld.RefreshSeasonal();
 
@@ -981,7 +993,7 @@ public class DataManager : MonoBehaviour
         waterCharges = WaterCapacity;
 
         if (timeManager != null) timeManager.SetTime(1, 6, 0f);
-        WorldColor.SetHeart(heart / maxHeart, true);
+        WorldColor.SetHeart(VisibleColor01, true);
         InventoryChanged();
     }
 
@@ -1048,7 +1060,7 @@ public class DataManager : MonoBehaviour
         waterCharges = Mathf.Clamp(data.waterCharges, 0, WaterCapacity);
         if (timeManager != null) timeManager.SetTime(data.day, data.hour, data.minute);
 
-        WorldColor.SetHeart(heart / maxHeart, true);
+        WorldColor.SetHeart(VisibleColor01, true);
         InventoryChanged();
         Spirit.EnsureSpawned();
         PixelArtWorld.RefreshSeasonal();

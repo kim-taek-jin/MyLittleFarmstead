@@ -60,6 +60,7 @@ public static class NeighborScenes
         if (!Data.HasItem(food)) return;
         Data.RemoveItem(food, 1);
         p.saechamDay = Today;
+        Data.story.saechamCount++;
         Data.NoteSaecham();
         Sfx.Play("pickup");
         if (chapter) { Finish(def, p, Neighbors.Next(def, p)); return; }
@@ -78,6 +79,7 @@ public static class NeighborScenes
     {
         int today = Today;
         Data.story.masilDay = today;
+        Data.story.masilCount++;
         Data.NoteMasil();
         PlayerAction player = PlayerAction.instance;
         Vector3 stood = player != null ? player.transform.position : Vector3.zero;

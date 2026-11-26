@@ -13,7 +13,7 @@ public class TitleScreen : MonoBehaviour
 {
     public static bool Open => instance != null && instance.root != null && instance.root.gameObject.activeSelf;
     // 타이틀이나 오프닝이 떠 있는 동안에는 다른 키(가방, 지도, 앨범, 제작...)를 받지 않음
-    public static bool Blocking => Open || Opening.Open || ChoiceMenu.Open;
+    public static bool Blocking => Open || Opening.Open || ChoiceMenu.Open || DemoEnd.Open;
 
     static TitleScreen instance;
     static bool shownThisSession;
@@ -45,6 +45,21 @@ public class TitleScreen : MonoBehaviour
 
     void OnDestroy() { Loc.Changed -= Relabel; }
 
+    // 데모 끝 화면에서 "타이틀로" (K-5)
+    public static void Reopen()
+    {
+        if (instance == null)
+        {
+            var go = new GameObject("TitleScreen");
+            DontDestroyOnLoad(go);
+            instance = go.AddComponent<TitleScreen>();
+            return;
+        }
+        instance.root.gameObject.SetActive(true);
+        Time.timeScale = 0f;
+        if (instance.built) instance.ShowMain();
+    }
+
     // 메뉴는 첫 Update에서 만듦: 그때는 DataManager가 저장을 이미 불러온 뒤라 "이어하기"에 날짜를 쓸 수 있음
     void Build()
     {
@@ -75,6 +90,10 @@ public class TitleScreen : MonoBehaviour
         ScreenUI.At(message.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 600f), new Vector2(1400f, 50f));
         hint = ScreenUI.Label("Hint", root, 22f, TextAlignmentOptions.Center, ScreenUI.Dim);
         ScreenUI.At(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(1400f, 34f));
+        // 체험판 표시와 버전 (오른쪽 아래, K-5)
+        TextMeshProUGUI version = ScreenUI.Label("Version", root, 22f, TextAlignmentOptions.Right, ScreenUI.Dim);
+        ScreenUI.At(version.rectTransform, new Vector2(1f, 0f), new Vector2(-190f, 40f), new Vector2(340f, 34f));
+        version.text = (DemoConfig.IsDemo ? "<color=#ffd84a>DEMO 체험판</color>   " : "") + "v" + DemoConfig.Version;
         ShowMain();
     }
 
