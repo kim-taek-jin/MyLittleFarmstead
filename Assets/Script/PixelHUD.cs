@@ -220,8 +220,10 @@ public class PixelHUD : MonoBehaviour
     }
 
     // ---------------------------------------------------------------- 마을 지도 (M)
+#pragma warning disable 0649   // JsonUtility가 Maps/villagemap.json에서 채움
     [System.Serializable] class MapRegionPos { public string id; public float labelX, labelY, pinX, pinY; }
     [System.Serializable] class MapLayout { public int width, height; public MapRegionPos[] regions; }
+#pragma warning restore 0649
     static MapLayout layout;
 
     static MapLayout Layout()

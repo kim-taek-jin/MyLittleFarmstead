@@ -61,7 +61,7 @@ public abstract class JangSpot : MonoBehaviour
     protected abstract void Use();
     protected virtual Vector2 Center => bottom + new Vector2(0f, 0.4f);
 
-    protected bool PlayerNear(float reach)
+    protected bool PlayerWithin(float reach)
     {
         PlayerAction p = PlayerAction.instance;
         return p != null && Vector2.Distance(p.transform.position, Center) < reach;
@@ -90,7 +90,7 @@ public abstract class JangSpot : MonoBehaviour
     {
         if (Data == null || Data.IsGameOver || TitleScreen.Blocking || PixelHUD.ViewOpen || PixelHUD.BagOpen) return;
         if (Time.frameCount % 30 == 0) Refresh();
-        if (PlayerNear(ReachHere) && AreaKit.PressedE() && IsNearest()) { Use(); Refresh(); }
+        if (PlayerWithin(ReachHere) && AreaKit.PressedE() && IsNearest()) { Use(); Refresh(); }
     }
 
     // 처음 한 번만 하는 방법 안내
@@ -105,7 +105,7 @@ public class Agungi : JangSpot
 {
     static Agungi current;
     // 아궁이 앞에 서 있으면 모닥불 없이도 요리, 메주 쑤기 (CraftingManager가 봄)
-    public static bool PlayerNear => current != null && current.isActiveAndEnabled && current.PlayerNear(Reach + 0.5f);
+    public static bool PlayerNear => current != null && current.isActiveAndEnabled && current.PlayerWithin(Reach + 0.5f);
 
     void Awake() { current = this; }
     void OnDestroy() { if (current == this) current = null; }
