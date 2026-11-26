@@ -49,6 +49,8 @@ public static class PixelArtWorld
             SpriteRenderer view;
             if (key == "bg_farmmap")
                 view = FarmMap.PlaceGround(sr, sprite);                                 // 넓어진 농장: 맵 전체 그림
+            else if (key == "bg_home")
+                view = HomeRoom.PlaceRoom(sr, sprite);                                  // 집 안: 주인공 크기에 맞춘 방 (H-1)
             else if (key.StartsWith("bg_"))
                 view = PixelArt.Overlay(sr, sprite, 1f, stretch: true);                 // 배경: 원래 영역에 정확히
             else if (key == "tree")

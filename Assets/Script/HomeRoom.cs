@@ -11,13 +11,24 @@ public static class HomeRoom
 {
     public const string SceneName = "Home";
 
-    // 그림의 픽셀 → 세계 좌표: ((px - 295) / 32, (164 - py) / 32 - 0.027)
-    public static readonly Vector2 Arrival = new Vector2(0f, -3.1f);      // 농장에서 들어오면 문 안쪽
-    public static readonly Vector2 WakeSpot = new Vector2(-4.1f, -0.5f);  // 지쳐 쓰러지면 요 옆에서 눈을 뜸
-    static readonly Vector2 Door = new Vector2(0f, -4.45f);
-    static readonly Vector2 BeddingCenter = new Vector2(-6.44f, -0.46f);
+    // 방 그림은 288 x 162 px (9 x 5.06칸), 주인공 키(32px ≈ 1.6m)에 맞춘 크기 (1m ≈ 20px).
+    // 세계 (0, 0)에 원래 픽셀 크기로 놓음 → 카메라(CameraFit)가 방에 맞춰 가까이 당겨짐.
+    // 그림의 픽셀 → 세계 좌표: ((px - 144) / 32, (81 - py) / 32)
+    public static readonly Vector2 Arrival = new Vector2(2.77f, -1.4f);   // 농장에서 들어오면 문 안쪽
+    public static readonly Vector2 WakeSpot = new Vector2(-2.9f, 0f);     // 지쳐 쓰러지면 요 옆에서 눈을 뜸
+    static readonly Vector2 Door = new Vector2(2.77f, -2.25f);            // 앞벽 오른쪽 미닫이문 (가운데 단축칸에 가리지 않게)
+    static readonly Vector2 BeddingCenter = new Vector2(-3.72f, 0.06f);
 
-    const float Left = -8.84f, Right = 8.84f, Back = 2.66f, Front = -4.28f, DoorHalf = 1.25f;
+    const float Left = -4.31f, Right = 4.31f, Back = 1.34f, Front = -1.97f, DoorX0 = 2.375f, DoorX1 = 3.156f;
+
+    // PixelArtWorld가 집 배경을 놓을 때: 늘이지 않고 원래 픽셀 크기로, 가운데를 (0, 0)에
+    public static SpriteRenderer PlaceRoom(SpriteRenderer original, Sprite sprite)
+    {
+        SpriteRenderer view = PixelArt.Overlay(original, sprite, native: true);
+        if (view == null) return null;
+        view.transform.position = new Vector3(0f, 0f, original.transform.position.z);
+        return view;
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Init()
@@ -38,7 +49,7 @@ public static class HomeRoom
                     root.transform.position = new Vector3(Door.x, Door.y, root.transform.position.z);
                     root.transform.localScale = Vector3.one;
                     BoxCollider2D door = root.GetComponent<BoxCollider2D>();
-                    if (door != null) { door.size = new Vector2(DoorHalf * 2f - 0.2f, 1.0f); door.offset = Vector2.zero; }
+                    if (door != null) { door.size = new Vector2(DoorX1 - DoorX0 - 0.1f, 0.6f); door.offset = Vector2.zero; }
                     HideAll(root);
                     break;
                 case "Exit_0":
@@ -48,7 +59,7 @@ public static class HomeRoom
                     root.transform.position = new Vector3(BeddingCenter.x, BeddingCenter.y, root.transform.position.z);
                     root.transform.localScale = Vector3.one;
                     BoxCollider2D bed = root.GetComponent<BoxCollider2D>();
-                    if (bed != null) { bed.size = new Vector2(3.4f, 2.9f); bed.offset = Vector2.zero; }
+                    if (bed != null) { bed.size = new Vector2(1.3f, 1.7f); bed.offset = Vector2.zero; }
                     HideAll(root);                            // 요와 이불은 방 그림에 있음
                     break;
             }
@@ -56,15 +67,16 @@ public static class HomeRoom
         if (GameObject.Find("HomeWalls") != null) return;
         var walls = new GameObject("HomeWalls");
         SceneManager.MoveGameObjectToScene(walls, scene);
-        Wall(walls, Left - 1f, Back, Right + 1f, Back + 4f);                 // 뒷벽
-        Wall(walls, Left - 3f, Front - 3f, Left, Back + 4f);                 // 왼쪽
-        Wall(walls, Right, Front - 3f, Right + 3f, Back + 4f);               // 오른쪽
-        Wall(walls, Left - 1f, Front - 3f, -DoorHalf, Front);                // 앞벽 (문 왼쪽)
-        Wall(walls, DoorHalf, Front - 3f, Right + 1f, Front);                // 앞벽 (문 오른쪽)
-        Wall(walls, -DoorHalf - 1f, Front - 4f, DoorHalf + 1f, Front - 1.3f); // 문 밖으로 너무 나가지 않게 (문턱 아래)
-        Wall(walls, -8.53f, 1.97f, -5.72f, Back);                            // 자개장
-        Wall(walls, 5.47f, 1.79f, 8.47f, Back);                              // 이불 얹은 반닫이
-        Wall(walls, 2.25f, -1.35f, 4.3f, -0.75f);                            // 밥상 (다리)
+        Wall(walls, Left - 1f, Back, Right + 1f, Back + 3f);                 // 뒷벽
+        Wall(walls, Left - 3f, Front - 3f, Left, Back + 3f);                 // 왼쪽
+        Wall(walls, Right, Front - 3f, Right + 3f, Back + 3f);               // 오른쪽
+        Wall(walls, Left - 1f, Front - 3f, DoorX0, Front);                   // 앞벽 (문 왼쪽)
+        Wall(walls, DoorX1, Front - 3f, Right + 1f, Front);                  // 앞벽 (문 오른쪽)
+        Wall(walls, DoorX0 - 1f, Front - 4f, DoorX1 + 1f, Front - 0.8f);     // 문 밖으로 너무 나가지 않게 (문턱 아래)
+        Wall(walls, -4.22f, 1.1f, -3.41f, Back);                             // 자개장
+        Wall(walls, 3.37f, 1.15f, 4.19f, Back);                              // 이불 얹은 반닫이
+        Wall(walls, 1.94f, 0.97f, 2.75f, Back);                              // 서안 (라디오, 편지)
+        Wall(walls, -0.05f, -0.5f, 0.45f, -0.27f);                           // 밥상 (다리)
     }
 
     static void Wall(GameObject parent, float x0, float y0, float x1, float y1)

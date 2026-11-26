@@ -105,11 +105,11 @@ public static class StoryEvents
         Data.ChangeHeart(5f, null);
         HUD.Announce(
             Loc.T("<size=46><color=#ffb6d0>The last color was yours</color></size>\n\n" +
-                  "The walls warm up. The curtains blush. The kettle shines.\n" +
+                  "The paper window fills with light. The quilt blushes red. The mother-of-pearl shimmers.\n" +
                   "The gray was never the city's. It was yours, and now it's gone.\n\n" +
                   "<size=24><color=#ff8fb1>Thank you for playing.</color>  Life in the village goes on.</size>",
                   "<size=46><color=#ffb6d0>마지막 색은 나였어요</color></size>\n\n" +
-                  "벽이 따스해지고, 커튼이 발그레해지고, 주전자가 반짝여요.\n" +
+                  "창호지에 볕이 들고, 이불이 발그레해지고, 자개장이 반짝여요.\n" +
                   "잿빛은 도시의 것이 아니었어요. 내 것이었고, 이제 사라졌어요.\n\n" +
                   "<size=24><color=#ff8fb1>플레이해 주셔서 고마워요.</color>  마을의 삶은 계속돼요.</size>"),
             20f);

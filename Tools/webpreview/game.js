@@ -573,7 +573,7 @@ const SCENES = {
   forest: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_forest_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => FORB },
   lake: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_lake_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => LAKB },
   sunset: { ww: CW / 64, wh: CH / 64, cx: 0, cy: 0, bg: () => 'World/bg_hill_gray_' + seasonKey(), outdoor: true, map: true, bounds: () => HILB },
-  home: { ww: 18.43, wh: 10.24, cx: 0, cy: -0.027, bg: () => unlocked('ending_seen') ? 'World/bg_home' : 'World/bg_home_gray' },   // ending A: gray until the end
+  home: { ww: 9, wh: 5.0625, cx: 0, cy: 0, bg: () => unlocked('ending_seen') ? 'World/bg_home' : 'World/bg_home_gray' },   // ending A: gray until the end
   market: { ww: 18.28, wh: 10.24, cx: 0.09, cy: -0.08, bg: () => 'World/bg_market_' + seasonKey(), outdoor: true },
   haggle: { ww: 17.95, wh: 10.04, cx: -0.035, cy: -0.079, bg: () => 'World/bg_minigame' },
   hill: { ww: 17.92, wh: 10.24, cx: 0, cy: 0, bg: () => 'World/bg_starhill' },
@@ -1329,7 +1329,7 @@ function drawDemoEnd() {
   hit(0, 0, CW, CH, () => { if (panel.page < 3) panel.page++; });
 }
 
-const onBedding = () => G.scene === 'home' && Math.abs(G.px + 6.44) < 1.8 && Math.abs(G.py + 0.46) < 1.5;   // H-1: the yo on the araetmok
+const onBedding = () => G.scene === 'home' && Math.abs(G.px + 3.72) < 0.9 && Math.abs(G.py - 0.06) < 1.0;   // H-1: the yo on the araetmok
 
 // ------------------------------------------------------------------ day end (DataManager.EndDay)
 function trySleep() {
@@ -1811,7 +1811,7 @@ function update(dt) {
   const hours = dt * 3 * speed / 60;   // K-5: 3 game minutes per second (a day ~6 min)
   G.minute += dt * 3 * speed; while (G.minute >= 60) { G.minute -= 60; G.hour++; }
   if (G.hour >= 24 && !G.warnedMid) { G.warnedMid = true; toast("It's midnight. You should go to bed soon."); }
-  if (G.hour >= 26) { endDay(true); go('home', -4.1, -0.5); clearPressed(); return; }   // H-1: wake beside the bedding
+  if (G.hour >= 26) { endDay(true); go('home', -2.9, 0); clearPressed(); return; }   // H-1: wake beside the bedding
   G.hunger = Math.max(0, G.hunger - 5 * hours); G.thirst = Math.max(0, G.thirst - 7 * hours);
   if (G.hunger <= 0 || G.thirst <= 0) { G.log.starved = true; G.health -= 15 * hours; if (G.health <= 0) { G.health = 0; G.dead = true; showAnnounce('[#ff8080]You collapsed...[/]\n\nTake better care of yourself.\n\nPress "새로 시작" below to try again.', 9999); } }
   else if (G.hunger > 50 && G.thirst > 50) G.health = Math.min(100, G.health + 2 * hours);
@@ -1846,7 +1846,7 @@ function update(dt) {
   // portals
   if (G.scene === 'farm') {
     const open = MAP.exits.find(e => !e.locked && inRect(exitRect(e), G.px, G.py));
-    if (near(DOOR[0], DOOR[1], 0.7)) go('home', 0, -3.1);
+    if (near(DOOR[0], DOOR[1], 0.7)) go('home', 2.77, -1.4);
     else if (open) go(open.to.toLowerCase(), open.spawnX, open.spawnY);          // the end of the road is the way to the market
     const gate = MAP.exits.find(e => areaOpen(e.to) && inRect(exitRect(e), G.px, G.py));
     if (gate && G.scene === 'farm') {
@@ -1884,7 +1884,7 @@ function update(dt) {
       else if (fishing.state === 'bite' && fishing.t <= 0) { fishing = null; toast('It got away...'); }
       if (fishing && !near(fishing.at[0], fishing.at[1], 2.2)) { fishing = null; toast('You reeled in your line.'); }
     }
-  } else if (G.scene === 'home') { if (G.py < -4.0 && Math.abs(G.px) < 1.25) go('farm', ...arrival('Home')); }   // H-1: out the sliding door
+  } else if (G.scene === 'home') { if (G.py < -1.95 && G.px > 2.4 && G.px < 3.15) go('farm', ...arrival('Home')); }   // H-1: out the sliding door
   else if (G.scene === 'market') { if (G.px < -8.5 && Math.abs(G.py) < 1.3) go('farm', ...arrival('Market')); }
   else if (G.scene === 'hill') updateStars(dt);
 
@@ -1920,11 +1920,11 @@ function clampPlayer() {
   if (G.scene === 'lake') { minX = LAKB.x0 + 0.3; maxX = LAKB.x1 - 0.3; minY = LAKB.y0 + 0.5; maxY = LAKB.y1 - 0.8; }
   if (G.scene === 'sunset') { minX = HILB.x0 + 0.3; maxX = HILB.x1 - 0.3; minY = HILB.y0 + 0.5; maxY = HILB.y1 - 0.8; }
   if (G.scene === 'market') maxY = 2.4;
-  if (G.scene === 'home') { minX = -8.4; maxX = 8.4; maxY = 3.05; minY = Math.abs(G.px) < 1.1 ? -4.3 : -3.8; }   // H-1: the ondol room, the door in the front wall
+  if (G.scene === 'home') { minX = -4.1; maxX = 4.1; maxY = 1.7; minY = G.px > 2.45 && G.px < 3.1 ? -2.1 : -1.55; }   // H-1: the ondol room, the door in the front wall
   if (G.scene === 'hill') { minX = -8.4; maxX = 8.4; minY = -4.6; maxY = -1.2; }
   G.px = Math.max(minX, Math.min(maxX, G.px)); G.py = Math.max(minY, Math.min(maxY, G.py));
   const solids = [];
-  if (G.scene === 'home') { for (const x of [-8.1, -7.4, -6.7, -6.1]) solids.push([x, 2.3, 0.45]); for (const x of [5.9, 6.6, 7.3, 8.0]) solids.push([x, 2.2, 0.45]); for (const x of [2.6, 3.3, 4.0]) solids.push([x, -1.05, 0.4]); }
+  if (G.scene === 'home') { for (const x of [-4.0, -3.6]) solids.push([x, 1.25, 0.32]); for (const x of [3.6, 4.0]) solids.push([x, 1.3, 0.32]); for (const x of [2.1, 2.6]) solids.push([x, 1.12, 0.3]); solids.push([0.2, -0.4, 0.3]); }
   if (G.scene === 'farm') {
     solids.push([WELL[0], WELL[1] - 0.45, 0.55]);
     // stumps and boulders near the player block the way (weeds don't)
@@ -2277,7 +2277,7 @@ function promptText() {
     if (debrisAt(Math.floor(G.px), Math.floor(G.py - 0.4)) === 'g' || ['k', 'o'].some(ch => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => debrisAt(Math.floor(G.px) + dx, Math.floor(G.py - 0.4) + dy) === ch))) {
       const it = ITEMS[selectedItem()] || {}; return it.tool === 'hoe' || it.tool === 'scythe' ? 'Click to clear the old field' : 'The old field: clear it with a hoe or scythe';
     }
-  } else if (G.scene === 'home') { if (onBedding()) return '[E] Lie down on the bedding and end the day'; if (G.py < -3.3 && Math.abs(G.px) < 1.4) return 'Out to the porch';
+  } else if (G.scene === 'home') { if (onBedding()) return '[E] Lie down on the bedding and end the day'; if (G.py < -1.0 && G.px > 2.1 && G.px < 3.4) return 'Out to the porch';
   } else if (G.scene === 'market') {
     { const rp = ritePrompt(); if (rp && !VILLAGERS.some(v => v.scene === G.scene && near(...vPos(v), 1.0))) return rp;
       const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
