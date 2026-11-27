@@ -80,6 +80,8 @@ for block_start in [m.end() for m in re.finditer(r'All\.Add\(new VillagerDef', S
               'hint': one('hint', c), 'spot': plain('spot', c), 'steps': many('steps', c), 'need': plain('needItem', c),
               'reward': items(c), 'unlock': plain('unlock', c), 'unlockText': one('unlockText', c),
               'favor': plain('favor', c), 'favorText': one('favorText', c)}
+        m = re.search(r'season\s*=\s*Season\.(\w+)', c)                    # F-1: the season a chapter opens in
+        ch['sn'] = ['Winter', 'Spring', 'Summer', 'Autumn'].index(m.group(1)) if m else 0
         m = re.search(r'heart\s*=\s*([\d.]+)f', c)
         ch['heart'] = float(m.group(1)) if m else 0
         m = re.search(r'gold\s*=\s*(\d+)', c)

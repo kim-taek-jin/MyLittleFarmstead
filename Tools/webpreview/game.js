@@ -24,7 +24,7 @@ const paceTop = s => s >= 3 ? 100 : THRESH[s + 1];
 const paceScale = (s, h) => PACE.gain * Math.max(PACE.minRoom, Math.min(1, (paceTop(s) - h) / (paceTop(s) - THRESH[s])));
 const color01 = h => Math.max(0, Math.min(1, (h - 10) / 90));
 const seasonDays = () => G.day - (G.story.seasonStart || 1);
-const seasonClosed = (s, day) => s === 0 ? !!(G.story.rites && G.story.rites.boreumDone) : day - (G.story.seasonStart || 1) >= PACE.days[s];
+const seasonClosed = (s, day) => s === 0 ? !!(G.story.rites && G.story.rites.boreumDone) : s === 1 ? !!(G.story.spring && G.story.spring.monaegiDone) : day - (G.story.seasonStart || 1) >= PACE.days[s];   // F-1: spring closes on the rice planting
 const ARRIVAL = [
   'The world is quiet and gray.',
   'The snow is melting. Little green shoots push through the ground. You can finally breathe again.',
@@ -75,6 +75,11 @@ reg('Compost', 'Special', { sell: 0, desc: 'Rich compost from the heap. Spread i
 // K-2: making sauces
 reg('Soybeans', 'Resource', { sell: 5, desc: 'Dried soybeans for meju. Boil four at the agungi to make one.' });
 reg('Salt', 'Resource', { sell: 2, desc: 'Coarse sea salt. Two go in each sauce jar.' });
+reg('Azalea', 'Resource', { sell: 8, desc: 'Azalea blossoms from the back hill. For flower pancakes.' });   // F-1
+reg('Rice Flour', 'Resource', { sell: 6, desc: 'Glutinous rice flour from the corner store.' });
+reg('Azalea Hwajeon', 'Food', { sell: 70, hunger: 15, heart: 2, desc: 'Little rice pancakes with an azalea pressed into each. Spring on a plate.' });
+reg('Pepper Seedling', 'Seed', { sell: 10, crop: 'pepper' });
+reg('Red Pepper', 'Crop', { sell: 35, hunger: 2, desc: 'Ripe red chili. Dried in autumn, it becomes gochugaru.' });
 reg('Barley Tea', 'Food', { sell: 10, thirst: 50, desc: 'Cold bottled barley tea from the corner store. Take it anywhere.' });   // W-1
 reg('Homemade Barley Tea', 'Food', { sell: 10, thirst: 60, heart: 1, desc: 'Barley tea boiled at your own agungi, kept in an old glass bottle. Tastes like home.' });
 reg('Roasted Barley', 'Resource', { sell: 4, desc: 'Roasted barley grains. Boil them at the agungi for barley tea.' });
@@ -117,6 +122,7 @@ const CROPS = {
   corn: { harvest: 'Corn', days: 5, regrow: 3, season: 2 },
   sunflower: { harvest: 'Sunflower', days: 5, regrow: 0, season: 2 },
   pumpkin: { harvest: 'Pumpkin', days: 6, regrow: 0, season: 3 },
+  pepper: { harvest: 'Red Pepper', days: 7, regrow: 3, season: 1 },   // F-1
 };
 
 const SHOP = [['Soybeans', 12], ['Salt', 8], ['Barley Tea', 30], ['Roasted Barley', 15], ['Wood', 5], ['Carrot Seed', 10], ['Potato Seed', 40], ['Strawberry Seed', 50], ['Corn Seed', 30], ['Campfire', 50], ['Rice Cake', 20], ['Apple', 12]];
@@ -136,6 +142,7 @@ const RECIPES = [
   { out: 'Mattock', n: 1, req: [['Wood', 5], ['Stone', 5]] },
   { out: 'Spring Greens', n: 1, req: [['Wild Garlic', 1], ['Fern Sprout', 1]], lock: 'forest_open' },
   { out: 'Morel Soup', n: 1, req: [['Morel', 2], ['Wild Garlic', 1]], station: 'Campfire', lock: 'forest_open' },
+  { out: 'Azalea Hwajeon', n: 2, req: [['Rice Flour', 1], ['Azalea', 2]], station: 'Campfire' },   // F-1
   { out: 'Homemade Barley Tea', n: 3, req: [['Roasted Barley', 1], ['Wood', 1]], station: 'Agungi' },   // W-1
   { out: 'Fresh Meju', n: 1, req: [['Soybeans', 4], ['Wood', 1]], station: 'Agungi' },
   { out: 'Doenjang Stew', n: 1, req: [['Doenjang', 1], ['Potato', 1], ['Carrot', 1]], station: 'Campfire' },
@@ -238,6 +245,37 @@ const VILLAGERS = [
      ]
     ],
     "heart": 6.0
+   },
+   {
+    "kind": "Saecham",
+    "invite": "Spring greens season, and here I am with nothing on the table. He used to dig shepherd's purse on the back hill, and I'd season it...",
+    "scene": [
+     "(She picks up her chopsticks, puts them down, picks them up again.)",
+     "This is it. A little bitter. That's what spring tastes like.",
+     "Maybe I'll climb the back hill myself this year. Slowly."
+    ],
+    "hint": "Dig greens on the back hill, make Spring Greens, bring them as saecham",
+    "need": "Spring Greens",
+    "sn": 1,
+    "heart": 3.0
+   },
+   {
+    "kind": "Masil",
+    "invite": "Come sit with me on the bench this evening. I've something to tell you about flowers.",
+    "scene": [
+     "Every Samjitnal he'd come down the hill with an armful of azaleas. He'd use a few petals for the pancakes and give me all the rest.",
+     "\"Flowers aren't for eating, they're for looking at,\" he'd say. Silly man.",
+     "I didn't look at a single flower last year. This year I did. Thanks to you."
+    ],
+    "hint": "In the evening, visit her on the bench in front of the mill (masil)",
+    "reward": [
+     [
+      "Rice Flour",
+      2
+     ]
+    ],
+    "sn": 1,
+    "heart": 5.0
    }
   ]
  },
@@ -320,6 +358,36 @@ const VILLAGERS = [
      ]
     ],
     "heart": 6.0
+   },
+   {
+    "kind": "Masil",
+    "invite": "Drop by the forge tonight. I... got something in the post.",
+    "scene": [
+     "A reply. From her. I've carried it in my pocket for three days.",
+     "(He hands it to you. It's one line long: \"Dad, me too.\")",
+     "...One line. A whole year, and one line. And it's the best thing anyone's sent me."
+    ],
+    "hint": "In the evening, visit him in front of the store (masil)",
+    "sn": 1,
+    "heart": 4.0
+   },
+   {
+    "kind": "Pumasi",
+    "invite": "Rice-planting's coming and half the village's sickles are blunt. Work the bellows for me again?",
+    "scene": [
+     "Twelve sickles. Every house in the village. You know what they'll say? \"Dongsu's forge is going again.\"",
+     "Here. Grocery money from the village. Half's yours."
+    ],
+    "hint": "By day, work the bellows at his forge (in front of the hardware store)",
+    "spot": "forge",
+    "steps": [
+     "You pump the bellows. The coals go white.",
+     "He hammers a sickle edge. Sparks.",
+     "You dip it together. Steam hisses up."
+    ],
+    "sn": 1,
+    "heart": 4.0,
+    "gold": 120
    }
   ]
  },
@@ -410,6 +478,36 @@ const VILLAGERS = [
     "unlock": "shop_sunflower",
     "unlockText": "Sunflower Seeds are now sold at the market",
     "heart": 6.0
+   },
+   {
+    "kind": "Masil",
+    "invite": "...Can I talk to you tonight? On the bench in your yard.",
+    "scene": [
+     "School starts again. New class. The kids from town call me \"the country girl.\"",
+     "You're from the city. Were city kids nicer?",
+     "...Not really? Huh. Okay. Then I'll just be the country girl who knows where the fish are."
+    ],
+    "hint": "In the evening, sit with Mina on the bench in your yard (masil)",
+    "sn": 1,
+    "heart": 4.0
+   },
+   {
+    "kind": "Acorn",
+    "invite": "Grandpa says there used to be a big oak on the back hill, where he played as a kid. It got cut down. Let's plant one! I saved acorns all winter.",
+    "scene": [
+     "(Mina pats the earth down with both hands, very seriously.)",
+     "Grandpa will be so old by the time it's big. And I'll be... a grown-up. Weird.",
+     "I'm going to tell him tonight. He'll pretend not to cry."
+    ],
+    "hint": "Plant an acorn with Mina in a clearing on the back hill",
+    "reward": [
+     [
+      "Acorn",
+      2
+     ]
+    ],
+    "sn": 1,
+    "heart": 5.0
    }
   ]
  },
@@ -481,6 +579,91 @@ const VILLAGERS = [
     ],
     "hint": "In the evening, visit him outside the village hall (masil)",
     "heart": 6.0
+   },
+   {
+    "kind": "Saecham",
+    "invite": "Rice planting's coming and I'm counting hands. Twelve houses empty... I can't even eat for worrying.",
+    "scene": [
+     "You're a stubborn one, feeding me again. ...It does help.",
+     "You'll come to the planting? Good. With you that's one more pair of hands than last year."
+    ],
+    "hint": "Bring the village head something to eat (any food)",
+    "sn": 1,
+    "heart": 3.0
+   },
+   {
+    "kind": "Masil",
+    "invite": "Sit with me by the hall stove tonight. I'm practicing tomorrow's announcement.",
+    "scene": [
+     "\"Attention, residents...\" Ha. Fifteen years and I still rehearse.",
+     "The year the school closed I almost quit. Who was I making announcements for?",
+     "Now I know: for whoever's listening. Even one person. Even you."
+    ],
+    "hint": "In the evening, visit him by the village hall stove (masil)",
+    "sn": 1,
+    "heart": 5.0
+   }
+  ]
+ },
+ {
+  "id": "myeong",
+  "name": "Mrs. Myeongsuk",
+  "scene": "market",
+  "x": 7.5,
+  "y": 3.0,
+  "ex": 8.7,
+  "ey": 1.15,
+  "place": "the plastic chairs in front of Happy Mart",
+  "intro": "Welcome! ...Oh, you're the one in the empty house. I'm Myeongsuk, I run Happy Mart. Need anything, I've probably got it. Except company.",
+  "gray": [
+   "Same shelves, same faces. Well. Fewer faces.",
+   "My son's in Seoul. University. He's busy."
+  ],
+  "color": [
+   "Ice cream's half price for you. Don't tell the village head.",
+   "He called yesterday! Talked for twenty minutes. Twenty!"
+  ],
+  "season": [
+   "Briquettes and instant noodles, that's winter in this village.",
+   "Seedlings are in! Peppers this year? Plant them by May.",
+   "Watermelons in the cooler. The kids come for the ice cream.",
+   "Kimchi season. Salt's selling like crazy."
+  ],
+  "restored": "Ha. The shelves look brighter. Or maybe it's me.",
+  "masil": [
+   "Sit, sit. The store can watch itself for an hour.",
+   "The street light hums. I like that sound."
+  ],
+  "chapters": [
+   {
+    "kind": "Saecham",
+    "invite": "I sell barley tea all day and never drink any. The bottled stuff... it's not the same as boiled at home.",
+    "scene": [
+     "Oh. It's still a little warm. You brought it in this old glass bottle and everything.",
+     "My mother kept barley tea in a bottle exactly like this. In the fridge door."
+    ],
+    "hint": "Boil barley tea at your agungi and bring her a bottle",
+    "need": "Homemade Barley Tea",
+    "sn": 1,
+    "heart": 3.0
+   },
+   {
+    "kind": "Masil",
+    "invite": "Come sit out front tonight, if you're not busy. I close up at eight.",
+    "scene": [
+     "I called my son today. He didn't pick up. He's busy, of course.",
+     "You know what? I'm busy too. I just pretend I'm not, so he doesn't feel bad.",
+     "...I'll text him instead. \"Eat well.\" That's what moms say when they mean everything else."
+    ],
+    "hint": "In the evening, sit with her on the plastic chairs in front of Happy Mart (masil)",
+    "reward": [
+     [
+      "Barley Tea",
+      3
+     ]
+    ],
+    "sn": 1,
+    "heart": 5.0
    }
   ]
  }
@@ -950,7 +1133,7 @@ function rollForage() {
   const pool = FORAGE_SPOTS.slice(); const wantAcorn = f.sapling.some(s => s < 0) && !has('Acorn');
   for (let k = 0; k < Math.min(pool.length, forageCount()); k++) {
     const [x, y] = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-    const roll = Math.random() * 100; const item = wantAcorn && k === 0 ? 'Acorn' : roll < 45 ? 'Wild Garlic' : roll < 80 ? 'Fern Sprout' : 'Morel';
+    const roll = Math.random() * 100; const item = wantAcorn && k === 0 ? 'Acorn' : S().season === 1 ? (roll < 35 ? 'Wild Garlic' : roll < 60 ? 'Fern Sprout' : roll < 90 ? 'Azalea' : 'Morel') : roll < 45 ? 'Wild Garlic' : roll < 80 ? 'Fern Sprout' : 'Morel';   // F-1: azaleas in spring
     f.forage.push([x, y, item]);
   }
 }
@@ -971,7 +1154,9 @@ function useSpot(i, item, d) {
   const f = F(), stage = f.sapling[i], name = CLEARING_NAMES[i];
   if (stage < 0) {
     if (item !== 'Acorn') { toast(`A ring of pebbles in the ${name} clearing. An acorn could grow here.`); return; }
-    if (!useEnergy(1)) return; remove('Acorn'); f.sapling[i] = 0; f.watered[i] = false; toast('You planted the acorn. Water it every day and it will grow.'); return;
+    if (!useEnergy(1)) return; remove('Acorn'); f.sapling[i] = 0; f.watered[i] = false; toast('You planted the acorn. Water it every day and it will grow.');
+    { const m = VILLAGERS.find(x => x.id === 'mina'); if (vNext(m)?.kind === 'Acorn' && vReady(m)) finishChapter(m); }   // F-1: Mina's acorn
+    return;
   }
   if (stage >= 3) { toast(`The young oak is doing well. The ${name} clearing is full of color again.`); return; }
   if (d.tool === 'can') {
@@ -1095,11 +1280,12 @@ function feedSpirit() {
 const isEvening = h => h >= 18 && h < 22, isDay = h => h >= 6 && h < 18;
 const vRestored = v => villagerProgress(v.id).wish >= v.chapters.length;
 const vNext = v => vRestored(v) ? null : v.chapters[villagerProgress(v.id).wish];
-const vReady = v => { const p = villagerProgress(v.id); return p.met && !vRestored(v) && G.day >= p.lastDay + 2; };
+const vReady = v => { const p = villagerProgress(v.id); return p.met && !vRestored(v) && G.day >= p.lastDay + 2 && (vNext(v).sn || 0) <= S().season; };   // F-1: chapters open by season
+const vStage = v => { const n = v.chapters.length; return n ? Math.min(3, Math.round(3 * Math.min(villagerProgress(v.id).wish, n) / n)) : 0; };
 const sittingOut = v => !!v.ex && isEvening(G.hour);
 const vPos = v => sittingOut(v) ? (v.id === 'mayor' ? roomAnchor('hall', 'mayorSeat', [v.ex, v.ey]) : [v.ex, v.ey])
-                                  : (v.id === 'rosa' ? roomAnchor('mill', 'keeper', [v.x, v.y]) : [v.x, v.y]);   // H-2: Grandma works inside the mill; the village head's evenings by the hall stove
-function villagerSprite(v) { const st = Math.min(3, villagerProgress(v.id).wish); return sittingOut(v) ? `Villagers/${v.id}_sit_${st}` : `Villagers/${v.id}_${st}`; }
+                                  : (v.id === 'rosa' ? roomAnchor('mill', 'keeper', [v.x, v.y]) : v.id === 'myeong' ? [STORE_KEEPER[0], STORE_KEEPER[1]] : [v.x, v.y]);   // F-1: Mrs. Myeongsuk at the store counter   // H-2: Grandma works inside the mill; the village head's evenings by the hall stove
+function villagerSprite(v) { const st = vStage(v); return sittingOut(v) ? `Villagers/${v.id}_sit_${st}` : `Villagers/${v.id}_${st}`; }
 function hasBubble(v) {
   const p = villagerProgress(v.id); if (!p.met) return true;
   if (sittingOut(v)) return S().masilDay !== G.day && vNext(v)?.kind === 'Masil' && vReady(v);
@@ -1111,13 +1297,15 @@ function invite(v, c) {
   if (c.kind === 'Pumasi') p.invited = true;
   if (c.kind === 'Fish' && !has('Fishing Rod')) { add('Fishing Rod'); unlock('fishing'); lines.push('[#9dff9d]Received:[/] Fishing Rod'); }
   if (c.kind === 'Saecham' && c.need && !has(c.need)) lines.push(`[#c8c0b0](Hold a ${c.need} and talk to them.)[/]`);
+  if (c.kind === 'Acorn' && !has('Acorn')) { add('Acorn', 2); lines.push('[#9dff9d]Received:[/] Acorn x2'); }   // F-1
   lines[lines.length - 1] += `\n[#c8c0b0]${c.hint}[/]`;
   return lines;
 }
 function talk(v) {
   G.log.talked = (G.log.talked || 0) + 1;
   const p = villagerProgress(v.id), portrait = villagerSprite(v), c = vNext(v);
-  if (!p.met) { p.met = true; p.lastDay = -99; report('villager_met'); say(v.name, [v.intro, ...(c && c.kind !== 'Letter' ? invite(v, c) : [])], portrait); return; }
+  if (!p.met) { p.met = true; p.lastDay = -99; report('villager_met'); say(v.name, [v.intro, ...(c && c.kind !== 'Letter' && (c.sn || 0) <= S().season ? invite(v, c) : [])], portrait); return; }
+  if (Sp().samjitDone && Sp().hwajeonTo === v.id && !Sp().hwajeonThanked) { Sp().hwajeonThanked = true; say(v.name, [THANKS_LINE[v.id]], portrait); changeHeart(1); return; }   // F-1
   if (v.id === 'rosa' && S().sikhyeDay !== G.day && G.thirst < 60) {   // W-1: Grandma's sikhye, once a day when you're thirsty
     S().sikhyeDay = G.day;
     say(v.name, ['You look parched. Here, have a bowl of sikhye before you go. I made it this morning.', '(Sweet, cold rice punch with rice grains floating on top. It goes down in one breath.)'], portrait,
@@ -1139,6 +1327,7 @@ function talk(v) {
     if (!(c.kind === 'Pumasi' && p.invited) || v.idle % 2 === 0) { say(v.name, invite(v, c), portrait); return; }
   }
   if (food && day && p.saechamDay !== G.day) { ask(v.name, `${idleLine(v)}\n[#ffd84a]Share your ${held}?[/]`, portrait, () => saecham(v, held, false), null, 'Eat together', 'Not now'); return; }
+  if (v.id === 'myeong' && day && roomAt(G.px, G.py)) { panel = { kind: 'shop', tab: 'buy' }; return; }   // F-1: nothing to say? the shop
   const lines = [idleLine(v)]; if (c && c.kind === 'Masil' && vReady(v)) lines.push(c.invite);
   say(v.name, lines, portrait);
 }
@@ -1217,7 +1406,7 @@ const WISH = { sleep: ['I want to sleep well', 'Just like I wrote on my wish pap
   eat: ['I want to eat slowly', 'Just like I wrote on my wish paper, I ate slowly.'], rest: ["It's okay to do nothing", 'Just like I wrote on my wish paper, I did nothing for a while. It was fine.'] };
 const DONGJI_LINE = { rosa: "Me too? Ha, first time in years someone's served me a bowl. ...It's sweet.", theo: "Red beans keep the bad stuff away, they say. ...Thanks. I'll eat it while it's hot.",
   mina: "Grandma says I have to eat as many rice balls as I am old! ...That's nine. I can do it.", mayor: 'Ah, patjuk on the winter solstice! Now it really feels like the village is alive.' };
-const vName = id => VILLAGERS.find(v => v.id === id).name, vFace = id => `Villagers/${id}_${Math.min(3, villagerProgress(id).wish)}`;
+const vName = id => VILLAGERS.find(v => v.id === id).name, vFace = id => `Villagers/${id}_${vStage(VILLAGERS.find(v => v.id === id))}`;
 const wishKept = (w, f) => w === 'sleep' ? f.onTime && !f.passedOut : w === 'laugh' ? !!f.masil : w === 'eat' ? f.meals >= 1 : w === 'rest' ? !!f.rested : false;
 function choose(title, options, pick) { panel = { kind: 'choice', title, options, pick }; }
 function riteBroadcast(day) {
@@ -1392,6 +1581,7 @@ function endDay(passedOut) {
   const before = S().season; let after = before;
   const holdSpring = before === 0 && !Rt().boreumDone;   // K-4: spring only after the Daeboreum night
   if (holdSpring && G.heart >= 17.5 && Rt().boreumDay < 0 && G.day + 1 >= RITE.scheduleFrom) { Rt().boreumDay = Math.max(G.day + 1 + RITE.notice, RITE.earliest); lines.push(`Spring is at the door. The village will greet it on Jeongwol Daeboreum (day ${Rt().boreumDay}).`); }
+  { const sl = springMorning(G.day + 1); if (sl) lines.push(sl); if (G.raining && isSpring()) waterSeedbed(G.day + 1); }   // F-1
   if (before < 3 && seasonClosed(before, G.day + 1)) { after = before + 1; G.story.seasonStart = G.day + 1; G.heart = Math.max(G.heart, THRESH[after]); }   // F-0: after the season's last rite, one step forward
   S().season = after; S().highest = Math.max(S().highest, after); if (after >= 3) unlock('season_autumn');
   if (after > before) requestWave(true); else if (delta >= 4) requestWave(false);
@@ -1444,7 +1634,7 @@ function endDay(passedOut) {
                (notes.length ? `\n\n[#c8c0b0]${notes.join('\n')}[/]` : '') + todayPreview(after), 10);
   queueBroadcast(broadcastLines({ day: G.day, before: seasonBefore, after, raining: G.raining, snowing: G.snowing,
     forestOpened: !wasOpen[0] && F().open, lakeOpened: !wasOpen[1] && Lk().open, hillOpened: !wasOpen[2] && Hl().open,
-    mejuSeason: after === 0 && !Jg().jars.some(x => x.start >= 0) && !Jg().hung.length, lidsOpen: Jg().lidsOpen, helpWanted: helpWanted(), rite: riteBroadcast(G.day) }));
+    mejuSeason: after === 0 && !Jg().jars.some(x => x.start >= 0) && !Jg().hung.length, lidsOpen: Jg().lidsOpen, helpWanted: helpWanted(), rite: riteBroadcast(G.day) || springBroadcast(G.day) }));
   letters();
   save();
 }
@@ -1526,6 +1716,7 @@ function interact() {
     return;
   }
   if (G.scene === 'forest') {
+    if (near(FSEAT[0], FSEAT[1], 1.6) && trySamjit()) return;   // F-1
     if (near(FSEAT[0], FSEAT[1], 1.3)) {
       G.thirst = 100; G.log.drank = true; const cap = waterCap(); if (cap) G.water = cap;
       if (F().restDay !== G.day) { F().restDay = G.day; G.log.rested = true; changeHeart(2, 'You sat by the spring and listened to the forest.'); }
@@ -1540,6 +1731,11 @@ function interact() {
       const rn = riteNear(); if (rn === 'pot') { useRitePot(); return; } if (rn === 'gate') { useGate(); return; } if (rn === 'daljip') { useDaljip(); return; } }
     if (near(COMPOST[0], COMPOST[1], 1.4)) { useHeap(); return; }
     { const s = jangSpot(); if (s === 'agungi') { useAgungi(); return; } if (s === 'rack') { useMejuRack(); return; } if (s === 'jars') { useJangdok(); return; } }
+    if (isSpring()) {   // F-1
+      if (monaegiNow() && near(PLANT_AT[0], PLANT_AT[1], 1.3)) { plantRow(); return; }
+      if (!Sp().monaegiDone && springDay() >= SPR.notice && near(SEEDBED[0], SEEDBED[1] + 0.35, 1.3)) { useSeedbed(); return; }
+      if (near(SLUICE[0], SLUICE[1] + 0.35, 1.3)) { useSluice(); return; }
+    }
     if (near(WELL[0], WELL[1] - 0.4, 1.3)) { sfx('well_bucket', 0.8); sfx('gulp', 0.7); G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) { go('hill', 0, -3.1); return; }
     if (near(POND[0], POND[1], 1.9)) { fish(); return; }
@@ -1559,6 +1755,103 @@ function interact() {
     if (near(5.1, -2.0, 1.5)) { if (S().benchDay === G.day) toast('You already watched the stars tonight.'); else { S().benchDay = G.day; G.log.rested = true; changeHeart(3, 'You sat on the bench and watched the stars.'); } }
   }
 }
+// ------------------------------------------------------------------ F-1: spring (SpringState.cs, SpringScenes.cs)
+const SPR = { notice: 3, waterFrom: 4, waterSteps: 3, seedFrom: 4, seedGrow: 6, seedWater: 3, samjit: 7, azaleas: 3, monaegi: 19, plantSteps: 6 };
+const HOPES = { slow: 'walking slowly', no: 'saying no when I need to', ask: 'asking for help', play: 'playing, just for fun' };
+function Sp() { if (!G.story.spring) G.story.spring = { waterSteps: 0, watered: false, seedSown: -1, seedWaterDays: 0, seedLastWater: -1, samjitDone: false, hwajeonTo: null, hwajeonThanked: false, planted: 0, monaegiDone: false, monaegiMissed: false, hope: null }; return G.story.spring; }
+const isSpring = () => S().season === 1;
+const springDay = (d = G.day) => d - (G.story.seasonStart || 1) + 1;
+const seedStage = (d = G.day) => { const p = Sp(); if (p.seedSown < 0) return 0; if (p.seedWaterDays >= SPR.seedWater && d >= p.seedSown + SPR.seedGrow) return 3; return p.seedWaterDays >= 1 ? 2 : 1; };
+const samjitNow = () => isSpring() && springDay() === SPR.samjit && !Sp().samjitDone && G.hour >= 10 && G.hour < 16;
+const monaegiNow = () => isSpring() && springDay() >= SPR.monaegi && !Sp().monaegiDone && G.hour >= 8 && G.hour < 17;
+const SEEDBED = ANCHOR('seedbed', 5.3, -1.1), SLUICE = ANCHOR('sluice', 2.7, -7.25), PLANT_AT = ANCHOR('monaegi', 7.0, -6.6);
+const SPRING_CROWD = ['rosa', 'theo', 'mina', 'myeong', 'mayor'];
+const PLANT_CROWD_AT = [[-3.4, 0.1], [-2.2, 0.2], [2.2, 0.15], [3.3, 0.05], [4.6, -1.2]], SAMJIT_AT = [[-1.2, 0.3], [1.3, 0.35], [-0.6, -0.7], [0.7, -0.75], [2.1, -0.2]];
+const GIVE_LINE = {
+  rosa: 'For me? ...He always gave me the last one too. (She eats it very slowly.)', theo: "Hmph. ...I'll save half. For when she visits.",
+  mina: "For me?! I'm going to take it to Grandpa. He can have one bite.", myeong: "Me? I'm the one who sells things. Nobody gives me things. ...Thank you.",
+  mayor: "Ha! The village head gets the last one? I'll announce it tomorrow." };
+const THANKS_LINE = {
+  rosa: 'That pancake on the hill... I dreamed of him that night. Smiling. Thank you, dear.', theo: "She called. I told her about the pancake. She laughed. ...First time I've heard her laugh in a year.",
+  mina: 'Grandpa ate the WHOLE thing. He said it tasted like when he was little.', myeong: 'I put the pancake on the counter and just looked at it all afternoon. Silly, right?',
+  mayor: 'I really did announce it. "The last pancake went to the village head." Ha!' };
+function waterSeedbed(d) { const p = Sp(); if (p.seedSown < 0 || p.seedLastWater === d || seedStage(d) >= 3) return false; p.seedLastWater = d; p.seedWaterDays++; return true; }
+function springMorning(newDay) {
+  if (!isSpring()) return null;
+  const p = Sp(), d = springDay(newDay);
+  if (d >= SPR.monaegi && !p.watered) p.watered = true;
+  if (d > SPR.monaegi && !p.monaegiDone) { p.monaegiDone = true; p.monaegiMissed = true; return 'While you were away, the village planted the paddy without you. "Next year, together!" says the note on your gate.'; }
+  return null;
+}
+function springBroadcast(day) {
+  if (!isSpring()) return null;
+  const d = springDay(day), p = Sp(), md = (G.story.seasonStart || 1) + SPR.monaegi - 1;
+  if (d === SPR.notice) return 'From tomorrow we let water into the paddies. Anyone with free hands, the sluice above the big paddy! And sow your rice seed in the seedbeds, everyone.';
+  if (d === SPR.samjit - 1) return "Tomorrow is Samjitnal, the third of the third month. The azaleas are out on the back hill: Grandma Boksun is frying flower pancakes by the spring, late morning!";
+  if (d === SPR.samjit && !p.samjitDone) return "Today's Samjitnal! Flower pancakes on the back hill, by the spring.";
+  if (d === SPR.monaegi - 2) return `Rice planting is in two days (day ${md}). Look after your seedlings!`;
+  if (d === SPR.monaegi - 1) return 'Rice planting tomorrow! Morning at the big paddy.';
+  if (d === SPR.monaegi && !p.monaegiDone) return 'Today we plant the rice! Everyone to the big paddy, the line is waiting.';
+  return null;
+}
+function useSeedbed() {
+  const p = Sp(); if (!isSpring() || p.monaegiDone) return;
+  if (p.seedSown < 0) {
+    if (springDay() < SPR.seedFrom) { toast('An empty seedbed. Rice seed goes in once the village starts on the paddies.', 3); return; }
+    p.seedSown = G.day; p.seedWaterDays = 0; p.seedLastWater = -1; sfx('plant');
+    toast('You scatter rice seed over the trays (the village head gave every house a bag). Water it in the days ahead.', 4); return;
+  }
+  const st = seedStage();
+  if (st < 3 && waterCap() > 0 && G.water > 0 && waterSeedbed(G.day)) { G.water--; sfx('water'); toast(['', 'Rice seed sown. Water it.', 'Green shoots in the seedbed.', 'The seedlings are ready to plant.'][seedStage()], 2.5); return; }
+  if (st < 3 && p.seedLastWater === G.day) { toast('You already watered the seedbed today.', 2.5); return; }
+  if (st < 3) { toast('You need water in your watering can (the well).', 2.5); return; }
+  toast(`The seedlings are ready to plant. Rice planting is on day ${(G.story.seasonStart || 1) + SPR.monaegi - 1}.`, 3);
+}
+function useSluice() {
+  const p = Sp();
+  if (isSpring() && !p.watered && springDay() >= SPR.waterFrom && !p.monaegiDone) {
+    if (!useEnergy(2)) return;
+    p.waterSteps++; const done = p.waterSteps >= SPR.waterSteps; if (done) { p.watered = true; p.wateredBySelf = true; }
+    sfx(done ? 'tap_water' : 'till', 0.8);
+    toast(['You clear the dead leaves out of the ditch.', 'The village head pulls the board up at the sluice. Water rushes in.', 'You patch the levee where it leaks. The paddy fills, silver.'][Math.min(2, p.waterSteps - 1)], 3);
+    if (done) changeHeart(2, 'Water in the paddies. The frogs will be loud tonight.');
+    return;
+  }
+  toast(p.watered ? 'Water trickles in through the sluice.' : `The sluice for the big paddy. The village lets water in from day ${(G.story.seasonStart || 1) + SPR.waterFrom - 1}.`, 3);
+}
+function plantRow() {
+  if (!monaegiNow() || !useEnergy(2)) return;
+  const p = Sp(); p.planted++; sfx('plant');
+  toast(['"Line!" The rope moves down a step.', 'Three seedlings, pressed into the mud with your thumb.', 'Mina is faster than you. Much faster.'][(p.planted - 1) % 3] + `  (${p.planted}/${SPR.plantSteps})`, 2);
+  if (p.planted >= SPR.plantSteps) say(vName('mayor'), ["That's the last row! Put your hands on your back and stretch. Oof.", 'They say you plant a wish with the rice. Whatever grows, you cut in autumn.'], vFace('mayor'), () =>
+    choose('What do you want to grow in yourself this year?', Object.values(HOPES), i => {
+      const hope = Object.keys(HOPES)[i]; p.monaegiDone = true; p.hope = hope; const mine = seedStage() >= 3;
+      say('Rice planting', ['(Everyone sits on the levee. Grandma Boksun unwraps rice cakes and makgeolli for the grown-ups, sikhye for Mina.)', '(The planted paddy shines. Rows of tiny green, all the way to the far levee.)',
+        ...(mine ? ["Some of those seedlings came from your seedbed. You can't tell which. That's fine."] : []), `You planted "${HOPES[hope]}" with the rice. You'll see what grew in autumn.`], null, () => {
+        G.log.riteNote = `Rice planting with the whole village. I planted "${HOPES[hope]}" with it.`;
+        changeHeart(mine ? 6 : 5, 'The paddy is planted. Summer is close.'); requestWave(true);
+      });
+    }));
+}
+function trySamjit() {
+  if (!samjitNow()) return false;
+  const lines = ['You came! Sit, sit. The lid\'s hot already.'];
+  if ((G.inv['Azalea'] || 0) >= SPR.azaleas) { remove('Azalea', SPR.azaleas); lines.push('And you picked azaleas! Look at that color. Press one into each pancake, like this.'); }
+  else lines.push('No azaleas? Never mind, I picked plenty on the way up. Press one into each pancake, like this.');
+  lines.push('(Little white rounds of rice dough sizzle on the upturned lid. A pink flower in the middle of each.)', 'He used to say the first one is for the mountain, the second for whoever you\'re with. ...Go on, eat.',
+    '(Everyone eats with their fingers. Mina burns her tongue. The village head laughs too loud.)', "There's one left. Give it to someone, dear.");
+  sfx('fire_whoosh', 0.4);
+  say(vName('rosa'), lines, vFace('rosa'), () => {
+    const ids = SPRING_CROWD.filter(id => villagerProgress(id).met); if (!ids.length) ids.push('rosa');
+    choose('Who gets the last flower pancake?', ids.map(vName), i => {
+      const to = ids[i]; const p = Sp(); p.samjitDone = true; p.hwajeonTo = to; p.hwajeonThanked = false; add('Azalea Hwajeon', 2);
+      G.log.riteNote = `Samjitnal: azalea pancakes on the back hill. I gave the last one to ${vName(to)}.`;
+      say(vName(to), [GIVE_LINE[to]], vFace(to), () => { changeHeart(4, 'Flower pancakes on the hill, shared.'); requestWave(true); });
+    });
+  });
+  return true;
+}
+function paddyOverlay() { if (!isSpring()) return null; const p = Sp(); return p.monaegiDone ? 'World/paddy_planted' : p.watered ? 'World/paddy_flooded' : null; }
 // ------------------------------------------------------------------ W-1: the village tap beside the hall
 const TAP = [4.6, -1.0];
 function useTap() {
@@ -1675,6 +1968,7 @@ function hit(x, y, w, h, fn) { hits.push({ x, y, w, h, fn }); }
 function shopStock() {
   const list = SHOP.slice();
   if (unlocked('shop_sunflower')) list.push(['Sunflower Seed', 60]);
+  if (S().season >= 1) list.push(['Rice Flour', 15]); if (S().season === 1) list.push(['Pepper Seedling', 25]);   // F-1
   if (S().season >= 3) list.push(['Pumpkin Seed', 70]);
   if (isMarketDay(G.day)) list.push(...FAIR_STOCK);
   if (!has('Mattock')) list.push(['Mattock', 150]);
@@ -1731,7 +2025,7 @@ function drawPanel() {
     L.push(`[#ffd84a]Journal[/]   Day ${G.day}   [${SEASON_COLOR[s.season]}]${SEASONS[s.season]}[/]` + (s.season === 0 ? `  (spring comes after Jeongwol Daeboreum${Rt().boreumDay > 0 ? ' (day ' + Rt().boreumDay + ')' : ''})` : s.season < 3 ? `  (${SEASONS[s.season + 1]} in about ${Math.max(0, PACE.days[s.season] - seasonDays())} day(s))` : '  (the last season of the year)'));
     L.push(`[#ff8fb1]Heart[/] ${Math.round(G.heart)}/100   Gold ${G.gold}   Album ${s.photos.length}/24`);
     L.push(''); L.push('[#ffd84a]Villagers[/]');
-    VILLAGERS.forEach(v => { const p = villagerProgress(v.id), n = v.chapters.length, d = Math.min(p.wish, n); L.push(`${v.name}  [${'#'.repeat(d)}${'-'.repeat(n - d)}]  ` + (!p.met ? '[#a0a0a0]not met yet[/]' : vRestored(v) ? '[#9dff9d]colors restored[/]' : 'Next: ' + vNext(v).hint + (vReady(v) ? '' : ' (give it a day or two)'))); });
+    VILLAGERS.forEach(v => { const p = villagerProgress(v.id), n = v.chapters.length, d = Math.min(p.wish, n); L.push(`${v.name}  [${'#'.repeat(d)}${'-'.repeat(n - d)}]  ` + (!p.met ? '[#a0a0a0]not met yet[/]' : vRestored(v) ? '[#9dff9d]colors restored[/]' : ((vNext(v).sn || 0) > S().season ? `more in ${SEASONS[vNext(v).sn]}` : 'Next: ' + vNext(v).hint + (vReady(v) ? '' : ' (give it a day or two)')))); });
     if (sp.found) L.push(`\n[#ff9fc4]Spirit[/]  ${FORM_NAMES[spiritForm(sp)]}   [#ffd84a]Sun ${sp.pts[0]}[/]  [#9dff9d]Earth ${sp.pts[1]}[/]  [#8fd0ff]Water ${sp.pts[2]}[/]  [#ff9fc4]Bloom ${sp.pts[3]}[/]   forms ${sp.forms.length}/10`);
     L.push(`\n[#ffb6d0]Kindness[/] ${s.kindness}/60  ` + (unlocked('starhill') ? `Star Hill open on clear nights. Stars caught: ${s.starsTotal}` : `(sharing box today ${S().shareDay === G.day ? S().sharedToday : 0}/5)`));
     if (s.forest.open) L.push(`[#9dff9d]Forest[/]  clearings restored ${forestRestored()}/3   ${s.forest.treeAwake ? 'The old zelkova is awake.' : 'The old zelkova is asleep.'}`);
@@ -1983,6 +2277,7 @@ function clampPlayer() {
   if (G.scene === 'home') { for (const x of [-4.0, -3.6]) solids.push([x, 1.25, 0.32]); for (const x of [3.6, 4.0]) solids.push([x, 1.3, 0.32]); for (const x of [2.1, 2.6]) solids.push([x, 1.12, 0.3]); solids.push([0.2, -0.4, 0.3]); }
   if (G.scene === 'farm') {
     solids.push([WELL[0], WELL[1] - 0.45, 0.55]);
+    if (isSpring() && !Sp().monaegiDone && springDay() >= SPR.notice) for (const dx of [-0.45, 0, 0.45]) solids.push([SEEDBED[0] + dx, SEEDBED[1] + 0.2, 0.3]);
     // stumps and boulders near the player block the way (weeds don't)
     const pcx = Math.floor(G.px), pcy = Math.floor(G.py - 0.4);
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const ch = debrisAt(pcx + dx, pcy + dy); if (ch === 'k' || ch === 'o') solids.push([pcx + dx + 0.5, pcy + dy + 0.3, 0.45]); }
@@ -2024,7 +2319,7 @@ function sndInit() {
     SND.master = SND.ctx.createGain(); SND.master.connect(SND.ctx.destination);
     SND.mus = SND.ctx.createGain(); SND.mus.gain.value = 0.7; SND.mus.connect(SND.master);
     SND.fx = SND.ctx.createGain(); SND.fx.gain.value = 0.8; SND.fx.connect(SND.master);
-    for (const a of ['amb_wind_winter', 'amb_night', 'amb_fire']) sndLoop(a).then(n => { SND.amb[a] = n; });
+    for (const a of ['amb_wind_winter', 'amb_night', 'amb_fire', 'amb_frogs']) sndLoop(a).then(n => { SND.amb[a] = n; });
   } catch (e) { SND.ctx = null; }
 }
 function sndBuf(name) {
@@ -2089,12 +2384,14 @@ function soundTick(dt) {
   if (!quiet && outdoors && G.scene === 'farm') {
     for (const l of nightLights()) if (l.flicker) { const r = l.r * 2.2, d = Math.hypot(G.px - l.x, G.py - l.y); fire = Math.max(fire, Math.max(0, 1 - d / r) * 0.7); }
   }
-  for (const [k, v] of [['amb_wind_winter', wind], ['amb_night', nightV], ['amb_fire', fire]]) if (SND.amb[k]) SND.amb[k].g.gain.setTargetAtTime(v, t0, 1.2);
+  const frogsV = quiet || !(isSpring() && Sp().watered) || !(h >= 19.5 || h < 4) ? 0 : outdoors ? 0.5 : indoors ? 0.12 : 0;   // F-1
+  for (const [k, v] of [['amb_wind_winter', wind], ['amb_night', nightV], ['amb_fire', fire], ['amb_frogs', frogsV]]) if (SND.amb[k]) SND.amb[k].g.gain.setTargetAtTime(v, t0, 1.2);
   if (quiet) return;
   if (G.day !== SND.roosterDay && hour >= 6.05 && hour < 7) { SND.roosterDay = G.day; sfx('rooster', indoors ? 0.5 : 0.85, 0.03); }
   SND.next -= dt;
   if (SND.next <= 0) { SND.next = 25 + Math.random() * 35; const r = Math.random();
-    if (outdoors && h >= 6 && h < 10 && r < 0.6) sfx('magpie', 0.8, 0.05); else if (outdoors && night && r < 0.5) sfx('dog_far', 0.8, 0.05); }
+    if (outdoors && isSpring() && h >= 8 && h < 17 && r >= 0.6) sfx('lark', 0.8, 0.05);
+    else if (outdoors && h >= 6 && h < 10 && r < 0.6) sfx('magpie', 0.8, 0.05); else if (outdoors && night && r < 0.5) sfx('dog_far', 0.8, 0.05); }
 }
 // ------------------------------------------------------------------ N-1: night (same as NightCurve.cs + NightLight.cs)
 const NIGHT_A = 0.58;
@@ -2235,7 +2532,7 @@ function renderWorld() {
     if (G.scene === 'forest') drawForestGround(c);
     else if (G.scene === 'lake') drawLakeGround(c);
     else if (G.scene === 'sunset') drawHillGround(c);
-    else sprite(c, sc().bg(), (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2);
+    else { sprite(c, sc().bg(), (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2); const po = G.scene === 'farm' && paddyOverlay(); if (po) sprite(c, po, (MAPB.x0 + MAPB.x1) / 2, (MAPB.y0 + MAPB.y1) / 2); }   // F-1: paddy water / rice
   } else {
     const bg = IMG[sc().bg()] || IMG['World/bg_farm']; if (bg) c.drawImage(bg, 0, 0, CW, CH);
     if (G.scene === 'market' && !roomAt(G.px, G.py) && isMarketDay(G.day) && IMG['World/market_fair']) c.drawImage(IMG['World/market_fair'], 0, 0, CW, CH);   // market-day stalls
@@ -2294,6 +2591,15 @@ function renderWorld() {
       if (ob.kind === 'apple') draws.push([ob.y, () => sprite(c, 'World/apple_ground', ob.x, ob.y)]);
     }
     draws.push([WELL[1] - 0.6, () => sprite(c, G.story.season === 0 ? 'World/well_winter' : 'World/well', WELL[0], WELL[1])]);
+    if (isSpring()) {   // F-1: seedbed, sluice, rice-planting line
+      if (!Sp().monaegiDone && springDay() >= SPR.notice) draws.push([SEEDBED[1], () => sprite(c, 'World/seedbed_' + seedStage(), SEEDBED[0], SEEDBED[1], 1, 'bottom')]);
+      draws.push([-998, () => sprite(c, 'World/sluice', SLUICE[0], SLUICE[1], 1, 'bottom')]);
+      if (monaegiNow()) {
+        draws.push([-997, () => sprite(c, 'World/monaegi_line', PLANT_AT[0], PLANT_AT[1] - 1.55, 1, 'bottom')]);
+        for (let i = 0; i < Sp().planted; i++) draws.push([-996, () => sprite(c, 'World/rice_tuft', PLANT_AT[0] - 1.5 + i * 0.6, PLANT_AT[1] - 1.25, 1, 'bottom')]);
+        SPRING_CROWD.forEach((id, i) => { if (villagerProgress(id).met) draws.push([PLANT_AT[1] + PLANT_CROWD_AT[i][1], () => sprite(c, vFace(id), PLANT_AT[0] + PLANT_CROWD_AT[i][0], PLANT_AT[1] + PLANT_CROWD_AT[i][1] + 0.45)]); });
+      }
+    }
     draws.push([CHEST[1] - 0.4, () => sprite(c, G.story.season === 0 ? 'World/storage_box_winter' : 'World/storage_box', CHEST[0], CHEST[1])]);
     draws.push([COMPOST[1] - 0.5, () => sprite(c, 'World/compost_heap', COMPOST[0], COMPOST[1] - 0.5, 1, 'bottom')]);
     { const j = Jg(), w = G.story.season === 0 ? '_winter' : '';
@@ -2318,6 +2624,10 @@ function renderWorld() {
       draws.push([y + 0.1, () => sprite(c, seasonal('forest_log'), x + 0.5, y + 0.03, 1 + Math.sin(p * Math.PI) * 0.12, 'bottom')]);
     }
     for (const [x, y, item] of f.forage) draws.push([y + 0.3, () => sprite(c, 'World/' + item.toLowerCase().replace(/ /g, '_') + '_ground', x + 0.5, y + 0.4)]);
+    if (samjitNow()) {   // F-1: Samjitnal by the spring
+      draws.push([FSEAT[1] - 0.45, () => sprite(c, 'World/hwajeon_lid', FSEAT[0] + 0.1, FSEAT[1] - 0.45, 1, 'bottom')]);
+      SPRING_CROWD.forEach((id, i) => { if (villagerProgress(id).met) draws.push([FSEAT[1] + SAMJIT_AT[i][1], () => sprite(c, vFace(id), FSEAT[0] + SAMJIT_AT[i][0], FSEAT[1] + SAMJIT_AT[i][1] + 0.45)]); });
+    }
   }
   if (G.scene === 'sunset') {
     const h = Hl();
@@ -2483,6 +2793,11 @@ function promptText() {
     { const rp = ritePrompt(); if (rp && !VILLAGERS.some(v => v.scene === G.scene && near(...vPos(v), 1.0))) return rp;
       const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
       const ch = choreNear(); if (ch) { const w = VILLAGERS.find(x => x.id === ch.who), c = vNext(w); return c?.kind === 'Pumasi' && c.spot === ch.id && villagerProgress(w.id).invited && vReady(w) ? `[E] Help out (${villagerProgress(w.id).chore}/${c.steps.length})` : ({ steamer: 'Rice-cake steamer', forge: 'Forge and bellows', briquettes: 'Coal briquettes', sled: 'Ice sled' })[ch.id]; } }
+    if (isSpring()) {   // F-1
+      if (monaegiNow() && near(PLANT_AT[0], PLANT_AT[1], 1.3)) return `[E] Plant a bunch of seedlings (${Sp().planted}/${SPR.plantSteps})`;
+      if (!Sp().monaegiDone && springDay() >= SPR.notice && near(SEEDBED[0], SEEDBED[1] + 0.35, 1.3)) return Sp().seedSown < 0 ? '[E] Sow rice seed in the seedbed' : seedStage() < 3 ? '[E] Water the seedbed' : 'The seedlings are ready';
+      if (near(SLUICE[0], SLUICE[1] + 0.35, 1.3)) return !Sp().watered && springDay() >= SPR.waterFrom ? `[E] Let water into the paddy (${Sp().waterSteps}/${SPR.waterSteps})` : 'The sluice';
+    }
     if (near(3.68, -0.4, 1.2)) return '[E] Drink and refill your watering can';
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) return '[E] Climb the glowing vine';
     if (near(POND[0], POND[1], 1.9)) return fishing ? (fishing.state === 'bite' ? '[#ffd84a][E] NOW![/]' : 'Waiting for a bite...') : (has('Fishing Rod') ? '[E] Fish' : 'The stream is full of fish');
@@ -2519,6 +2834,7 @@ function promptText() {
     if (near(LBENCH[0], LBENCH[1], 1.3)) return Lk().restDay === G.day ? 'The willow sways' : '[E] Rest under the willow';
     if (G.px < LAKB.x0 + 2) return '← Back to the farm';
   } else if (G.scene === 'forest') {
+    if (samjitNow() && near(FSEAT[0], FSEAT[1], 1.6)) return '[E] Join the flower-pancake picnic (Samjitnal)';
     if (near(FSEAT[0], FSEAT[1], 1.3)) return F().restDay === G.day ? '[E] Drink from the spring' : '[E] Rest by the spring';
     if (near(FTREE[0], FTREE[1] + 0.6, 2.2)) return '[E] Look at the old zelkova';
     const i = FSPOTS.findIndex(([x, y]) => near(x + 0.5, y + 0.5, 1.6));
