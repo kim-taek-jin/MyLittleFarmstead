@@ -42,6 +42,7 @@ public class StoryState
     // 나눔 → 별의 언덕
     public RiteState rites = new RiteState();   // K-4: 동지, 정월대보름
     public int masilDay = -1;
+    public int sikhyeDay = -1;                    // W-1: 복순 할머니 식혜를 받은 날 (하루 한 번)
     public int saechamCount, masilCount;          // 데모 끝 "올겨울의 나"에 (K-5)        // 마지막으로 마실 간 날 (하룻저녁에 한 집, K-3)
     public int kindness;
     public int donationDay = -1;     // 마지막으로 나눔을 한 날 (하루 첫 나눔 보너스용)

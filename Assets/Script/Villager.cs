@@ -180,6 +180,21 @@ public class Villager : MonoBehaviour
         // 절기 의식 (K-4): 동짓날 팥죽, 대보름 아침 부럼
         if (RiteScenes.TryTalk(def)) return;
 
+        // W-1: 목이 마른 채로 오면 복순 할머니가 식혜 한 그릇 (하루 한 번)
+        if (WaterRules.CanGetSikhye(Data.story, def.id, today, Data.thirst / Mathf.Max(1f, Data.maxThirst)))
+        {
+            WaterRules.GiveSikhye(Data.story, today);
+            HUD.Say(def.name, WaterRules.SikhyeLines(), Portrait, () =>
+            {
+                Data.thirst = Mathf.Min(Data.maxThirst, Data.thirst + WaterRules.SikhyeThirst);
+                Data.hunger = Mathf.Min(Data.maxHunger, Data.hunger + WaterRules.SikhyeHunger);
+                Data.NoteDrink();
+                Data.ChangeHeart(WaterRules.SikhyeHeart, Loc.T("Grandma Boksun gave you a bowl of sikhye.", "복순 할머니가 식혜 한 그릇을 주셨어요."));
+                Data.UpdateAllUI();
+            });
+            return;
+        }
+
         // 저녁: 마실
         if (sittingOut)
         {

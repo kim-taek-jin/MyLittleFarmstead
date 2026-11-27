@@ -104,6 +104,9 @@ public class Shop : MonoBehaviour
                 // 장 담그기 재료 (K-2)
                 stock.Add(new ItemForSale { itemName = "Soybeans", price = 12 });
                 stock.Add(new ItemForSale { itemName = "Salt", price = 8 });
+                // 마실 것 (W-1)
+                stock.Add(new ItemForSale { itemName = WaterRules.BottledTea, price = WaterRules.BottledTeaPrice });
+                stock.Add(new ItemForSale { itemName = WaterRules.RoastedBarley, price = WaterRules.RoastedBarleyPrice });
                 if (MarketState.IsMarketDay(dataManager.Today))
                     foreach (ItemStack fair in MarketState.FairStock) stock.Add(new ItemForSale { itemName = fair.itemName, price = fair.count });   // 장날 (count = 가격)
             }

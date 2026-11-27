@@ -55,6 +55,7 @@ public class CraftingManager : MonoBehaviour
         yield return Make("Pumpkin Porridge", 1, "Campfire", new ItemInfo("Pumpkin", 1), new ItemInfo("Rice Cake", 1)).Locked("season_autumn");
         yield return Make("Mattock", 1, "", new ItemInfo("Wood", 5), new ItemInfo("Stone", 5));
         // 장 담그기 (K-2): 메주는 집 부엌 아궁이에서만 쑴. 장으로 만드는 집밥
+        yield return Make(WaterRules.HomemadeTea, WaterRules.TeaPerBrew, "Agungi", new ItemInfo(WaterRules.RoastedBarley, 1), new ItemInfo("Wood", 1));   // W-1: 집 보리차
         yield return Make("Fresh Meju", 1, "Agungi", new ItemInfo("Soybeans", JangState.SoybeansPerMeju), new ItemInfo("Wood", 1));
         yield return Make("Doenjang Stew", 1, "Campfire", new ItemInfo("Doenjang", 1), new ItemInfo("Potato", 1), new ItemInfo("Carrot", 1));
         yield return Make("Braised Potatoes", 2, "Campfire", new ItemInfo("Potato", 2), new ItemInfo("Ganjang", 1));

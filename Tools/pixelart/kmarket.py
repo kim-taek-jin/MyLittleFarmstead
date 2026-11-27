@@ -445,6 +445,9 @@ def market(season='summer'):
     import k3
     bg.prop(k3.village_hall(), wx=6.85, wy=-2.85)
     bg.prop(k3.hall_bench(), wx=5.9, wy=-3.0)
+    # W-1: the village water tap left of the hall (drink with E; MarketTap.At in WaterSpots.cs)
+    import water
+    bg.prop(water.water_tap(winter=snow), wx=4.6, wy=-1.0)
     gp = K.pyeongsang()
     for x in range(10, 31):
         for y in range(9, 13):

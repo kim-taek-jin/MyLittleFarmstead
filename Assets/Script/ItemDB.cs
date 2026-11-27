@@ -112,6 +112,10 @@ public static class ItemDB
         Register(new ItemDef { name = "Braised Potatoes", category = ItemCategory.Food, sellPrice = 160, hunger = 35f, heart = 3f, color = new Color(0.7f, 0.5f, 0.25f), description = "Little potatoes simmered in your own soy sauce." });
         // K-4: 동지 팥죽 (할머니에게 받아 이웃에게 나름)
         Register(new ItemDef { name = "Red Bean Porridge", category = ItemCategory.Food, sellPrice = 0, hunger = 40f, heart = 3f, color = new Color(0.55f, 0.15f, 0.15f), description = "Winter solstice porridge with little rice balls. One bowl for every house." });
+        // W-1: 마실 것
+        Register(new ItemDef { name = "Barley Tea", category = ItemCategory.Food, sellPrice = 10, thirst = 50f, color = new Color(0.6f, 0.38f, 0.16f), description = "Cold bottled barley tea from the corner store. Take it anywhere." });
+        Register(new ItemDef { name = "Homemade Barley Tea", category = ItemCategory.Food, sellPrice = 10, thirst = 60f, heart = 1f, color = new Color(0.62f, 0.36f, 0.14f), description = "Barley tea boiled at your own agungi, kept in an old glass bottle. Tastes like home." });
+        Register(new ItemDef { name = "Roasted Barley", category = ItemCategory.Resource, sellPrice = 4, color = new Color(0.5f, 0.3f, 0.12f), description = "Roasted barley grains. Boil them at the agungi for barley tea." });
         Register(new ItemDef { name = "Compost", category = ItemCategory.Special, sellPrice = 0, color = new Color(0.4f, 0.3f, 0.2f), description = "Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life." });
         Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. The dokkaebi fire loves it (all four colors)." });
 

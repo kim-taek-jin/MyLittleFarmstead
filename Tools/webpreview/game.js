@@ -68,6 +68,9 @@ reg('Compost', 'Special', { sell: 0, desc: 'Rich compost from the heap. Spread i
 // K-2: making sauces
 reg('Soybeans', 'Resource', { sell: 5, desc: 'Dried soybeans for meju. Boil four at the agungi to make one.' });
 reg('Salt', 'Resource', { sell: 2, desc: 'Coarse sea salt. Two go in each sauce jar.' });
+reg('Barley Tea', 'Food', { sell: 10, thirst: 50, desc: 'Cold bottled barley tea from the corner store. Take it anywhere.' });   // W-1
+reg('Homemade Barley Tea', 'Food', { sell: 10, thirst: 60, heart: 1, desc: 'Barley tea boiled at your own agungi, kept in an old glass bottle. Tastes like home.' });
+reg('Roasted Barley', 'Resource', { sell: 4, desc: 'Roasted barley grains. Boil them at the agungi for barley tea.' });
 reg('Fresh Meju', 'Special', { sell: 0, desc: 'A block of boiled, pounded soybeans. Hang it on the meju rack to dry.' });
 reg('Dried Meju', 'Special', { sell: 40, desc: 'Meju dried in the winter wind. Put it in a sauce jar with 2 Salt.' });
 reg('Doenjang', 'Resource', { sell: 60, desc: 'Soybean paste you made yourself.' });
@@ -109,7 +112,7 @@ const CROPS = {
   pumpkin: { harvest: 'Pumpkin', days: 6, regrow: 0, season: 3 },
 };
 
-const SHOP = [['Soybeans', 12], ['Salt', 8], ['Wood', 5], ['Carrot Seed', 10], ['Potato Seed', 40], ['Strawberry Seed', 50], ['Corn Seed', 30], ['Campfire', 50], ['Rice Cake', 20], ['Apple', 12]];
+const SHOP = [['Soybeans', 12], ['Salt', 8], ['Barley Tea', 30], ['Roasted Barley', 15], ['Wood', 5], ['Carrot Seed', 10], ['Potato Seed', 40], ['Strawberry Seed', 50], ['Corn Seed', 30], ['Campfire', 50], ['Rice Cake', 20], ['Apple', 12]];
 // five-day market (장날): every 5th day the lane fills with stalls, rare goods and an old farmer to haggle with
 const MARKET_CYCLE = 5;
 const isMarketDay = d => d > 0 && d % MARKET_CYCLE === 3;
@@ -126,6 +129,7 @@ const RECIPES = [
   { out: 'Mattock', n: 1, req: [['Wood', 5], ['Stone', 5]] },
   { out: 'Spring Greens', n: 1, req: [['Wild Garlic', 1], ['Fern Sprout', 1]], lock: 'forest_open' },
   { out: 'Morel Soup', n: 1, req: [['Morel', 2], ['Wild Garlic', 1]], station: 'Campfire', lock: 'forest_open' },
+  { out: 'Homemade Barley Tea', n: 3, req: [['Roasted Barley', 1], ['Wood', 1]], station: 'Agungi' },   // W-1
   { out: 'Fresh Meju', n: 1, req: [['Soybeans', 4], ['Wood', 1]], station: 'Agungi' },
   { out: 'Doenjang Stew', n: 1, req: [['Doenjang', 1], ['Potato', 1], ['Carrot', 1]], station: 'Campfire' },
   { out: 'Braised Potatoes', n: 2, req: [['Potato', 2], ['Ganjang', 1]], station: 'Campfire' },
@@ -1107,6 +1111,12 @@ function talk(v) {
   G.log.talked = (G.log.talked || 0) + 1;
   const p = villagerProgress(v.id), portrait = villagerSprite(v), c = vNext(v);
   if (!p.met) { p.met = true; p.lastDay = -99; report('villager_met'); say(v.name, [v.intro, ...(c && c.kind !== 'Letter' ? invite(v, c) : [])], portrait); return; }
+  if (v.id === 'rosa' && S().sikhyeDay !== G.day && G.thirst < 60) {   // W-1: Grandma's sikhye, once a day when you're thirsty
+    S().sikhyeDay = G.day;
+    say(v.name, ['You look parched. Here, have a bowl of sikhye before you go. I made it this morning.', '(Sweet, cold rice punch with rice grains floating on top. It goes down in one breath.)'], portrait,
+      () => { G.thirst = Math.min(100, G.thirst + 45); G.hunger = Math.min(100, G.hunger + 5); G.log.drank = true; changeHeart(1, 'Grandma Boksun gave you a bowl of sikhye.'); });
+    return;
+  }
   if (sittingOut(v)) {
     if (S().masilDay !== G.day) ask(v.name, `Sit with ${v.name} for a while? (masil: one house a night)`, portrait, () => masil(v), () => say(v.name, [idleLine(v)], portrait), 'Sit down', 'Just say hi');
     else say(v.name, ['Already been visiting tonight? Go get some sleep.'], portrait);
@@ -1531,6 +1541,7 @@ function interact() {
     { const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0) && !(v.id === 'mina' && gathering())); if (v) { if (!riteTalk(v)) talk(v); return; } const ch = choreNear(); if (ch) { useChore(ch); return; }
       const rn = riteNear(); if (rn === 'pot') { useRitePot(); return; } if (rn === 'gate') { useGate(); return; } if (rn === 'daljip') { useDaljip(); return; } }
     if (near(-4.2, -2.0, 1.1)) { share(); return; }
+    if (!roomAt(G.px, G.py) && near(TAP[0], TAP[1] + 0.3, 1.15)) { useTap(); return; }   // W-1
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) { if (G.market.haggled) toast('"We\'ve struck our deal for today. Come back next market day!"', 2.5); else go('haggle', 0, 0); return; }
     if (near(STORE_KEEPER[0], STORE_KEEPER[1] - 0.9, 1.4)) { panel = { kind: 'shop', tab: 'buy' }; return; }   // H-2: buy inside the corner store
     { const r = !roomAt(G.px, G.py) && ROOMS.find(r => near(r.entranceX, r.entranceY, 1.0)); if (r) { [G.px, G.py] = roomAnchor(r.id, 'arrive', [r.originX, r.originY]); return; } }
@@ -1539,6 +1550,13 @@ function interact() {
     if (near(0, -4.4, 1.4)) { go('farm', LADDER[0] - 0.6, LADDER[1] - 1.0); return; }
     if (near(5.1, -2.0, 1.5)) { if (S().benchDay === G.day) toast('You already watched the stars tonight.'); else { S().benchDay = G.day; G.log.rested = true; changeHeart(3, 'You sat on the bench and watched the stars.'); } }
   }
+}
+// ------------------------------------------------------------------ W-1: the village tap beside the hall
+const TAP = [4.6, -1.0];
+function useTap() {
+  G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(), w = S().season === 0;
+  if (cap) { G.water = cap; toast(w ? `You unwrap the cloth, drink the icy tap water and fill your can. (${G.water}/${cap})` : `You drink from the village tap and fill your can. (${G.water}/${cap})`); }
+  else toast(w ? 'You unwrap the cloth and drink the icy tap water.' : 'You drink cool water from the village tap.');
 }
 // ------------------------------------------------------------------ K-2: making sauces (agungi, meju rack, jangdokdae)
 const JANG = { jars: 3, rack: 4, dry: 2, ferment: 4, salt: 2 };
@@ -1673,12 +1691,12 @@ function drawPanel() {
     });
     const rows = panel.tab === 'buy' ? shopStock().map(([n, p]) => ({ n, label: `${p}G`, fn: () => { if (G.gold >= p) { G.gold -= p; add(n); toast(`Bought ${n}.`, 1.6); } else toast('Not enough gold!'); } }))
       : Object.keys(G.inv).filter(canSell).sort((a, b) => sortKey(a) - sortKey(b)).map(n => ({ n, label: `x${G.inv[n]}  ${sellPrice(n)}G${n === G.market.demand ? ' *' : ''}`, fn: () => { const p = sellPrice(n); remove(n); G.market.sold[n] = (G.market.sold[n] || 0) + 1; addGold(p); toast(`Sold ${n} for ${p}G.`, 1.6); } }));
-    rows.slice(0, 15).forEach((r, i) => {
-      const cx = x + 24 + (i % 3) * 290, cy = y + 120 + Math.floor(i / 3) * 70;
-      box(cx, cy, 276, 60, '#2a201a', '#8a6a4a');
-      const im = IMG[iconKey(r.n)]; if (im) ctx.drawImage(im, cx + 8, cy + 6, 48, 48);
-      drawRich(r.n, cx + 64, cy + 8, 18, 200); drawRich(`[#ffd84a]${r.label}[/]`, cx + 64, cy + 32, 18, 200);
-      hit(cx, cy, 276, 60, r.fn);
+    rows.slice(0, 18).forEach((r, i) => {   // six rows of three (W-1: more to buy)
+      const cx = x + 24 + (i % 3) * 290, cy = y + 114 + Math.floor(i / 3) * 62;
+      box(cx, cy, 276, 56, '#2a201a', '#8a6a4a');
+      const im = IMG[iconKey(r.n)]; if (im) ctx.drawImage(im, cx + 8, cy + 6, 44, 44);
+      drawRich(r.n, cx + 60, cy + 7, 18, 210); drawRich(`[#ffd84a]${r.label}[/]`, cx + 60, cy + 30, 18, 210);
+      hit(cx, cy, 276, 56, r.fn);
     });
     if (!rows.length) drawRich('Nothing to sell yet. Tools cannot be sold.', x + 24, y + 130, 20, 800, 'left', '#c8c0b0');
     drawRich('Click to buy / sell one.   [E] or [Esc] Close', x + w - 24, y + h - 40, 18, 700, 'right', '#c8c0b0');
@@ -1827,11 +1845,11 @@ function update(dt) {
   G.minute += dt * 3 * speed; while (G.minute >= 60) { G.minute -= 60; G.hour++; }
   if (G.hour >= 24 && !G.warnedMid) { G.warnedMid = true; toast("It's midnight. You should go to bed soon."); }
   if (G.hour >= 26) { endDay(true); go('home', -2.9, 0); clearPressed(); return; }   // H-1: wake beside the bedding
-  G.hunger = Math.max(0, G.hunger - 5 * hours); G.thirst = Math.max(0, G.thirst - 7 * hours);
+  G.hunger = Math.max(0, G.hunger - 5 * hours); G.thirst = Math.max(0, G.thirst - 5 * hours);   // W-1: 7 → 5
   if (G.hunger <= 0 || G.thirst <= 0) { G.log.starved = true; G.health -= 15 * hours; if (G.health <= 0) { G.health = 0; G.dead = true; showAnnounce('[#ff8080]You collapsed...[/]\n\nTake better care of yourself.\n\nPress "새로 시작" below to try again.', 9999); } }
   else if (G.hunger > 50 && G.thirst > 50) G.health = Math.min(100, G.health + 2 * hours);
   if (G.hunger < 20 && !G.warnedH) { G.warnedH = true; toast("You're getting hungry. (Right-click / F to eat)"); } if (G.hunger > 30) G.warnedH = false;
-  if (G.thirst < 20 && !G.warnedT) { G.warnedT = true; toast("You're thirsty. Drink at the well (E)."); } if (G.thirst > 30) G.warnedT = false;
+  if (G.thirst < 20 && !G.warnedT) { G.warnedT = true; toast(has('Homemade Barley Tea') || has('Barley Tea') ? "You're thirsty. Drink your barley tea. (Right-click / F)" : G.scene === 'market' ? "You're thirsty. Drink at the tap beside the village hall (E)." : "You're thirsty. Drink at the well (E)."); } if (G.thirst > 30) G.warnedT = false;
 
   // movement
   let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
@@ -1968,7 +1986,7 @@ function clampPlayer() {
     }
   }
   if (G.scene === 'market' && isMarketDay(G.day)) { FAIR_STALLS.forEach(([x, y, r]) => { for (let dx = -r + 0.25; dx <= r - 0.25; dx += 0.5) solids.push([x + dx, y + 0.3, 0.3]); }); solids.push([HAGGLER[0], HAGGLER[1] - 0.4, 0.3]); }
-  if (G.scene === 'market') { solids.push([-4.2, -2.35, 0.35]);
+  if (G.scene === 'market') { solids.push([-4.2, -2.35, 0.35]); for (const dx of [-0.45, 0, 0.45]) solids.push([TAP[0] + 0.05 + dx, TAP[1] + 0.2, 0.3]);
     for (let x = 5.6; x <= 8.2; x += 0.5) for (const y of [-0.9, -1.5, -2.1, -2.55]) solids.push([x, y, 0.45]);   // the village hall (K-3)
     for (const ch of CHORES) if (ch.scene === 'market') solids.push([ch.x, ch.y + 0.15, 0.4]); }
   if (!G.sitting) for (const v of VILLAGERS) if (v.scene === G.scene && !sittingOut(v)) solids.push([v.x, v.y - 0.4, 0.25]);
@@ -2393,6 +2411,7 @@ function promptText() {
       const v = VILLAGERS.find(v => v.scene === G.scene && near(...vPos(v), 1.0)); if (v) return sittingOut(v) && S().masilDay !== G.day ? `[E] Sit with ${v.name} (masil)` : `[E] Talk to ${v.name}`;
       const ch = choreNear(); if (ch) { const w = VILLAGERS.find(x => x.id === ch.who), c = vNext(w); return c?.kind === 'Pumasi' && c.spot === ch.id && villagerProgress(w.id).invited && vReady(w) ? `[E] Help out (${villagerProgress(w.id).chore}/${c.steps.length})` : ({ steamer: 'Rice-cake steamer', forge: 'Forge and bellows', briquettes: 'Coal briquettes', sled: 'Ice sled' })[ch.id]; } }
     if (near(-4.2, -2.0, 1.1)) return '[E] Share the food you hold (Shift+E: more)';
+    if (!roomAt(G.px, G.py) && near(TAP[0], TAP[1] + 0.3, 1.15)) return '[E] Drink at the village tap and fill your can';   // W-1
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) return G.market.haggled ? 'The old farmer is done haggling for today' : '[E] Haggle with the old farmer';
     if (near(STORE_KEEPER[0], STORE_KEEPER[1] - 0.9, 1.4)) return '[E] Buy and sell';
     { const r = !roomAt(G.px, G.py) && ROOMS.find(r => near(r.entranceX, r.entranceY, 1.0)); if (r) return `[E] Go into ${r.nameEn}`; }

@@ -235,6 +235,10 @@ def main():
     for name, canvas in k4.world_sprites().items():
         exported['World'].append(export('World', name, canvas))
     exported['Items'].append(export('Items', 'red_bean_porridge', k4.red_bean_porridge()))
+    # ---- W-1: drinks ----
+    import water
+    for name, canvas in water.all_icons().items():
+        exported['Items'].append(export('Items', name, canvas))
     export_image('World', 'rite_moon', k4.rite_moon().image())
     # ---- K-3: neighbours (sitting poses, pumasi spots, the village head in gray stages) ----
     import k3

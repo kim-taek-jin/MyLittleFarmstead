@@ -49,7 +49,7 @@ public class DataManager : MonoBehaviour
 
     [Header("생존 수치 변화 (게임 시간 1시간당)")]
     public float hungerPerGameHour = 5f;
-    public float thirstPerGameHour = 7f;
+    public float thirstPerGameHour = WaterRules.ThirstPerGameHour;   // W-1: 7 → 5
     public float starvingDamagePerGameHour = 15f;
     public float healthRegenPerGameHour = 2f;
 
@@ -222,7 +222,7 @@ public class DataManager : MonoBehaviour
     {
         if (hunger < 20f && !warnedHunger) { warnedHunger = true; HUD.Toast(Loc.T("You're getting hungry. (Right-click / F to eat)", "배가 고파요. (오른쪽 클릭 / F: 먹기)")); }
         if (hunger > 30f) warnedHunger = false;
-        if (thirst < 20f && !warnedThirst) { warnedThirst = true; HUD.Toast(Loc.T("You're thirsty. Drink at the well (E).", "목이 말라요. 우물에서 물을 마셔요 (E).")); }
+        if (thirst < 20f && !warnedThirst) { warnedThirst = true; HUD.Toast(WaterRules.ThirstHint(SceneManager.GetActiveScene().name, WaterRules.TeaToDrink(n => HasItem(n)) != null)); }   // W-1: 있는 곳에 맞춰
         if (thirst > 30f) warnedThirst = false;
     }
 
@@ -406,6 +406,9 @@ public class DataManager : MonoBehaviour
         today.mealsEaten++;
         UpdateStatusUI();
     }
+
+    // W-1: 마실 것을 마셨다고 일기에 (식혜 등 아이템이 아닌 것)
+    public void NoteDrink() { today.drankWater = true; }
 
     public void RefillThirst()
     {

@@ -38,6 +38,7 @@ public static class WorldSpawner
             DonationBox box = DonationBox.Create(new Vector2(-4.2f, -2.0f), mat, PixelArt.CharacterScale);
             SceneManager.MoveGameObjectToScene(box.gameObject, scene);
             MarketFair.Create(scene, mat);   // 장날이면 노점과 흥정 할아버지
+            MarketTap.Create(scene);         // W-1: 마을회관 옆 수돗가
         }
 
         NeighborScenes.CreateSpots(scene, mat);
