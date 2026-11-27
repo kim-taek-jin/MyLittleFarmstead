@@ -2,14 +2,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 개발용 단축키 (Unity 에디터와 Development Build에서만 동작, 출시 빌드에서는 꺼짐)
-//  F1  다음 마음의 계절로 (마음을 올리고 하루를 넘김 → 숲/호수/언덕이 열림)
+//  F1  다음 계절로 (지금 계절의 마지막 절기를 지낸 것으로 하고 하루를 넘김 → 숲/호수/언덕이 열림)
 //  F2  마음 +10
 //  F3  하루 넘기기
 //  F4  테스트 아이템 받기 (곡괭이, 낚싯대, 도토리, 대지의 숨결, 감, 물고기, 나무, 돌, 골드)
 //  F6  농장 → 숲 → 호수 → 언덕 순서로 순간이동 (열린 곳만)
 //  F7  엔딩 조건 맞추기 (주민 3명 색 회복 + 마음 95) → 집에서 자면 엔딩
 //  F8  이 목록 보기
-//  F9  대보름 밤 바로 시작 (오늘 = 대보름, 달집 다 쌓음, 저녁 7시, 마음 30) → 농장 남동쪽 논 달집에서 E (K-5 데모 끝 확인용)
+//  F9  대보름 밤 바로 시작 (오늘 = 대보름, 달집 다 쌓음, 저녁 7시) → 농장 남동쪽 논 달집에서 E (K-5 데모 끝 확인용)
 public class DevKeys : MonoBehaviour
 {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -28,10 +28,18 @@ public class DevKeys : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            int next = (int)data.CurrentSeason + 1;
-            if (next >= SeasonSystem.Thresholds.Length) { HUD.Toast("[DEV] It's already autumn in your heart."); return; }
+            // F-0: 지금 계절을 마친 것으로 하고 하루를 넘김 → 아침에 다음 계절 (겨울은 대보름을 지낸 것으로)
+            if (data.CurrentSeason >= Season.Autumn) { HUD.Toast("[DEV] It's already the last season (autumn)."); return; }
             if (data.demoMode) HUD.Toast("[DEV] Demo Mode is on: the season stops at winter. Turn it off on GameManager.", 4f);
-            data.heart = Mathf.Max(data.heart, SeasonSystem.Thresholds[next] + 1f);
+            if (data.CurrentSeason == Season.Winter)
+            {
+                RiteState r = data.story.rites;
+                r.Ensure();
+                if (r.boreumDay < 0) r.boreumDay = data.Today;
+                r.bureom = true;
+                Rites.Finish(r);
+            }
+            else data.story.seasonStartDay = data.Today - SeasonPacing.TargetDays[(int)data.CurrentSeason];
             data.DevEndDay();
             Reload();
         }
@@ -59,7 +67,7 @@ public class DevKeys : MonoBehaviour
             r.Ensure();
             r.boreumDay = data.Today;
             r.daljipWood = Rites.DaljipWood;
-            if (data.heart < 31f) data.ChangeHeart(31f - data.heart, null);
+            if (!SeasonPacing.Ready(Season.Winter, data.heart)) data.heart = SeasonPacing.Bottom(Season.Winter) + 20f;
             GameTimeManager t = GameTimeManager.instance;
             if (t != null) t.SetTime(t.day, 19, 0f);
             HUD.Toast("[DEV] Daeboreum night: go to the moon house (south-east paddy) and press E. Sleep after the rite for the demo ending.", 6f);

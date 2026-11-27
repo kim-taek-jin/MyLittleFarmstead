@@ -125,10 +125,10 @@ public static class StoryEvents
         int day = Data.TimeManager != null ? Data.TimeManager.day : 1;
         sb.Append("<size=40>" + Loc.T("Journal", "생활 일지") + "</size>   <size=24>" + Loc.T($"Day {day}", $"{day}일째") + "</size>\n\n");
         Season season = Data.CurrentSeason;
-        int toNext = SeasonSystem.HeartToNext(Data.heart, season);
+        string nextLine = SeasonPacing.NextText(season, story, day);   // F-0: 다음 계절은 절기를 지나야
         sb.Append("<color=#ff8fb1>" + Loc.T("Heart", "마음") + $"</color> {Data.heart:0}/{Data.maxHeart:0}    " + Loc.T("Gold", "골드") + $" {Data.gold}    " +
                   $"<color={SeasonSystem.Color(season)}>{SeasonSystem.Name(season)}</color>" +
-                  (toNext > 0 ? " <size=22>(" + Loc.T($"{SeasonSystem.Name(season + 1)} at {toNext} more Heart", $"{SeasonSystem.Name(season + 1)}까지 마음 {toNext}") + ")</size>" : "") +
+                  " <size=22>(" + nextLine + ")</size>" +
                   "    " + Loc.T("Album", "앨범") + $" {story.photos.Count}/{AlbumDB.All.Count} [P]\n\n");
 
         sb.Append("<color=#ffd84a>" + Loc.T("Neighbors", "이웃") + "</color>\n");

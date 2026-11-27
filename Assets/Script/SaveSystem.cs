@@ -33,13 +33,19 @@ public static class SaveSystem
     // 체험판은 따로 저장 (정식판 저장과 섞이지 않게, K-5)
     public static string SavePath => Path.Combine(Application.persistentDataPath, DemoConfig.IsDemo ? "save_demo.json" : "save.json");
 
-    public static bool HasSave() => File.Exists(SavePath);
+    public static string BackupPath => SavePath + ".bak";
+    public static bool HasSave() => File.Exists(SavePath) || File.Exists(BackupPath);
 
     public static void Save(SaveData data)
     {
         try
         {
-            File.WriteAllText(SavePath, JsonUtility.ToJson(data, true));
+            // F-0: 먼저 임시 파일에 쓰고, 예전 저장은 .bak으로 남긴 뒤 바꿔 넣음 (쓰다가 꺼져도 저장이 깨지지 않게)
+            string tmp = SavePath + ".tmp";
+            File.WriteAllText(tmp, JsonUtility.ToJson(data, true));
+            if (File.Exists(SavePath)) File.Copy(SavePath, BackupPath, true);
+            File.Copy(tmp, SavePath, true);
+            File.Delete(tmp);
             Debug.Log("[SaveSystem] Saved: " + SavePath);
         }
         catch (System.Exception e)
@@ -51,19 +57,33 @@ public static class SaveSystem
     public static SaveData Load()
     {
         if (!HasSave()) return null;
+        SaveData d = Read(SavePath);
+        if (d == null && File.Exists(BackupPath))
+        {
+            Debug.LogWarning("[SaveSystem] The save could not be read. Loading the backup from the day before.");
+            d = Read(BackupPath);
+        }
+        return d;
+    }
+
+    static SaveData Read(string path)
+    {
+        if (!File.Exists(path)) return null;
         try
         {
-            return JsonUtility.FromJson<SaveData>(File.ReadAllText(SavePath));
+            string json = File.ReadAllText(path);
+            return string.IsNullOrWhiteSpace(json) ? null : JsonUtility.FromJson<SaveData>(json);
         }
         catch (System.Exception e)
         {
-            Debug.LogError("[SaveSystem] Load failed: " + e.Message);
+            Debug.LogError("[SaveSystem] Load failed (" + Path.GetFileName(path) + "): " + e.Message);
             return null;
         }
     }
 
     public static void DeleteSave()
     {
-        if (HasSave()) File.Delete(SavePath);
+        if (File.Exists(SavePath)) File.Delete(SavePath);
+        if (File.Exists(BackupPath)) File.Delete(BackupPath);
     }
 }

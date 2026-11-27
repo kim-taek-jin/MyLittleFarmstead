@@ -444,18 +444,14 @@ public class DataManager : MonoBehaviour
         return true;
     }
 
-    // K-5: 겨울이 대보름까지 붙들려 있는 동안 (마음은 봄 문턱을 넘었어도)
-    //  - 세상의 색은 반까지만 돌아옴. 나머지 반은 대보름 밤에 한꺼번에 (데모의 절정)
-    //  - 봄 문턱(30) 위로는 마음이 천천히 오름 (모든 걸 첫날부터 해도 닷새 만에 100이 되지 않게)
-    public bool WinterHeld => CurrentSeason == Season.Winter && Rites.HoldSpring(story.rites);
-    public float VisibleColor01 => heart / maxHeart * (WinterHeld ? 0.5f : 1f);
-    public const float HeldGainScale = 0.35f;
+    // F-0: 마음은 계절마다 한 칸(띠)씩 차고, 계절은 그 계절의 마지막 절기를 지나야 바뀜 (SeasonPacing)
+    public float VisibleColor01 => SeasonPacing.Color01(heart);
 
     public void ChangeHeart(float amount, string reason)
     {
-        if (amount > 0f && WinterHeld && heart >= SeasonSystem.Thresholds[1]) amount *= HeldGainScale;
+        if (amount > 0f) amount *= SeasonPacing.Scale(CurrentSeason, heart);   // 띠 끝에 가까울수록 천천히
         float before = heart;
-        heart = Mathf.Clamp(heart + amount, 0f, maxHeart);
+        heart = Mathf.Clamp(heart + amount, 0f, Mathf.Min(maxHeart, Mathf.Max(before, SeasonPacing.Top(CurrentSeason))));
         if (amount >= 1f && heart > before) Sfx.Play("heart", 0.8f, 0.5f);
         if (amount >= 2f && heart > before && !string.IsNullOrEmpty(reason)) ColorWave.Request(false);   // 낮에 생긴 좋은 일 (아침 요약은 아래에서)
         WorldColor.SetHeart(VisibleColor01);
@@ -722,16 +718,20 @@ public class DataManager : MonoBehaviour
         // ---- 마음의 계절: 아침에만 바뀜 ----
         Season before = CurrentSeason;
         Season cap = demoMode ? Season.Winter : Season.Autumn;
-        // K-4: 겨울 → 봄은 정월대보름 밤을 보낸 뒤에만. 마음이 봄 문턱에 닿으면 대보름 날이 정해짐
-        bool springReady = SeasonSystem.ForHeart(heart) >= Season.Spring;
+        // 겨울 → 봄은 정월대보름 밤을 보낸 뒤에만. 마음이 겨울 띠의 반을 넘으면 대보름 날이 정해짐 (9일째부터)
         int newDay = (timeManager != null ? timeManager.day : 0) + 1;
         bool holdSpring = before == Season.Winter && Rites.HoldSpring(story.rites);
-        if (holdSpring && springReady && Rites.Schedule(story.rites, newDay))
+        if (holdSpring && SeasonPacing.Ready(Season.Winter, heart) && Rites.Schedule(story.rites, newDay))
             lines.Add(Loc.T($"Spring is at the door. The village will greet it on Jeongwol Daeboreum (day {story.rites.boreumDay}).",
                             $"봄이 문 앞에 와 있어요. 마을은 정월대보름({story.rites.boreumDay}일째)에 봄을 맞아요."));
-        bool demoEndsNow = demoMode && springReady && story.rites.boreumDone && !story.IsUnlocked("demo_end");
-        Season after = holdSpring ? Season.Winter : SeasonSystem.Evaluate(heart, before, cap);
-        if ((int)after > (int)before + 1) after = before + 1;   // 한 아침에 한 계절씩 (대보름 다음 날 바로 가을이 되지 않게)
+        bool demoEndsNow = demoMode && story.rites.boreumDone && !story.IsUnlocked("demo_end");
+        Season after = SeasonPacing.Next(before, story, newDay, cap);   // F-0: 지난 계절의 마지막 절기를 지났으면 한 칸 (앞으로만)
+        if (after > before)
+        {
+            story.seasonStartDay = newDay;
+            heart = SeasonPacing.EnterHeart(after, heart);               // 새 계절 띠의 시작까지 (큰 색 물결)
+            WorldColor.SetHeart(VisibleColor01);
+        }
         story.season = (int)after;
         if ((int)after > story.highestSeason) story.highestSeason = (int)after;
         // 색 물결: 아침 요약을 닫으면 퍼짐 (계절이 바뀐 아침은 크게)
@@ -882,8 +882,8 @@ public class DataManager : MonoBehaviour
         if (ripe > 0) tips.Add(Loc.T($"{ripe} crop(s) ripe in the field", $"밭에 다 익은 작물 {ripe}개"));
         int tomorrow = farm.RipeningTomorrow(season);
         if (tomorrow > 0) tips.Add(Loc.T($"{tomorrow} crop(s) ripen tomorrow if you water them today", $"오늘 물을 주면 내일 익을 작물 {tomorrow}개"));
-        int toNext = SeasonSystem.HeartToNext(heart, season);
-        if (toNext > 0 && toNext <= 8 && !(demoMode && season == Season.Winter && story.IsUnlocked("demo_end")))
+        int daysLeft = SeasonPacing.TargetDays[(int)season] - SeasonPacing.DaysIn(story, today);
+        if (season != Season.Winter && season != Season.Autumn && !demoMode && daysLeft > 0 && daysLeft <= 2)   // 겨울은 이장님 방송이 대보름을 알려 줌
             tips.Add(Loc.T($"{SeasonSystem.Name(season + 1)} feels close", $"{SeasonSystem.Name(season + 1)}이 가까이 와 있어요"));
         int todayN = timeManager != null ? timeManager.day : 0;
         string masil = Neighbors.MasilTonight(story, VillagerDB.All, todayN);
@@ -999,6 +999,7 @@ public class DataManager : MonoBehaviour
         waterCharges = WaterCapacity;
 
         if (timeManager != null) timeManager.SetTime(1, 6, 0f);
+        story.seasonStartDay = 1;
         WorldColor.SetHeart(VisibleColor01, true);
         InventoryChanged();
     }
@@ -1007,6 +1008,7 @@ public class DataManager : MonoBehaviour
     {
         SaveData data = new SaveData
         {
+            version = SeasonPacing.SaveVersion,
             gold = gold,
             health = health,
             hunger = hunger,
@@ -1065,6 +1067,7 @@ public class DataManager : MonoBehaviour
 
         waterCharges = Mathf.Clamp(data.waterCharges, 0, WaterCapacity);
         if (timeManager != null) timeManager.SetTime(data.day, data.hour, data.minute);
+        heart = SeasonPacing.Migrate(data.version, story, heart, data.day);   // F-0: 예전 저장을 새 계절 흐름에 맞춤
 
         WorldColor.SetHeart(VisibleColor01, true);
         InventoryChanged();

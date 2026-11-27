@@ -33,6 +33,7 @@ public class StoryState
 
     // 마음의 계절 (0 겨울 ~ 3 가을)
     public int season = 0;
+    public int seasonStartDay = 1;   // F-0: 지금 계절이 시작된 날 (SeasonPacing)
     public int highestSeason = 0;
     public List<string> photos = new List<string>();   // 계절 앨범에서 찍은 사진 id
 

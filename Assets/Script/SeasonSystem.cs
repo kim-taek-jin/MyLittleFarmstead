@@ -5,7 +5,7 @@ public enum Season { Winter = 0, Spring = 1, Summer = 2, Autumn = 3 }
 
 public static class SeasonSystem
 {
-    public static readonly int[] Thresholds = { 0, 30, 60, 85 };   // 각 계절이 시작되는 마음
+    public static readonly int[] Thresholds = { 0, 35, 60, 85 };   // 각 계절이 시작되는 마음 (F-0: SeasonPacing.Start와 같음. 계절은 이제 절기를 지나야 바뀜)
     public const int ColdSnapMargin = 5;
 
     public static Season ForHeart(float heart)

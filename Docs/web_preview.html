@@ -153,7 +153,13 @@ const FONT = '"Pixelify Sans", "Courier New", monospace';
 // ------------------------------------------------------------------ data
 const SEASONS = ['Winter', 'Spring', 'Summer', 'Autumn'];
 const SEASON_COLOR = ['#c8d8ff', '#ffb6d0', '#9dff9d', '#ffc46a'];
-const THRESH = [0, 30, 60, 85];
+const THRESH = [0, 35, 60, 85];   // F-0: each season's band of the heart (SeasonPacing.cs)
+const PACE = { days: [13, 20, 20, 20], gain: 0.6, minRoom: 0.15 };
+const paceTop = s => s >= 3 ? 100 : THRESH[s + 1];
+const paceScale = (s, h) => PACE.gain * Math.max(PACE.minRoom, Math.min(1, (paceTop(s) - h) / (paceTop(s) - THRESH[s])));
+const color01 = h => Math.max(0, Math.min(1, (h - 10) / 90));
+const seasonDays = () => G.day - (G.story.seasonStart || 1);
+const seasonClosed = (s, day) => s === 0 ? !!(G.story.rites && G.story.rites.boreumDone) : day - (G.story.seasonStart || 1) >= PACE.days[s];
 const ARRIVAL = [
   'The world is quiet and gray.',
   'The snow is melting. Little green shoots push through the ground. You can finally breathe again.',
@@ -887,10 +893,9 @@ function report(evt, arg = null) {
     if (have >= 6 && unlock('album_' + p.season)) { G.gold += 300; changeHeart(5); showAnnounce(`[#ffd84a]${SEASONS[p.season]} page complete![/]\n\nEvery memory of this season is in color now.\n[#9dff9d]+300G  +5 Heart[/]`, 5); }
   }
 }
-const winterHeld = () => G.story.season === 0 && !(G.story.rites && G.story.rites.boreumDone);   // K-5
 function changeHeart(a, reason) {
-  if (a > 0 && winterHeld() && G.heart >= 30) a *= 0.35;   // above the spring threshold, slower while winter is held
-  const before = G.heart; G.heart = Math.max(0, Math.min(100, G.heart + a));
+  if (a > 0) a *= paceScale(S().season, G.heart);   // F-0: the heart fills one season's band at a time, slower near its top
+  const before = G.heart; G.heart = Math.max(0, Math.min(Math.max(before, paceTop(S().season)), G.heart + a));
   if (a >= 2 && G.heart > before && reason) requestWave(false);
   if (reason && Math.abs(a) >= 0.5) toast((a > 0 ? '[#ff8fb1]♥[/]  ' : '[#9aa4c0]♡[/]  ') + reason);
   for (const [m, t] of [[30, 'Color returns...\n\nThe gray haze of the city is starting to lift.'], [50, 'Breathing again\n\nYou notice the smell of the soil and the sound of the wind.'], [75, 'Warm days\n\nThe village feels like home now.'], [100, 'Happiness rebuilt\n\nThe world is full of color again.']]) {
@@ -1519,11 +1524,10 @@ function endDay(passedOut) {
   G.hunger = Math.max(0, G.hunger - 15); G.thirst = Math.max(0, G.thirst - 20); G.health = Math.min(100, G.health + 30);
 
   // seasons of the heart
-  const before = S().season; let after = before; const target = THRESH.filter(t => G.heart >= t).length - 1;
+  const before = S().season; let after = before;
   const holdSpring = before === 0 && !Rt().boreumDone;   // K-4: spring only after the Daeboreum night
-  if (holdSpring && target >= 1 && Rt().boreumDay < 0 && G.day + 1 >= RITE.scheduleFrom) { Rt().boreumDay = Math.max(G.day + 1 + RITE.notice, RITE.earliest); lines.push(`Spring is at the door. The village will greet it on Jeongwol Daeboreum (day ${Rt().boreumDay}).`); }
-  if (holdSpring) after = 0;
-  else if (target > before) after = Math.min(target, before + 1); else if (target < before && G.heart < THRESH[before] - 5) after = before - 1;   // one season per morning
+  if (holdSpring && G.heart >= 17.5 && Rt().boreumDay < 0 && G.day + 1 >= RITE.scheduleFrom) { Rt().boreumDay = Math.max(G.day + 1 + RITE.notice, RITE.earliest); lines.push(`Spring is at the door. The village will greet it on Jeongwol Daeboreum (day ${Rt().boreumDay}).`); }
+  if (before < 3 && seasonClosed(before, G.day + 1)) { after = before + 1; G.story.seasonStart = G.day + 1; G.heart = Math.max(G.heart, THRESH[after]); }   // F-0: after the season's last rite, one step forward
   S().season = after; S().highest = Math.max(S().highest, after); if (after >= 3) unlock('season_autumn');
   if (after > before) requestWave(true); else if (delta >= 4) requestWave(false);
   if (before === 0 && after >= 1 && Rt().boreumDone && unlock('demo_end')) demoEndPending = true;   // K-5: the demo ending
@@ -1584,7 +1588,7 @@ function todayPreview(season) {
   const ripe = Object.values(G.crops).filter(mature).length; if (ripe) tips.push(`${ripe} crop(s) ripe`);
   const tm = Object.values(G.crops).filter(c => !mature(c) && season >= CROPS[c.id].season && c.days + 1 >= CROPS[c.id].days).length;
   if (tm) tips.push(`${tm} crop(s) ripen tomorrow if watered`);
-  if (season < 3 && THRESH[season + 1] - G.heart <= 8) tips.push(`${SEASONS[season + 1]} feels close`);
+  if (season > 0 && season < 3 && PACE.days[season] - seasonDays() <= 2) tips.push(`${SEASONS[season + 1]} feels close`);
   const ms = VILLAGERS.find(v => vNext(v)?.kind === 'Masil' && vReady(v)); if (ms) tips.push(`${ms.name} would like a visit this evening (masil)`);
   if (unlocked('starhill') && !G.raining && !G.snowing) tips.push('Clear skies tonight: the star vine will grow');
   const left = 6 - PHOTOS.filter(p => p.season === season && S().photos.includes(p.id)).length; if (left) tips.push(`${left} ${SEASONS[season]} photo(s) left [P]`);
@@ -1859,7 +1863,7 @@ function drawPanel() {
     drawRich('[C] or [Esc] Close', x + w - 24, y + h - 40, 18, 400, 'right', '#c8c0b0');
   } else if (panel.kind === 'journal') {
     const s = S(); const sp = s.spirit; const L = [];
-    L.push(`[#ffd84a]Journal[/]   Day ${G.day}   [${SEASON_COLOR[s.season]}]${SEASONS[s.season]}[/]` + (s.season < 3 ? `  (${SEASONS[s.season + 1]} at ${Math.ceil(THRESH[s.season + 1] - G.heart)} more Heart)` : ''));
+    L.push(`[#ffd84a]Journal[/]   Day ${G.day}   [${SEASON_COLOR[s.season]}]${SEASONS[s.season]}[/]` + (s.season === 0 ? `  (spring comes after Jeongwol Daeboreum${Rt().boreumDay > 0 ? ' (day ' + Rt().boreumDay + ')' : ''})` : s.season < 3 ? `  (${SEASONS[s.season + 1]} in about ${Math.max(0, PACE.days[s.season] - seasonDays())} day(s))` : '  (the last season of the year)'));
     L.push(`[#ff8fb1]Heart[/] ${Math.round(G.heart)}/100   Gold ${G.gold}   Album ${s.photos.length}/24`);
     L.push(''); L.push('[#ffd84a]Villagers[/]');
     VILLAGERS.forEach(v => { const p = villagerProgress(v.id), n = v.chapters.length, d = Math.min(p.wish, n); L.push(`${v.name}  [${'#'.repeat(d)}${'-'.repeat(n - d)}]  ` + (!p.met ? '[#a0a0a0]not met yet[/]' : vRestored(v) ? '[#9dff9d]colors restored[/]' : 'Next: ' + vNext(v).hint + (vReady(v) ? '' : ' (give it a day or two)'))); });
@@ -2210,7 +2214,7 @@ function soundTick(dt) {
   const hour = G.hour + G.minute / 60, indoors = G.scene === 'home' || !!roomAt(G.px, G.py), outdoors = !!sc().outdoor && !indoors;
   const want = SND.test ? SND.test : musicPiece(hour);
   if (want !== SND.musicId) { SND.musicId = want; stopPiece(SND.music); SND.music = null; if (want) startPiece(want); }
-  const t0 = SND.ctx.currentTime, color = G.heart / 100 * (winterHeld() ? 0.5 : 1), mday = isMarketDay(G.day);
+  const t0 = SND.ctx.currentTime, color = color01(G.heart), mday = isMarketDay(G.day);
   if (SND.music) SND.music.layers.forEach((l, i) => { if (!l) return; const v = SND.on ? (SND.test ? 1 : musicLevel(SND.music.id, hour, indoors) * layerVol(SND.music.id, i, color, mday)) : 0; l.g.gain.setTargetAtTime(v, t0, 0.8); });
   // outdoor sounds
   const quiet = !SND.on || !!screen || (panel && panel.kind === 'demoEnd') || G.scene === 'hill' || !!SND.test, winter = S().season === 0, h = hour % 24, night = h >= 19 || h < 5;
@@ -2512,7 +2516,7 @@ function renderWorld() {
   if (G.scene === 'lake') drawFireflies(c);
 
   // seasons of the heart: the world's saturation follows Heart (UI layer is not affected)
-  let sat = 1 + (-80 + 95 * G.heart / 100 * (winterHeld() ? 0.5 : 1)) / 100;   // K-5: half the color until Daeboreum
+  let sat = 1 + (-80 + 95 * color01(G.heart)) / 100;   // F-0: (heart - 10) / 90
 
   worldCanvas.style.filter = `saturate(${sat.toFixed(2)})`;
 }
@@ -2703,13 +2707,13 @@ $('t-market').onclick = () => {   // skip ahead to the next market day and walk 
 $('t-hill').onclick = () => { S().kindness = Math.max(S().kindness, 60); unlock('starhill'); G.raining = G.snowing = false; if (G.hour < 20) { G.hour = 20; G.minute = 30; } toast('Preview: Star Hill is open. The vine glows at the meadow edge at night.'); uiCanvas.focus(); };
 $('t-forest').onclick = () => {
   if (G.heart < 30) changeHeart(30 - G.heart, 'Preview tool');
-  if (S().season < 1) { S().season = 1; S().highest = Math.max(S().highest, 1); }
+  if (S().season < 1) { S().season = 1; S().highest = Math.max(S().highest, 1); G.story.seasonStart = G.day; }
   forestCheckOpen(); add('Acorn', 3); if (!has('Mattock')) add('Mattock');
   toast('Preview: spring, the forest is open. +3 Acorn, Mattock. The flower arch is at the west end of the farm lane.', 5); uiCanvas.focus();
 };
 $('t-hill2').onclick = () => {
   if (G.heart < 85) changeHeart(85 - G.heart, 'Preview tool');
-  if (S().season < 3) { S().season = 3; S().highest = 3; unlock('season_autumn'); }
+  if (S().season < 3) { S().season = 3; S().highest = 3; unlock('season_autumn'); G.story.seasonStart = G.day; }
   forestCheckOpen(); lakeCheckOpen(); hillCheckOpen(); add("Earth's Breath", 6); add('Persimmon', 4);
   toast('Preview: autumn, Sunset Hill is open (south lane of the farm). +6 Earth\'s Breath, 4 Persimmons.', 5); uiCanvas.focus();
 };
