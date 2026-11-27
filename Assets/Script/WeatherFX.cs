@@ -15,6 +15,7 @@ public class WeatherFX : MonoBehaviour
     private RectTransform root;
     private bool lastSnow;
     private bool visible = true;
+    private float shade = 1f;   // N-1: 밤에는 눈·비도 어둡게
 
     public static void Ensure()
     {
@@ -58,16 +59,18 @@ public class WeatherFX : MonoBehaviour
         {
             float s = Random.value < 0.3f ? 8f : 5f;
             drops[i].sizeDelta = new Vector2(s, s);
-            images[i].color = new Color(1f, 1f, 1f, 0.85f);
+            images[i].color = Shade(new Color(1f, 1f, 1f, 0.85f));
             speed[i] = new Vector2(Random.Range(-20f, 20f), -Random.Range(50f, 110f));
         }
         else
         {
             drops[i].sizeDelta = new Vector2(3f, 22f);
-            images[i].color = new Color(0.75f, 0.85f, 1f, 0.55f);
+            images[i].color = Shade(new Color(0.75f, 0.85f, 1f, 0.55f));
             speed[i] = new Vector2(-120f, -Random.Range(900f, 1200f));
         }
     }
+
+    Color Shade(Color c) => new Color(c.r * shade, c.g * shade, c.b * (0.15f + 0.85f * shade), c.a);
 
     void Update()
     {
@@ -84,6 +87,14 @@ public class WeatherFX : MonoBehaviour
             for (int i = 0; i < Count; i++) images[i].enabled = show;
         }
         if (!show) return;
+
+        float want = 1f - NightLight.Dim * 0.85f;
+        if (Mathf.Abs(want - shade) > 0.02f)
+        {
+            shade = want;
+            for (int i = 0; i < Count; i++)
+                images[i].color = Shade(snow ? new Color(1f, 1f, 1f, 0.85f) : new Color(0.75f, 0.85f, 1f, 0.55f));
+        }
 
         if (snow != lastSnow)
         {

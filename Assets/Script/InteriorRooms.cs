@@ -35,7 +35,9 @@ public class RoomData
     }
 }
 
+#pragma warning disable 0649   // JsonUtility가 채움
 [System.Serializable] class RoomFile { public RoomData[] rooms; }
+#pragma warning restore 0649
 
 public static class InteriorRooms
 {

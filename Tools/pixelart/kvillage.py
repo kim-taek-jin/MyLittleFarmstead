@@ -285,7 +285,9 @@ def bale():
     return c
 
 
-def pole(speaker=False):
+def pole(speaker=False, lamp=True):
+    """A concrete utility pole. lamp: a small 보안등 on a bent arm to the left (lit at night, N-1:
+    the light sits 6 px left of the pole's centre and 70 px above its foot, see NightLight.PoleLampHead)."""
     c = Canvas(30 if speaker else 18, 92)
     c.shadow(9, 90, 5, 1.5)
     c.rect(8, 6, 10, 89, P['stone'][2]); c.rect(8, 6, 8, 89, P['stone'][3]); c.rect(10, 6, 10, 89, P['stone'][1])
@@ -293,6 +295,11 @@ def pole(speaker=False):
     for x in (2, 8, 15):
         c.rect(x, 7, x + 1, 9, P['white'][2])
     c.rect(11, 40, 13, 46, P['metal'][2])                      # transformer box
+    if lamp:                                                  # the security lamp: a bent pipe arm, a flat hood, a pale bulb
+        for (x, y) in ((7, 23), (6, 22), (5, 21), (4, 21)):
+            c.set(x, y, P['metal'][1])
+        c.rect(1, 21, 5, 21, P['metal'][2]); c.rect(1, 22, 5, 22, P['metal'][1])
+        c.rect(2, 23, 4, 23, P['sun'][3]); c.set(3, 24, P['white'][3])
     if speaker:                                               # the village loudspeaker: two gray horns on a bracket
         c.rect(10, 18, 20, 19, P['metal'][1])
         for (x0, d) in ((18, 1),):

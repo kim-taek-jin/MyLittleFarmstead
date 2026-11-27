@@ -57,7 +57,11 @@ public static class RiteScenes
             spot.feet.size = feet;
             spot.feet.offset = new Vector2(0f, feet.y * 0.5f);
         }
-        if (kind == RiteSpot.Kind.Daljip) spot.MakeCrowd(mat);
+        if (kind == RiteSpot.Kind.Daljip)
+        {
+            spot.MakeCrowd(mat);
+            NightGlow.Add(go, spot.view, "fire", new Vector2(0f, 1.1f), 4.2f, 1.25f, NightLight.FireColor, 0.10f);   // N-1: 달집 불이 마당을 밝힘
+        }
         spot.Refresh();
     }
 
@@ -386,6 +390,7 @@ public class RiteSpot : MonoBehaviour
             sr.sortingOrder = 26;
             go.transform.localScale = Vector3.one * (PixelArt.PixelsPerUnit / (s != null ? s.pixelsPerUnit : 32f));
             sparks.Add(sr);
+            if (i == 0) NightGlow.Add(go, sr, null, Vector2.zero, 1.3f, 1.0f, NightLight.FireColor, 0.15f);   // N-1: 돌아가는 깡통 불
         }
         float t = 0f;
         Sfx.Play("swish");

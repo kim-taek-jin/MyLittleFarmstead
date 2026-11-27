@@ -1988,6 +1988,89 @@ function clearPressed() { for (const k in pressed) delete pressed[k]; }
 
 // ------------------------------------------------------------------ render
 function daylight(h) { if (h >= 24 || h < 4) return 0; if (h < 7) return (h - 4) / 3; if (h < 17) return 1; if (h < 21) return 1 - (h - 17) / 4; return 0; }
+// ------------------------------------------------------------------ N-1: night (same as NightCurve.cs + NightLight.cs)
+const NIGHT_A = 0.58;
+const NIGHT_KEYS = [
+  [0, .06, .08, .20, NIGHT_A], [4, .06, .08, .20, NIGHT_A], [5, .20, .24, .46, .38], [6, .95, .72, .58, .10], [6.75, 1, .85, .70, 0],
+  [16.5, 1, .62, .30, 0], [17.5, 1, .55, .25, .11], [18.5, .86, .38, .30, .19], [19.25, .34, .28, .50, .31], [20.25, .12, .14, .34, .46],
+  [21, .06, .08, .20, NIGHT_A], [24, .06, .08, .20, NIGHT_A]];
+const smooth01 = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+function nightness(hour) { const h = ((hour % 24) + 24) % 24; if (h >= 20.5 || h < 4.5) return 1; if (h >= 18) return smooth01((h - 18) / 2.5); if (h >= 6.5) return 0; return 1 - smooth01((h - 4.5) / 2); }
+function nightSample(hour, weather, moon) {
+  const h = ((hour % 24) + 24) % 24; let i = 0; while (i < NIGHT_KEYS.length - 2 && h >= NIGHT_KEYS[i + 1][0]) i++;
+  const A = NIGHT_KEYS[i], B = NIGHT_KEYS[i + 1], t = smooth01((h - A[0]) / (B[0] - A[0]));
+  let [r, g, b, a] = [1, 2, 3, 4].map(k => A[k] + (B[k] - A[k]) * t); const n = nightness(hour);
+  if (weather) a *= 1 + 0.12 * n;
+  if (moon) { a *= 1 - 0.08 * n; r += (0.10 - r) * n; g += (0.15 - g) * n; b += (0.34 - b) * n; }
+  return [r, g, b, Math.min(0.68, a)];
+}
+const nightBand = l => l <= 0 ? 0 : l >= 1 ? 1 : Math.round(l * 6) / 6;
+const WINDOW_C = [1, .74, .40], LAMP_C = [1, .90, .62], FIRE_C = [1, .56, .22];
+function poleLamps(add, head, ground) {
+  add(head[0], head[1], 0.6, 0.95, LAMP_C);
+  add(head[0] + (ground[0] - head[0]) * 0.62, head[1] + (ground[1] - head[1]) * 0.62, 2.0, 0.45, LAMP_C);
+  add(ground[0], ground[1] + 0.3, 1.5, 0.32, LAMP_C);
+}
+function nightLights() {
+  const L = [], add = (x, y, r, i, col, flicker = 0, seed = 0) => L.push({ x, y, r, i, col, flicker, seed });
+  if (G.scene === 'farm') {
+    add(DOOR[0] + 0.03, DOOR[1] + 1.30, 1.25, 0.85, WINDOW_C); add(DOOR[0] - 1.32, DOOR[1] + 1.36, 0.8, 0.7, WINDOW_C);
+    add(DOOR[0] + 1.36, DOOR[1] + 1.36, 0.8, 0.7, WINDOW_C); add(DOOR[0], DOOR[1] - 0.1, 2.0, 0.32, WINDOW_C);
+    MAP.rows.forEach((row, r) => [...row].forEach((ch, c) => { if (ch === '|') poleLamps(add,
+      [MAP.originX + (c * 32 + 10) / 32, MAP.originY - (r * 32 - 38) / 32], [MAP.originX + (c * 32 + 10) / 32, MAP.originY - (r * 32 + 30) / 32]); }));
+    if (Jg().fireToday) add(AGUNGI[0], AGUNGI[1] + 0.3, 1.7, 0.95, FIRE_C, 0.12, 1);
+    const r = Rt(), burning = r.boreumDone ? (S().season === 0 && G.hour >= 19 && G.day <= r.boreumDay + 1) : r.lit;
+    if (burning) add(DALJIP[0], DALJIP[1] + 1.1, 4.2, 1.25, FIRE_C, 0.10, 2);
+  }
+  if (G.scene === 'market') {
+    add(-6.07, 2.70, 1.3, 0.72, WINDOW_C); add(-1.39, 2.90, 1.0, 0.66, WINDOW_C); add(7.51, 2.90, 1.15, 0.74, WINDOW_C); add(7.20, -2.27, 1.15, 0.74, WINDOW_C);
+    add(-6.07, 1.55, 1.5, 0.28, WINDOW_C); add(-1.39, 1.75, 1.3, 0.26, WINDOW_C); add(7.51, 1.75, 1.4, 0.28, WINDOW_C); add(7.20, -3.35, 1.4, 0.28, WINDOW_C);
+    poleLamps(add, [-4.13, 3.83], [-4.13, 1.70]);
+  }
+  if (jwibul) { const a = jwibul.t * 9; add(G.px + Math.cos(a) * 0.75, G.py + 0.1 + Math.sin(a) * 0.75, 1.3, Math.min(1, (2.6 - jwibul.t) * 2), FIRE_C, 0.15, 3); }
+  return L;
+}
+const NIGHTCV = document.createElement('canvas');
+let NIGHT_DIM = 0;   // how dark the outdoors is right now (snow and rain dim with it)
+function drawNight(c) {
+  NIGHT_DIM = 0;
+  const hour = G.hour + G.minute / 60, night = nightness(hour), s = sc();
+  const indoors = G.scene === 'home' || !!roomAt(G.px, G.py);
+  if (indoors) { if (night > 0) { c.fillStyle = `rgba(255,184,107,${(0.10 * night).toFixed(3)})`; c.fillRect(0, 0, CW, CH); } return; }
+  if (!s.outdoor) return;
+  const r0 = Rt(), moon = r0.boreumDay > 0 && G.day === r0.boreumDay && G.hour >= 17;
+  const [nr, ng, nb, a] = nightSample(hour, G.raining || G.snowing, moon);
+  NIGHT_DIM = a;
+  if (a <= 0.003) return;
+  const T = 16, step = 1 / T, W = Math.ceil(s.ww * T) + 2, H = Math.ceil(s.wh * T) + 2;
+  const ox = Math.floor((s.cx - s.ww / 2) / step) * step - step, oy = Math.floor((s.cy - s.wh / 2) / step) * step - step;
+  const light = new Float32Array(W * H), tw = new Float32Array(W * H), wr = new Float32Array(W * H), wg = new Float32Array(W * H), wb = new Float32Array(W * H);
+  const splat = (x, y, rad, inten, col, tint) => {
+    if (inten <= 0) return;
+    const x0 = Math.max(0, Math.floor((x - rad - ox) / step)), x1 = Math.min(W - 1, Math.ceil((x + rad - ox) / step));
+    const y0 = Math.max(0, Math.floor((y - rad - oy) / step)), y1 = Math.min(H - 1, Math.ceil((y + rad - oy) / step));
+    for (let j = y0; j <= y1; j++) { const dy = (oy + (j + 0.5) * step - y) / rad;
+      for (let i = x0; i <= x1; i++) { const dx = (ox + (i + 0.5) * step - x) / rad, t = dx * dx + dy * dy; if (t >= 1) continue;
+        const v = (1 - t) * (1 - t) * inten, k = (H - 1 - j) * W + i; light[k] += v;   // image rows run top-down
+        const q = v * tint; tw[k] += q; wr[k] += q * col[0]; wg[k] += q * col[1]; wb[k] += q * col[2]; } }
+  };
+  splat(G.px, G.py + 0.35, 1.9, 0.34, [1, 1, 1], 0);   // a faint light around the player
+  const now = performance.now() / 1000;
+  for (const l of nightLights()) {
+    const f = l.flicker ? 1 + l.flicker * (Math.sin(now * 7.3 + l.seed * 5) * 0.6 + Math.sin(now * 12.9 + l.seed) * 0.4) : 1;
+    splat(l.x, l.y, l.r * f, l.i * night, l.col, 1);
+  }
+  NIGHTCV.width = W; NIGHTCV.height = H; const nc = NIGHTCV.getContext('2d'), img = nc.createImageData(W, H), d = img.data;
+  for (let k = 0; k < W * H; k++) {
+    const l = nightBand(Math.min(1, light[k])); let warm = 0, r = 0, g = 0, b = 0;
+    if (tw[k] > 0) { r = wr[k] / tw[k]; g = wg[k] / tw[k]; b = wb[k] / tw[k]; warm = nightBand(Math.min(1, tw[k])) * 0.48 * night; }
+    const dark = a * (1 - l), oa = dark + warm; if (oa <= 0.0001) continue;
+    d[k * 4] = (nr * dark + r * warm) / oa * 255; d[k * 4 + 1] = (ng * dark + g * warm) / oa * 255; d[k * 4 + 2] = (nb * dark + b * warm) / oa * 255; d[k * 4 + 3] = Math.min(1, oa) * 255;
+  }
+  nc.putImageData(img, 0, 0);
+  const [sx, sy] = toScreen(ox, oy + H * step);
+  c.imageSmoothingEnabled = false; c.drawImage(NIGHTCV, sx, sy, W * step * ux(), H * step * uy());
+}
 // the camera follows the player inside the map and never shows past its edges (snapped to the art's pixel grid)
 function updateCamera() {
   const s = sc(), b = s.bounds(); const hw = s.ww / 2, hh = s.wh / 2;
@@ -2186,10 +2269,7 @@ function renderWorld() {
   }
   draws.sort((a, b) => b[0] - a[0]).forEach(d => d[1]());
   // night
-  if (G.scene !== 'haggle' && G.scene !== 'hill') {
-    const dl = daylight(G.hour + G.minute / 60) * ((G.raining || G.snowing) ? 0.8 : 1);
-    const a = (1 - Math.max(0.45, dl)) * 0.95; if (a > 0.01) { c.fillStyle = `rgba(16, 22, 60, ${a})`; c.fillRect(0, 0, CW, CH); }
-  }
+  if (G.scene !== 'haggle' && G.scene !== 'hill') drawNight(c);   // N-1: evening and night light
   if (G.scene === 'lake') drawFireflies(c);
 
   // seasons of the heart: the world's saturation follows Heart (UI layer is not affected)
@@ -2208,8 +2288,9 @@ function renderUI() {
   if (sc().outdoor && (G.raining || G.snowing)) {
     if (particles.length !== 80 || particles.snow !== G.snowing) { particles = Array.from({ length: 80 }, () => ({ x: Math.random() * CW, y: Math.random() * CH, s: Math.random() })); particles.snow = G.snowing; }
     for (const p of particles) {
-      if (G.snowing) { p.y += 0.8 + p.s; p.x += Math.sin(performance.now() / 600 + p.s * 9) * 0.6; ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(p.x, p.y, p.s > 0.7 ? 6 : 4, p.s > 0.7 ? 6 : 4); }
-      else { p.y += 12 + p.s * 4; p.x -= 1.5; ctx.fillStyle = 'rgba(190,215,255,0.55)'; ctx.fillRect(p.x, p.y, 2, 16); }
+      const sh = 1 - NIGHT_DIM * 0.85, cs = (r, g, b, al) => `rgba(${Math.round(r * sh)},${Math.round(g * sh)},${Math.round(b * (0.15 + 0.85 * sh))},${al})`;
+      if (G.snowing) { p.y += 0.8 + p.s; p.x += Math.sin(performance.now() / 600 + p.s * 9) * 0.6; ctx.fillStyle = cs(255, 255, 255, 0.85); ctx.fillRect(p.x, p.y, p.s > 0.7 ? 6 : 4, p.s > 0.7 ? 6 : 4); }
+      else { p.y += 12 + p.s * 4; p.x -= 1.5; ctx.fillStyle = cs(190, 215, 255, 0.55); ctx.fillRect(p.x, p.y, 2, 16); }
       if (p.y > CH) { p.y = -20; p.x = Math.random() * CW; }
     }
   }

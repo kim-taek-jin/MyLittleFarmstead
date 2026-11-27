@@ -107,6 +107,7 @@ public class DataManager : MonoBehaviour
         HUD.Ensure();
         WorldColor.Ensure();
         WeatherFX.Ensure();
+        NightLight.Ensure();   // N-1: 밤 화면
     }
 
     private void OnDestroy()

@@ -30,6 +30,8 @@ public static class JangSpots
         T spot = go.AddComponent<T>();
         spot.bottom = bottom;
         spot.view = AreaKit.SpriteAt(go.transform, "Art", null, bottom, 6, mat);
+        if (spot is Agungi)   // N-1: 불 땐 날 밤에 아궁이 불빛
+            NightGlow.Add(go, spot.view, "fire", new Vector2(0f, 0.3f), 1.7f, 0.95f, NightLight.FireColor, 0.12f);
         spot.Refresh();
         return spot;
     }
