@@ -27,7 +27,7 @@ public class NightLight : MonoBehaviour
     private SpriteRenderer sr;
     private Texture2D tex;
     private Color32[] pixels;
-    private float[] light, wr, wg, wb, tw;
+    private float[] lightSum, wr, wg, wb, tw;
     private int texW, texH;
 
     // 지금 화면이 얼마나 밤인지 (눈·비 그림을 어둡게 할 때 씀): 0 = 낮
@@ -165,7 +165,7 @@ public class NightLight : MonoBehaviour
         }
         else
         {
-            System.Array.Clear(light, 0, light.Length);
+            System.Array.Clear(lightSum, 0, lightSum.Length);
             System.Array.Clear(wr, 0, wr.Length); System.Array.Clear(wg, 0, wg.Length); System.Array.Clear(wb, 0, wb.Length); System.Array.Clear(tw, 0, tw.Length);
 
             PlayerAction p = PlayerAction.instance;
@@ -180,7 +180,7 @@ public class NightLight : MonoBehaviour
 
             for (int i = 0; i < pixels.Length; i++)
             {
-                float l = NightCurve.Band(light[i] > 1f ? 1f : light[i]);
+                float l = NightCurve.Band(lightSum[i] > 1f ? 1f : lightSum[i]);
                 float warm = 0f, r = 0f, gg = 0f, b = 0f;
                 if (tw[i] > 0f)
                 {
@@ -218,7 +218,7 @@ public class NightLight : MonoBehaviour
                 float v = NightCurve.Falloff(Mathf.Sqrt(dx * dx + dy * dy)) * intensity;
                 if (v <= 0f) continue;
                 int i = y * texW + x;
-                light[i] += v;
+                lightSum[i] += v;
                 float t = v * tint; tw[i] += t; wr[i] += t * color.r; wg[i] += t * color.g; wb[i] += t * color.b;
             }
         }
@@ -231,7 +231,7 @@ public class NightLight : MonoBehaviour
         if (tex != null) Destroy(tex);
         tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
         pixels = new Color32[w * h];
-        light = new float[w * h]; wr = new float[w * h]; wg = new float[w * h]; wb = new float[w * h]; tw = new float[w * h];
+        lightSum = new float[w * h]; wr = new float[w * h]; wg = new float[w * h]; wb = new float[w * h]; tw = new float[w * h];
         sr.sprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), TexelsPerUnit, 0, SpriteMeshType.FullRect);
         sr.transform.localScale = Vector3.one;
     }
