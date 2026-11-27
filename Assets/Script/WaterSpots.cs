@@ -28,6 +28,7 @@ public class MarketTap : MonoBehaviour
         if (Vector2.Distance(p.transform.position, At + new Vector2(0f, 0.3f)) > Reach || !AreaKit.PressedE()) return;
 
         data.RefillThirst();
+        Sfx.Play("tap_water", 0.8f); Sfx.Play("gulp", 0.7f);    // S-1
         int capacity = data.WaterCapacity;
         bool winter = data.CurrentSeason == Season.Winter;
         if (capacity > 0)

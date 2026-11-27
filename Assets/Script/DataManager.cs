@@ -425,6 +425,7 @@ public class DataManager : MonoBehaviour
         if (def == null || !def.IsEdible || !HasItem(def.name)) return false;
 
         RemoveItem(def.name, 1);
+        Sfx.Play(SoundRules.EatSound(def.hunger, def.thirst), 0.8f);   // S-1: 꿀꺽 / 냠냠
         hunger = Mathf.Min(maxHunger, hunger + def.hunger);
         thirst = Mathf.Min(maxThirst, thirst + def.thirst);
         energy = Mathf.Min(MaxEnergyNow, energy + def.hunger * 0.25f);
@@ -822,6 +823,7 @@ public class DataManager : MonoBehaviour
         }
         string news = notes.Count > 0 ? "\n\n<size=22><color=#c8c0b0>" + string.Join("\n", notes) + "</color></size>" : "";
         string preview = BuildTodayPreview(after, day);
+        Sfx.Play("page", 0.8f);   // S-1: 일기장 넘기는 소리
         HUD.Announce($"{header}\n\n<size=22><color=#e8d8b0>" + Loc.T("— Yesterday's diary —", "— 어제의 일기 —") + $"</color></size>\n<size=26>{diary}</size>\n" +
                      $"<size=24><color=#ff8fb1>{DayDiary.Mood(delta)}</color></size>{news}{preview}", 9f);
 

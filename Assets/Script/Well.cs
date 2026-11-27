@@ -13,6 +13,7 @@ public class Well : MonoBehaviour
         if (data == null) return;
 
         data.RefillThirst();
+        Sfx.Play("well_bucket", 0.8f); Sfx.Play("gulp", 0.7f);   // S-1
         int capacity = data.WaterCapacity;
         if (capacity > 0)
         {

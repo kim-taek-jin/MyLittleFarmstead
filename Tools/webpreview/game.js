@@ -4,6 +4,7 @@
 'use strict';
 
 const ASSETS = /*__ASSETS__*/{};
+const AUDIO = /*__AUDIO__*/{};   // S-1/S-2: sounds and gugak music (small mp3 copies of the game's files)
 const IMG = {};
 const CW = 1148, CH = 656;
 const worldCanvas = document.getElementById('world');
@@ -683,6 +684,7 @@ function doAction(kind, cx, cy) {
   const dx = cx + 0.5 - G.px, dy = cy + 0.5 - G.py;
   if (dx * dx + dy * dy > 0.04) { if (Math.abs(dx) > Math.abs(dy)) { G.dir = 'side'; G.facingLeft = dx < 0; } else G.dir = dy > 0 ? 'up' : 'down'; }
   act = { kind, t: 0.31 };
+  sfx({ hoe: 'till', water: 'water', harvest: 'harvest', plant: 'plant', seed: 'plant', scythe: 'swish', hit: 'hit' }[kind] || null);
 }
 const FX_COLORS = { dust: ['#784f2e', '#9a6b42', '#5c3b21'], splash: ['#c0e6ff', '#58a4e4'], seed: ['#93d66a', '#fff09a'], swish: ['#e6cc74', '#93d66a'] };
 function burst(type, cx, cy) {
@@ -772,7 +774,7 @@ function useEnergy(a) {
 }
 function eat(n) {
   const d = ITEMS[n]; if (!d || !edible(n) || !has(n)) { if (n) toast(`You can't eat ${n}.`); return; }
-  remove(n); G.hunger = Math.min(100, G.hunger + d.hunger); G.thirst = Math.min(100, G.thirst + d.thirst);
+  remove(n); sfx(d.thirst > d.hunger ? 'gulp' : 'eat', 0.8); G.hunger = Math.min(100, G.hunger + d.hunger); G.thirst = Math.min(100, G.thirst + d.thirst);
   G.energy = Math.min(maxEnergy(), G.energy + d.hunger * 0.25); G.log.meals++; if (d.thirst > 0) G.log.drank = true;
   if (d.cat === 'Food' && d.heart > 0) report('eat_cooked', n);
   if (d.heart > 0) changeHeart(d.heart);
@@ -783,7 +785,7 @@ function sellPrice(n) {
   let p = d.sell; if (n === G.market.demand) p *= 1.5; p *= 1 + G.market.haggle;
   p *= Math.max(0.5, 1 - 0.04 * (G.market.sold[n] || 0)); return Math.max(1, Math.round(p));
 }
-function addGold(a) { G.gold = Math.max(0, G.gold + a); if (G.gold >= 1000) report('gold1000'); }
+function addGold(a) { if (a > 0) sfx('coin', 0.9, 0.02); G.gold = Math.max(0, G.gold + a); if (G.gold >= 1000) report('gold1000'); }
 
 // ------------------------------------------------------------------ hotbar
 function hotbarItems() { return Object.keys(G.inv).filter(inHotbar).sort((a, b) => sortKey(a) - sortKey(b)); }
@@ -1114,7 +1116,7 @@ function talk(v) {
   if (v.id === 'rosa' && S().sikhyeDay !== G.day && G.thirst < 60) {   // W-1: Grandma's sikhye, once a day when you're thirsty
     S().sikhyeDay = G.day;
     say(v.name, ['You look parched. Here, have a bowl of sikhye before you go. I made it this morning.', '(Sweet, cold rice punch with rice grains floating on top. It goes down in one breath.)'], portrait,
-      () => { G.thirst = Math.min(100, G.thirst + 45); G.hunger = Math.min(100, G.hunger + 5); G.log.drank = true; changeHeart(1, 'Grandma Boksun gave you a bowl of sikhye.'); });
+      () => { sfx('gulp', 0.8); G.thirst = Math.min(100, G.thirst + 45); G.hunger = Math.min(100, G.hunger + 5); G.log.drank = true; changeHeart(1, 'Grandma Boksun gave you a bowl of sikhye.'); });
     return;
   }
   if (sittingOut(v)) {
@@ -1234,7 +1236,7 @@ function riteTalk(v) {
   if (v.id === 'mina' && boreumSched() && G.day >= r.boreumDay && G.hour >= 6 && G.hour < 18 && !r.bureom) {
     say(v.name, ['Grandma says to bite these. Walnuts and peanuts. They\'re called bureom.',
       "If you crack something hard with your teeth on the morning of Daeboreum, you won't get boils all year. ...I don't know what boils are either.",
-      'On three, together! One, two, three... *crack!*'], villagerSprite(v), () => { r.bureom = true; changeHeart(1, 'Crack! No boils this year.'); G.log.riteNote = 'Mina and I cracked walnuts with our teeth this morning. Hers went flying.'; });
+      'On three, together! One, two, three... *crack!*'], villagerSprite(v), () => { r.bureom = true; sfx('bureom_crack'); changeHeart(1, 'Crack! No boils this year.'); G.log.riteNote = 'Mina and I cracked walnuts with our teeth this morning. Hers went flying.'; });
     return true;
   }
   return false;
@@ -1290,7 +1292,7 @@ function ceremony() {
 }
 function moonrise() {
   say(vName('mayor'), ["There! The moon's up! Light it, light it!", 'Everyone, make a wish when the flames go up.'], vFace('mayor'), () => {
-    Rt().lit = true;
+    Rt().lit = true; sfx('fire_whoosh');
     panel = { kind: 'view', layers: ['rite_moon'], caption: '[#ffd84a]The first full moon of the year[/]   The moon house burns, and the village stands around it.', onClose: burnChoice };
   });
 }
@@ -1433,6 +1435,7 @@ function endDay(passedOut) {
   if (G.raining) report('rain_morning');
   facts.delta = delta;
   const notes = lines.filter(l => !/^(Slept on a warm|Passed out|Went to bed|Stayed up|Ate proper|Drank fresh|Didn't overwork|Worked until|Went hungry|Harvested)/.test(l)).map(l => l.replace(/\s*\[#[0-9a-f]{6}\][+-]\d+\[\/\]/g, ''));
+  sfx('page', 0.8);
   showAnnounce(`${header}\n\n[#e8d8b0]— Yesterday's diary —[/]\n${diaryLines(facts, G.day - 1).join('\n')}\n[#ff8fb1]${diaryMood(delta)}[/]` +
                (notes.length ? `\n\n[#c8c0b0]${notes.join('\n')}[/]` : '') + todayPreview(after), 10);
   queueBroadcast(broadcastLines({ day: G.day, before: seasonBefore, after, raining: G.raining, snowing: G.snowing,
@@ -1466,6 +1469,7 @@ function letters() {
 
 // ------------------------------------------------------------------ scenes / travel
 function go(scene, x, y) {
+  if (scene === 'home' || G.scene === 'home') sfx('door_slide', 0.8);
   G.scene = scene; G.px = x; G.py = y; panel = null; fishing = null;
   if (G.spirit) { G.spirit.x = x - 0.8; G.spirit.y = y + 0.8; }
   if (scene === 'forest' && F().forageDay !== G.day) rollForage();
@@ -1532,7 +1536,7 @@ function interact() {
       const rn = riteNear(); if (rn === 'pot') { useRitePot(); return; } if (rn === 'gate') { useGate(); return; } if (rn === 'daljip') { useDaljip(); return; } }
     if (near(COMPOST[0], COMPOST[1], 1.4)) { useHeap(); return; }
     { const s = jangSpot(); if (s === 'agungi') { useAgungi(); return; } if (s === 'rack') { useMejuRack(); return; } if (s === 'jars') { useJangdok(); return; } }
-    if (near(WELL[0], WELL[1] - 0.4, 1.3)) { G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
+    if (near(WELL[0], WELL[1] - 0.4, 1.3)) { sfx('well_bucket', 0.8); sfx('gulp', 0.7); G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(); if (cap) { G.water = cap; toast(`You drink cool water and fill your watering can. (${G.water}/${cap})`); } else toast('You drink cool, fresh water.'); return; }
     if (starVineOpen() && near(LADDER[0], LADDER[1] - 1.0, 1.2)) { go('hill', 0, -3.1); return; }
     if (near(POND[0], POND[1], 1.9)) { fish(); return; }
   } else if (G.scene === 'home') {
@@ -1544,7 +1548,7 @@ function interact() {
     if (!roomAt(G.px, G.py) && near(TAP[0], TAP[1] + 0.3, 1.15)) { useTap(); return; }   // W-1
     if (isMarketDay(G.day) && near(HAGGLER[0], HAGGLER[1], 1.3)) { if (G.market.haggled) toast('"We\'ve struck our deal for today. Come back next market day!"', 2.5); else go('haggle', 0, 0); return; }
     if (near(STORE_KEEPER[0], STORE_KEEPER[1] - 0.9, 1.4)) { panel = { kind: 'shop', tab: 'buy' }; return; }   // H-2: buy inside the corner store
-    { const r = !roomAt(G.px, G.py) && ROOMS.find(r => near(r.entranceX, r.entranceY, 1.0)); if (r) { [G.px, G.py] = roomAnchor(r.id, 'arrive', [r.originX, r.originY]); return; } }
+    { const r = !roomAt(G.px, G.py) && ROOMS.find(r => near(r.entranceX, r.entranceY, 1.0)); if (r) { sfx(r.id === 'store' ? 'door_bell' : 'door_slide', 0.8); [G.px, G.py] = roomAnchor(r.id, 'arrive', [r.originX, r.originY]); return; } }
     if (Math.abs(G.px - 3.92) < 2 && G.py > 0.8 && G.py < 2.6) { toast("The corner store's stall. Step inside the store to buy and sell.", 2.5); return; }
   } else if (G.scene === 'hill') {
     if (near(0, -4.4, 1.4)) { go('farm', LADDER[0] - 0.6, LADDER[1] - 1.0); return; }
@@ -1554,6 +1558,7 @@ function interact() {
 // ------------------------------------------------------------------ W-1: the village tap beside the hall
 const TAP = [4.6, -1.0];
 function useTap() {
+  sfx('tap_water', 0.8); sfx('gulp', 0.7);
   G.thirst = 100; G.log.drank = true; report('drink'); const cap = waterCap(), w = S().season === 0;
   if (cap) { G.water = cap; toast(w ? `You unwrap the cloth, drink the icy tap water and fill your can. (${G.water}/${cap})` : `You drink from the village tap and fill your can. (${G.water}/${cap})`); }
   else toast(w ? 'You unwrap the cloth and drink the icy tap water.' : 'You drink cool water from the village tap.');
@@ -1569,7 +1574,7 @@ function useAgungi() {
   const j = Jg();
   if (!j.fireToday) {
     if (!has('Wood')) { toast('You need a piece of firewood (Wood) to light the agungi.', 3); return; }
-    remove('Wood', 1); j.fireToday = true;
+    remove('Wood', 1); j.fireToday = true; sfx('fire_whoosh', 0.45);
     toast('You light the agungi. The floor will be warm tonight. ([C] to cook here)', 4);
     howTo('agungi', '[#ffd84a]The agungi[/]\n\nThe kitchen fire also heats the floor of the room (ondol).\nLight it once a day with a piece of firewood, and you\'ll sleep warm.\n\nStanding here, press [#ffd84a][C][/] to cook without a campfire,\nand to boil soybeans into [#ffd84a]meju[/] (4 Soybeans + 1 Wood).');
     return;
@@ -1603,7 +1608,7 @@ function useJangdok() {
     howTo('jangdok', "[#ffd84a]Looking after the jars[/]\n\nOn sunny days, open the lids and let the sun in: the sauce gets deeper.\nWhen it rains or snows, close them, or rainwater gets in.\n(Press [#ffd84a][E][/] at the jangdokdae to open or close all the lids.)\nForgetting isn't a disaster. It just tastes a little milder.");
     return;
   }
-  j.lidsOpen = !j.lidsOpen;
+  j.lidsOpen = !j.lidsOpen; sfx('jar_lid');
   const n = j.jars.filter(x => x.start >= 0).length, st = n ? `  (${n} jar(s) fermenting)` : '';
   if (j.lidsOpen) toast((G.raining || G.snowing ? 'You opened the lids... in this weather? Rain will get in.' : 'You opened the jar lids to let the sun in.') + st, 3);
   else toast('You closed the jar lids.' + st, 2.5);
@@ -1872,7 +1877,7 @@ function update(dt) {
     G.px += mx / l * sp * dt; if (tiles && feetBlocked()) G.px = ox;   // trees, water, the old tree, logs, reeds
     G.py += my / l * sp * dt; if (tiles && feetBlocked()) G.py = oy;
     if (Math.abs(mx) > Math.abs(my)) { G.dir = 'side'; G.facingLeft = mx < 0; } else G.dir = my > 0 ? 'up' : 'down';
-    G.stepT += dt; if (G.stepT > 0.125) { G.stepT = 0; G.step = (G.step + 1) % 4; }
+    G.stepT += dt; if (G.stepT > 0.125) { G.stepT = 0; G.step = (G.step + 1) % 4; if (G.step % 2 === 0) sfx(G.scene === 'home' || roomAt(G.px, G.py) ? 'step_floor' : S().season === 0 ? 'step_snow' : 'step_dirt', 0.5, 0.15); }
   } else G.step = 0;
   clampPlayer();
 
@@ -2006,6 +2011,87 @@ function clearPressed() { for (const k in pressed) delete pressed[k]; }
 
 // ------------------------------------------------------------------ render
 function daylight(h) { if (h >= 24 || h < 4) return 0; if (h < 7) return (h - 4) / 3; if (h < 17) return 1; if (h < 21) return 1 - (h - 17) / 4; return 0; }
+// ------------------------------------------------------------------ S-1/S-2: sound (same rules as SoundRules.cs)
+const SND = { ctx: null, buf: {}, on: true, music: null, musicId: undefined, amb: {}, next: 20, roosterDay: -1, test: null };
+function sndInit() {
+  if (SND.ctx) return;
+  try {
+    const C = window.AudioContext || window.webkitAudioContext; SND.ctx = new C();
+    SND.master = SND.ctx.createGain(); SND.master.connect(SND.ctx.destination);
+    SND.mus = SND.ctx.createGain(); SND.mus.gain.value = 0.7; SND.mus.connect(SND.master);
+    SND.fx = SND.ctx.createGain(); SND.fx.gain.value = 0.8; SND.fx.connect(SND.master);
+    for (const a of ['amb_wind_winter', 'amb_night', 'amb_fire']) sndLoop(a).then(n => { SND.amb[a] = n; });
+  } catch (e) { SND.ctx = null; }
+}
+function sndBuf(name) {
+  if (!SND.ctx || !AUDIO[name]) return Promise.resolve(null);
+  if (!SND.buf[name]) {
+    const bin = atob(AUDIO[name].split(',')[1]), arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    SND.buf[name] = new Promise(res => SND.ctx.decodeAudioData(arr.buffer, res, () => res(null)));
+  }
+  return SND.buf[name];
+}
+function sfx(name, vol = 1, jitter = 0.06) {
+  if (!SND.ctx || !SND.on) return;
+  sndBuf(name).then(b => { if (!b) return; const s = SND.ctx.createBufferSource(), g = SND.ctx.createGain(); s.buffer = b; s.playbackRate.value = 1 + (Math.random() - 0.5) * 2 * jitter; g.gain.value = vol; s.connect(g).connect(SND.fx); s.start(); });
+}
+async function sndLoop(name, out = null, when = 0) {
+  const b = await sndBuf(name); if (!b) return null;
+  const s = SND.ctx.createBufferSource(), g = SND.ctx.createGain(); s.buffer = b; s.loop = true; g.gain.value = 0;
+  s.connect(g).connect(out || SND.fx); s.start(when || SND.ctx.currentTime); return { s, g };
+}
+const smoothstep = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+function musicPiece(hour) {
+  if (panel && panel.kind === 'demoEnd') return 'spring';
+  if (screen && (screen.kind === 'title' || screen.kind === 'opening')) return 'title';
+  if (G.scene === 'farm' && S().season === 0 && gathering() && !Rt().boreumDone) return 'boreum';
+  if (hour >= 19 || hour < 6) return null;
+  if (G.scene === 'market') return 'market';
+  if (G.scene === 'farm' || G.scene === 'home') return 'farm';
+  return null;
+}
+const LAYERS = { farm: 3, market: 2 };
+function musicLevel(id, hour, indoors) {
+  if (!id) return 0; if (id === 'title' || id === 'spring' || id === 'boreum') return 1;
+  const h = hour % 24; let k = h >= 18 && h < 19 ? 1 - (h - 18) : h >= 6 && h < 7 ? h - 6 : 1; return indoors ? k * 0.55 : k;
+}
+function layerVol(id, i, color, mday) {
+  if (i === 0) return 1;
+  if (id === 'farm') return i === 1 ? smoothstep((color - 0.18) / 0.14) : smoothstep((color - 0.36) / 0.12);
+  if (id === 'market') return mday ? 1 : 0;
+  return 0;
+}
+async function startPiece(id) {
+  const n = LAYERS[id] || 1, names = n > 1 ? [...Array(n).keys()].map(i => `mus_${id}_${i}`) : [`mus_${id}`];
+  const bufs = await Promise.all(names.map(sndBuf)); if (SND.musicId !== id) return;
+  const at = SND.ctx.currentTime + 0.05, layers = [];
+  for (const b of bufs) { if (!b) { layers.push(null); continue; } const s = SND.ctx.createBufferSource(), g = SND.ctx.createGain(); s.buffer = b; s.loop = true; g.gain.value = 0; s.connect(g).connect(SND.mus); s.start(at); layers.push({ s, g }); }
+  SND.music = { id, layers };
+}
+function stopPiece(m) { if (!m) return; const t0 = SND.ctx.currentTime; for (const l of m.layers) if (l) { l.g.gain.setTargetAtTime(0, t0, 0.6); l.s.stop(t0 + 3); } }
+function soundTick(dt) {
+  if (!SND.ctx) return;
+  const hour = G.hour + G.minute / 60, indoors = G.scene === 'home' || !!roomAt(G.px, G.py), outdoors = !!sc().outdoor && !indoors;
+  const want = SND.test ? SND.test : musicPiece(hour);
+  if (want !== SND.musicId) { SND.musicId = want; stopPiece(SND.music); SND.music = null; if (want) startPiece(want); }
+  const t0 = SND.ctx.currentTime, color = G.heart / 100 * (winterHeld() ? 0.5 : 1), mday = isMarketDay(G.day);
+  if (SND.music) SND.music.layers.forEach((l, i) => { if (!l) return; const v = SND.on ? (SND.test ? 1 : musicLevel(SND.music.id, hour, indoors) * layerVol(SND.music.id, i, color, mday)) : 0; l.g.gain.setTargetAtTime(v, t0, 0.8); });
+  // outdoor sounds
+  const quiet = !SND.on || !!screen || (panel && panel.kind === 'demoEnd') || G.scene === 'hill' || !!SND.test, winter = S().season === 0, h = hour % 24, night = h >= 19 || h < 5;
+  const wind = quiet || !winter || night ? 0 : outdoors ? (G.snowing ? 0.55 : 0.32) : indoors ? 0.08 : 0;
+  const nightV = quiet || !night ? 0 : outdoors ? 0.45 : indoors ? 0.1 : 0;
+  let fire = 0;
+  if (!quiet && outdoors && G.scene === 'farm') {
+    for (const l of nightLights()) if (l.flicker) { const r = l.r * 2.2, d = Math.hypot(G.px - l.x, G.py - l.y); fire = Math.max(fire, Math.max(0, 1 - d / r) * 0.7); }
+  }
+  for (const [k, v] of [['amb_wind_winter', wind], ['amb_night', nightV], ['amb_fire', fire]]) if (SND.amb[k]) SND.amb[k].g.gain.setTargetAtTime(v, t0, 1.2);
+  if (quiet) return;
+  if (G.day !== SND.roosterDay && hour >= 6.05 && hour < 7) { SND.roosterDay = G.day; sfx('rooster', indoors ? 0.5 : 0.85, 0.03); }
+  SND.next -= dt;
+  if (SND.next <= 0) { SND.next = 25 + Math.random() * 35; const r = Math.random();
+    if (outdoors && h >= 6 && h < 10 && r < 0.6) sfx('magpie', 0.8, 0.05); else if (outdoors && night && r < 0.5) sfx('dog_far', 0.8, 0.05); }
+}
 // ------------------------------------------------------------------ N-1: night (same as NightCurve.cs + NightLight.cs)
 const NIGHT_A = 0.58;
 const NIGHT_KEYS = [
@@ -2503,6 +2589,15 @@ $('t-lake').onclick = () => {
   forestCheckOpen(); lakeCheckOpen(); if (!has('Fishing Rod')) add('Fishing Rod'); add('Minnow', 4); add('Carp', 3);
   toast('Preview: summer, the lake is open. +Fishing Rod, 4 Minnow, 3 Carp. The lake path is at the south-east of the farm.', 5); uiCanvas.focus();
 };
+// the sound board (listen to every sound and piece of music)
+{ const sb = $('soundboard'); if (sb) {
+  const btn = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = () => { sndInit(); fn(b); }; sb.appendChild(b); return b; };
+  btn('소리 끄기', b => { SND.on = !SND.on; b.textContent = SND.on ? '소리 끄기' : '소리 켜기'; b.classList.toggle('on', !SND.on); uiCanvas.focus(); });
+  const tracks = [['타이틀', 'title'], ['농장 (마음 따라 3겹)', 'farm'], ['장터 (장날 장구)', 'market'], ['대보름 풍물', 'boreum'], ['봄 (데모 끝)', 'spring']];
+  for (const [label, id] of tracks) btn('♪ ' + label, b => { SND.test = SND.test === id ? null : id; document.querySelectorAll('#soundboard button.on').forEach(x => { if (x !== b && x.textContent.startsWith('♪')) x.classList.remove('on'); }); b.classList.toggle('on', SND.test === id); });
+  const fxs = $('sfxboard');
+  if (fxs) for (const k of Object.keys(AUDIO).filter(k => !k.startsWith('mus_') && !k.startsWith('amb_') && k !== 'step')) { const b = document.createElement('button'); b.type = 'button'; b.textContent = k; b.onclick = () => { sndInit(); sfx(k, 1, 0); }; fxs.appendChild(b); }
+} }
 $('t-night').onclick = () => { G.hour = Math.max(G.hour, 20); G.minute = 30; toast('Preview: it is night now.'); uiCanvas.focus(); };
 $('t-speed').onclick = e => { speed = speed === 1 ? 4 : 1; e.currentTarget.classList.toggle('on', speed === 4); e.currentTarget.textContent = speed === 4 ? '시간 1배속' : '시간 4배속'; uiCanvas.focus(); };
 $('t-new').onclick = () => { newGame(); toasts = []; dialogue = null; panel = null; announce = null; G.spirit = null; save(); startOpening(); uiCanvas.focus(); };
@@ -2669,7 +2764,7 @@ function broadcastLines(n) {
   return body.length ? ['Ahem, ahem. Attention, everyone in the village.', ...body, "That's all from your village head."] : [];
 }
 let broadcast = null;   // { lines, i, t }
-function queueBroadcast(lines) { broadcast = lines.length ? { lines, i: 0, t: 0 } : null; }
+function queueBroadcast(lines) { broadcast = lines.length ? { lines, i: 0, t: 0 } : null; if (broadcast) sfx('chime_broadcast', 0.9, 0); }
 function updateBroadcast(dt, skip) {
   if (!broadcast || announce || dialogue || panel || screen || (G.scene !== 'farm' && G.scene !== 'market')) return;
   const line = broadcast.lines[broadcast.i]; broadcast.t += dt;
@@ -2688,7 +2783,7 @@ function drawBroadcast() {
 // ------------------------------------------------------------------ boot
 function loop(t) {
   const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
-  update(dt); renderWorld(); renderUI();
+  update(dt); soundTick(dt); renderWorld(); renderUI();
   requestAnimationFrame(loop);
 }
 newGame();
@@ -2706,7 +2801,7 @@ if (G.story.spirit.found && !G.spirit) G.spirit = { x: G.px, y: G.py, vx: 0, pul
 Promise.all([loadAll(), document.fonts ? document.fonts.ready : Promise.resolve()]).then(() => {
   renderWorld(); renderUI();
   $('start').onclick = () => {
-    $('start').hidden = true; uiCanvas.focus();
+    $('start').hidden = true; uiCanvas.focus(); sndInit();
     screen = { kind: 'title', sel: 0, confirm: false };
     requestAnimationFrame(t => { last = t; loop(t); });
   };

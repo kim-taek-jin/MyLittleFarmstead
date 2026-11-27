@@ -67,7 +67,7 @@ public class Sfx : MonoBehaviour
     static void ApplyMusicVolume()
     {
         foreach (AudioSource a in FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            if (a.loop && (Instance == null || a != Instance.source)) a.volume = Music;
+            if (a.loop && (Instance == null || a != Instance.source) && !MusicManager.Ours(a)) a.volume = Music;   // 음악·바깥 소리 관리자는 스스로 맞춤
     }
 
     void Update()

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -41,7 +42,12 @@ public class PlayerMovement : MonoBehaviour
         if (moveDirection.sqrMagnitude > 0.01f)
         {
             stepTimer -= Time.deltaTime;
-            if (stepTimer <= 0f) { Sfx.Play("step", 0.5f, 0.1f, 0.15f); stepTimer = 1.6f / speed; }
+            if (stepTimer <= 0f)
+            {
+                bool indoors = SceneManager.GetActiveScene().name == "Home" || InteriorRooms.Inside;   // S-1: 장판 / 눈 / 흙
+                Sfx.Play(SoundRules.Step(indoors, data != null && data.CurrentSeason == Season.Winter), 0.5f, 0.1f, 0.15f);
+                stepTimer = 1.6f / speed;
+            }
         }
         else stepTimer = 0f;
     }

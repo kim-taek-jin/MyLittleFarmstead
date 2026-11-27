@@ -271,6 +271,7 @@ public class ForestArea : MonoBehaviour
         if (Vector2.Distance(p, seat) < 1.3f)
         {
             data.RefillThirst();
+            Sfx.Play("gulp", 0.7f);
             if (data.WaterCapacity > 0) { data.RefillWater(); data.UpdateAllUI(); }
             int day = GameTimeManager.instance != null ? GameTimeManager.instance.day : 1;
             if (state.Rest(day))

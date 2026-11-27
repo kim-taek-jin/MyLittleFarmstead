@@ -14,6 +14,11 @@ for path in sorted(glob.glob(os.path.join(ART, '*', '*.png'))):
     with open(path, 'rb') as f:
         assets[key] = 'data:image/png;base64,' + base64.b64encode(f.read()).decode()
 
+audio = {}
+for path in sorted(glob.glob(os.path.join(HERE, 'audio', '*.mp3'))):   # S-1/S-2: made by Tools/audio/make_sfx.py and make_music.py
+    with open(path, 'rb') as f:
+        audio[os.path.basename(path)[:-4]] = 'data:audio/mpeg;base64,' + base64.b64encode(f.read()).decode()
+
 with open(os.path.join(HERE, 'template.html'), encoding='utf-8') as f:
     html = f.read()
 with open(os.path.join(HERE, 'game.js'), encoding='utf-8') as f:
@@ -31,6 +36,7 @@ with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'villagemap.json'), 
 with open(os.path.join(ROOT, 'Assets', 'Resources', 'Maps', 'rooms.json'), encoding='utf-8') as f:
     rooms_map = json.load(f)
 js = (js.replace('/*__ASSETS__*/{}', json.dumps(assets))
+        .replace('/*__AUDIO__*/{}', json.dumps(audio))
         .replace('/*__MAP__*/null', json.dumps(farm_map, separators=(',', ':')))
         .replace('/*__FOREST__*/null', json.dumps(forest_map, separators=(',', ':')))
         .replace('/*__LAKE__*/null', json.dumps(lake_map, separators=(',', ':')))
@@ -41,4 +47,4 @@ html = html.replace('/*__GAME__*/', js)
 out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'Docs', 'web_preview.html')
 with open(out, 'w', encoding='utf-8') as f:
     f.write(html)
-print(f'{len(assets)} images, {len(html) // 1024} KB -> {out}')
+print(f'{len(assets)} images, {len(audio)} sounds, {len(html) // 1024} KB -> {out}')

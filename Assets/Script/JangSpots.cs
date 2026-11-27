@@ -126,7 +126,7 @@ public class Agungi : JangSpot
             }
             Data.RemoveItem("Wood", 1);
             j.fireToday = true;
-            Sfx.Play("open", 0.7f);
+            Sfx.Play("fire_whoosh", 0.45f);
             HUD.Toast(Loc.T("You light the agungi. The floor will be warm tonight. ([C] to cook here)", "아궁이에 불을 지폈어요. 오늘 밤은 방바닥이 뜨끈하겠어요. (여기서 [C]로 요리)"), 4f);
             HowTo("agungi",
                   "<size=34>The agungi</size>\n\nThe kitchen fire also heats the floor of the room (ondol).\nLight it once a day with a piece of firewood, and you'll sleep warm.\n\nStanding here, press <color=#ffd84a>[C]</color> to cook without a campfire,\nand to boil soybeans into <color=#ffd84a>meju</color> (4 Soybeans + 1 Wood).",
@@ -217,7 +217,7 @@ public class JangdokPlatform : JangSpot
         }
         // 뚜껑 열고 닫기
         j.lidsOpen = !j.lidsOpen;
-        Sfx.Play("click");
+        Sfx.Play("jar_lid");
         int n = j.Fermenting();
         string state = n > 0 ? Loc.T($"  ({n} jar(s) fermenting)", $"  (익어 가는 독 {n}개)") : "";
         if (j.lidsOpen)

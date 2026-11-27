@@ -71,7 +71,7 @@ public class BroadcastBanner : MonoBehaviour
             stay = 1.8f + current.Length / 14f;
             speaker.text = Loc.T("Village broadcast", "마을 방송") + "  ·  " + VillageBroadcast.Speaker;
             root.gameObject.SetActive(true);
-            if (first) Sfx.Play("open", 0.8f);      // 띵동
+            if (first) Sfx.Play("chime_broadcast", 0.9f);      // 딩동댕동
         }
         shown += Time.unscaledDeltaTime;
         int n = Mathf.Clamp(Mathf.FloorToInt(shown * CharsPerSecond), 0, current.Length);

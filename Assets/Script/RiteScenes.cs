@@ -125,7 +125,7 @@ public static class RiteScenes
         }, Face("mina"), () =>
         {
             R.bureom = true;
-            Sfx.Play("hit");
+            Sfx.Play("bureom_crack");
             Data.NoteTalk();
             Data.ChangeHeart(1f, Loc.T("Crack! No boils this year.", "딱! 올해는 부스럼 없이."));
             Data.NoteRite(Loc.T("Mina and I cracked walnuts with our teeth this morning. Hers went flying.", "아침에 미나랑 호두를 깨물었다. 미나 호두는 저 멀리 튀어 나갔다."));
@@ -158,7 +158,7 @@ public static class RiteScenes
         {
             R.lit = true;
             daljip.Refresh();
-            Sfx.Play("open");
+            Sfx.Play("fire_whoosh");
             PixelHUD.ShowView(new List<string> { "rite_moon" },
                 Loc.T("<color=#ffd84a>The first full moon of the year</color>   The moon house burns, and the village stands around it.",
                       "<color=#ffd84a>정월대보름 달</color>   달집이 타오르고, 마을 사람들이 둘레에 서 있어요."),

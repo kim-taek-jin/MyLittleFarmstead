@@ -237,7 +237,7 @@ public class RoomEntrance : MonoBehaviour
         near = now;
         if (!near || Villager.InRange != null || !AreaKit.PressedE()) return;
         Vector2 arrive = room.TryAnchor("arrive", out Vector2 a) ? a : room.World(room.w * 0.5f, room.h * 0.5f);
-        Sfx.Play("open", 0.7f);
+        Sfx.Play(room.id == "store" ? "door_bell" : "door_slide", 0.8f);   // 가게 유리문 종 / 미닫이
         InteriorRooms.Teleport(arrive);
     }
 }
@@ -250,7 +250,7 @@ public class RoomDoor : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        Sfx.Play("close", 0.7f);
+        Sfx.Play(room.id == "store" ? "door_bell" : "door_slide", 0.8f);
         InteriorRooms.Teleport(new Vector2(room.exitX, room.exitY));
     }
 }

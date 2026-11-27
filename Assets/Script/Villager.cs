@@ -189,6 +189,7 @@ public class Villager : MonoBehaviour
                 Data.thirst = Mathf.Min(Data.maxThirst, Data.thirst + WaterRules.SikhyeThirst);
                 Data.hunger = Mathf.Min(Data.maxHunger, Data.hunger + WaterRules.SikhyeHunger);
                 Data.NoteDrink();
+                Sfx.Play("gulp", 0.8f);
                 Data.ChangeHeart(WaterRules.SikhyeHeart, Loc.T("Grandma Boksun gave you a bowl of sikhye.", "복순 할머니가 식혜 한 그릇을 주셨어요."));
                 Data.UpdateAllUI();
             });

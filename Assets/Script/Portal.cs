@@ -18,6 +18,7 @@ public class Portal : MonoBehaviour
         // 농장 데이터는 항상 DataManager에 있으므로 따로 저장할 필요가 없습니다.
         SceneData.nextPlayerPosition = destinationPosition;
         SceneData.hasNextPlayerPosition = true;
+        if (destinationSceneName == "Home" || SceneManager.GetActiveScene().name == "Home") Sfx.Play("door_slide", 0.8f);   // S-1: 창호지 미닫이문
         SceneManager.LoadScene(destinationSceneName);
     }
 }
