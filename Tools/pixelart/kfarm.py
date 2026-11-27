@@ -319,10 +319,8 @@ def farmmap(season='spring'):
         if kind == 'S' and season != 'autumn':
             kind = 'R'                     # the harvested field is only harvested in autumn
         if kind == 'R' and season == 'spring':
-            col = SPRING_PADDY[2] if (x + y) % 9 else SPRING_PADDY[3]
-            if k % 8 in (3, 4) and x % 6 in (1, 2):
-                col = SEEDLING[2] if k % 8 == 3 else SEEDLING[1]
-            return col
+            import spring as SP                # F-1: spring starts with ploughed, dry paddies (water and rice come as overlays)
+            return SP.dry_px(x, y)
         if kind == 'R' and season == 'summer':
             row, stalk = k % 6, (x + k // 6 * 2) % 4
             return SUMMER_RICE[1] if row == 0 else SUMMER_RICE[3] if stalk == 0 and row < 4 else SUMMER_RICE[2]

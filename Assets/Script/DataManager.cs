@@ -104,6 +104,7 @@ public class DataManager : MonoBehaviour
 #if DEMO_BUILD
         demoMode = true;
 #endif
+        SyncNeighbors();
         HUD.Ensure();
         WorldColor.Ensure();
         WeatherFX.Ensure();
@@ -444,6 +445,13 @@ public class DataManager : MonoBehaviour
         return true;
     }
 
+    // F-1: 이웃 이야기의 계절 (지금 계절, 체험판이면 겨울까지만)
+    public void SyncNeighbors()
+    {
+        Neighbors.SeasonNow = CurrentSeason;
+        Neighbors.Cap = demoMode ? Season.Winter : Season.Autumn;
+    }
+
     // F-0: 마음은 계절마다 한 칸(띠)씩 차고, 계절은 그 계절의 마지막 절기를 지나야 바뀜 (SeasonPacing)
     public float VisibleColor01 => SeasonPacing.Color01(heart);
 
@@ -725,6 +733,8 @@ public class DataManager : MonoBehaviour
             lines.Add(Loc.T($"Spring is at the door. The village will greet it on Jeongwol Daeboreum (day {story.rites.boreumDay}).",
                             $"봄이 문 앞에 와 있어요. 마을은 정월대보름({story.rites.boreumDay}일째)에 봄을 맞아요."));
         bool demoEndsNow = demoMode && story.rites.boreumDone && !story.IsUnlocked("demo_end");
+        string springLine = Spring.Morning(story, newDay, false);       // F-1: 모내기 날을 놓쳤으면 마을이 다 심어 둠
+        if (springLine != null) lines.Add(springLine);
         Season after = SeasonPacing.Next(before, story, newDay, cap);   // F-0: 지난 계절의 마지막 절기를 지났으면 한 칸 (앞으로만)
         if (after > before)
         {
@@ -733,6 +743,7 @@ public class DataManager : MonoBehaviour
             WorldColor.SetHeart(VisibleColor01);
         }
         story.season = (int)after;
+        Neighbors.SeasonNow = after;                                          // F-1: 이웃 이야기도 계절을 따라 열림
         if ((int)after > story.highestSeason) story.highestSeason = (int)after;
         // 색 물결: 아침 요약을 닫으면 퍼짐 (계절이 바뀐 아침은 크게)
         if (after > before) ColorWave.Request(true);
@@ -743,6 +754,7 @@ public class DataManager : MonoBehaviour
         bool wet = rng.NextDouble() < SeasonSystem.RainChance(after, delta);
         snowing = wet && after == Season.Winter;
         raining = wet && after != Season.Winter;
+        if (raining && after == Season.Spring) Spring.WaterSeedbed(story.spring, newDay);   // 봄비가 모판을 적심
 
         // 새로운 날
         int earthLevel = SpiritDB.PerkLevel(story.spirit, "earth");
@@ -834,7 +846,7 @@ public class DataManager : MonoBehaviour
             mejuSeason = after == Season.Winter && story.jang.Fermenting() == 0 && story.jang.hung.Count == 0,
             lidsOpen = story.jang.lidsOpen,
             helpWanted = Neighbors.HelpWanted(story, VillagerDB.All, day),
-            rite = Rites.Broadcast(story.rites, day),
+            rite = Rites.Broadcast(story.rites, day) ?? Spring.Broadcast(story, day),   // F-1: 봄 소식
             forestOpened = !forestWas && story.forest != null && story.forest.open,
             lakeOpened = !lakeWas && story.lake != null && story.lake.open,
             hillOpened = !hillWas && story.hill != null && story.hill.open,
@@ -1000,6 +1012,7 @@ public class DataManager : MonoBehaviour
 
         if (timeManager != null) timeManager.SetTime(1, 6, 0f);
         story.seasonStartDay = 1;
+        SyncNeighbors();
         WorldColor.SetHeart(VisibleColor01, true);
         InventoryChanged();
     }
@@ -1052,6 +1065,7 @@ public class DataManager : MonoBehaviour
         market = data.market ?? new MarketState();
         today = data.today ?? new DayLog();
         story = data.story ?? new StoryState();
+        if (story.spring == null) story.spring = new SpringState();   // F-1: 봄 이전 저장
         raining = data.raining;
         snowing = data.snowing;
 
@@ -1068,6 +1082,7 @@ public class DataManager : MonoBehaviour
         waterCharges = Mathf.Clamp(data.waterCharges, 0, WaterCapacity);
         if (timeManager != null) timeManager.SetTime(data.day, data.hour, data.minute);
         heart = SeasonPacing.Migrate(data.version, story, heart, data.day);   // F-0: 예전 저장을 새 계절 흐름에 맞춤
+        SyncNeighbors();
 
         WorldColor.SetHeart(VisibleColor01, true);
         InventoryChanged();

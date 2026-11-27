@@ -26,7 +26,7 @@ public static class RiteScenes
     {
         Villager v = Villager.Find(id);
         if (v != null && v.Portrait != null) return v.Portrait;
-        return PixelArt.Load($"Villagers/{id}_{Mathf.Clamp(Data.story.Get(id).wishIndex, 0, 3)}");
+        return PixelArt.Load($"Villagers/{id}_{Neighbors.Stage(VillagerDB.Get(id), Data.story.Get(id))}");
     }
 
     static string Name(string id) => VillagerDB.Get(id)?.name ?? id;

@@ -80,7 +80,8 @@ public static class InteriorRooms
 
     // ---------------------------------------------------------------- 사람과 물건의 자리 (방 안으로 옮긴 것)
     public static Vector2 DayPosition(string villagerId, Vector2 fallback) =>
-        villagerId == "rosa" ? Anchor("mill", "keeper", fallback) : fallback;                // 복순 할머니: 낮엔 방앗간 안
+        villagerId == "rosa" ? Anchor("mill", "keeper", fallback) :                          // 복순 할머니: 낮엔 방앗간 안
+        villagerId == "myeong" ? Anchor("store", "keeper", fallback) : fallback;             // 명숙 아주머니: 행복슈퍼 계산대 (F-1)
 
     public static Vector2 EveningPosition(string villagerId, Vector2 fallback) =>
         villagerId == "mayor" ? Anchor("hall", "mayorSeat", fallback) : fallback;            // 이장님: 저녁엔 회관 난롯가
@@ -179,6 +180,7 @@ public static class InteriorRooms
         {
             if (go.name != "Shopkeeper") continue;
             go.transform.position = new Vector3(keeper.x, keeper.y, go.transform.position.z);
+            if (go.GetComponent<HideArt>() == null) go.AddComponent<HideArt>();   // F-1: 계산대엔 명숙 아주머니(Villager)가 섬 (원래 그림은 숨김)
             Vector3 s = go.transform.lossyScale;
             float sx = Mathf.Max(0.01f, Mathf.Abs(s.x)), sy = Mathf.Max(0.01f, Mathf.Abs(s.y));
             foreach (BoxCollider2D c in go.GetComponents<BoxCollider2D>())

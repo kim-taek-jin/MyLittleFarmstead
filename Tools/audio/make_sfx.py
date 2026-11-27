@@ -170,6 +170,15 @@ for a, b in [(0.11, 0.14), (0.29, 0.32)]:
     gaps[int(a * SR):int(b * SR)] = 0.15
 sfx('rooster', lowpass(v * gaps * env_asr(n, 0.02, 0.35), 2200), 0.28, 0.45)
 
+# ---------------------------------------------------------------- spring (F-1): a skylark over the fields
+lark = np.zeros(1)
+for i in range(14):                                          # a long tumbling trill of quick chirps
+    f0 = rng.uniform(2800, 4200)
+    nb = int(SR * rng.uniform(0.04, 0.08))
+    chirp = np.sin(phase(np.linspace(f0, f0 * rng.uniform(0.8, 1.25), nb), nb)) * env_ad(nb, 0.003, 30)
+    lark = place(lark, chirp * rng.uniform(0.4, 1.0), i * 0.09 + rng.uniform(0, 0.03))
+sfx('lark', lowpass(lark, 7000), 0.25, 0.35)
+
 # ---------------------------------------------------------------- write the effects
 os.makedirs(OUT, exist_ok=True)
 for name, y in SFX.items():
@@ -210,7 +219,31 @@ def crackle(d, seed):
 
 
 os.makedirs(AMB, exist_ok=True)
+def frogs(d, seed):
+    """Spring nights by the flooded paddies: many frogs croaking in overlapping pulses (gaegul-gaegul)."""
+    r = np.random.default_rng(seed)
+    n = int(SR * d)
+    y = np.zeros(n)
+    for f in range(9):                                           # nine frogs, each with its own pitch and rhythm
+        f0 = r.uniform(380, 900)
+        rate = r.uniform(5.0, 8.0)
+        at = r.uniform(0, 1.0)
+        while at < d - 0.3:
+            burst_len = r.integers(4, 9)                          # a run of croaks, then a rest
+            for k in range(burst_len):
+                nb = int(SR * 0.06)
+                v = sum(np.sin(phase(f0 * h * (1 - 0.15 * np.linspace(0, 1, nb)), nb)) / h for h in (1, 2, 3))
+                y = place(y, bandpass(v, f0 * 1.6, 1.2) * env_ad(nb, 0.004, 45) * r.uniform(0.2, 0.5) / (1 + f * 0.15), at)
+                at += 1 / rate
+            at += r.uniform(0.8, 3.0)
+    y = lowpass(y[:n], 3000)
+    k = int(SR * 0.3)
+    y[:k] = y[:k] * np.linspace(0, 1, k) + y[n - k:] * np.linspace(1, 0, k)
+    return normalize(y[: n - k], 0.45)
+
+
 AMBS = {
+    'amb_frogs': frogs(20.3, 104),                              # F-1: spring nights by the flooded paddies
     'amb_wind_winter': wind(24.4, 101, 650, strength=1.0),     # day outdoors in winter (stronger when it snows)
     'amb_night': wind(30.4, 102, 420, strength=0.7),           # a quieter, darker night
     'amb_fire': crackle(8.2, 103),                              # near the lit agungi and the burning moon house

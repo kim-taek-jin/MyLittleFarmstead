@@ -29,6 +29,7 @@ public static class ItemNames
         // 장 담그기
         { "Soybeans", "메주콩" }, { "Salt", "소금" }, { "Fresh Meju", "생메주" }, { "Dried Meju", "마른 메주" },
         { "Doenjang", "된장" }, { "Ganjang", "간장" }, { "Doenjang Stew", "된장찌개" }, { "Braised Potatoes", "감자조림" }, { "Red Bean Porridge", "팥죽" },
+        { "Azalea", "진달래" }, { "Rice Flour", "찹쌀가루" }, { "Azalea Hwajeon", "진달래 화전" }, { "Pepper Seedling", "고추 모종" }, { "Red Pepper", "홍고추" },
         { "Barley Tea", "병 보리차" }, { "Homemade Barley Tea", "집 보리차" }, { "Roasted Barley", "볶은 보리" },
         { "Sunshine Shard", "햇살 조각" }, { "Earth's Breath", "대지의 숨결" }, { "Star Fragment", "별 조각" },
     };
@@ -68,6 +69,11 @@ public static class ItemNames
         { "Doenjang Stew", "감자, 당근 넣고 보글보글 끓인 된장찌개. 집밥 맛이에요." },
         { "Braised Potatoes", "내가 담근 간장에 졸인 알감자." },
         { "Red Bean Porridge", "새알심이 든 동짓날 팥죽. 집집마다 한 그릇씩." },
+        { "Azalea", "뒷산 진달래. 화전에 얹어요." },
+        { "Rice Flour", "행복슈퍼에서 파는 찹쌀가루." },
+        { "Azalea Hwajeon", "찹쌀 반죽에 진달래 꽃잎을 한 장씩 얹어 부친 화전. 접시 위의 봄." },
+        { "Pepper Seedling", "고추 모종. 봄에 심으면 가을까지 열려요." },
+        { "Red Pepper", "빨갛게 익은 고추. 가을에 말리면 고춧가루가 돼요." },
         { "Barley Tea", "행복슈퍼에서 산 시원한 병 보리차. 들고 다니며 마셔요." },
         { "Homemade Barley Tea", "우리 집 아궁이에서 끓여 옛날 유리병에 담은 보리차. 집 맛이에요." },
         { "Roasted Barley", "볶은 보리. 아궁이에서 끓이면 보리차가 돼요." },

@@ -244,6 +244,18 @@ def main():
     import k3
     for name, canvas in k3.villager_sits().items():
         exported['Villagers'].append(export('Villagers', name, canvas))
+    # ---- F-1: spring (paddies, seedbed, rice planting, Samjitnal, items, pepper, Mrs. Myeongsuk) ----
+    import spring as SP
+    for name, canvas in SP.world_sprites().items():
+        exported['World'].append(export('World', name, canvas))
+    for name, canvas in SP.item_icons().items():
+        exported['Items'].append(export('Items', name, canvas))
+    for i, fn in enumerate(SP.CROP_STAGES):
+        exported['Crops'].append(export('Crops', f'pepper_{i}', fn()))
+    for name, canvas in SP.myeong_sprites().items():
+        exported['Villagers'].append(export('Villagers', name, canvas))
+    for style in ('flooded', 'planted'):
+        export_image('World', f'paddy_{style}', SP.paddy_overlay(style))
     exported['Player'].append(export('Player', 'player_sit', k3.player_sit()))
     for name, canvas in k3.world_sprites().items():
         exported['World'].append(export('World', name, canvas))

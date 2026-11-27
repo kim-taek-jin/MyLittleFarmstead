@@ -28,6 +28,7 @@ public static class CropDB
         Register(new CropDef { id = "corn", seedItem = "Corn Seed", harvestItem = "Corn", daysToMature = 5, regrowDays = 3, tint = new Color(1f, 0.95f, 0.45f), minSeason = Season.Summer });
         Register(new CropDef { id = "sunflower", seedItem = "Sunflower Seed", harvestItem = "Sunflower", daysToMature = 5, tint = new Color(1f, 0.95f, 0.4f), minSeason = Season.Summer });
         Register(new CropDef { id = "strawberry", seedItem = "Strawberry Seed", harvestItem = "Strawberry", daysToMature = 6, regrowDays = 3, tint = new Color(1f, 0.55f, 0.6f), minSeason = Season.Spring });
+        Register(new CropDef { id = "pepper", seedItem = "Pepper Seedling", harvestItem = "Red Pepper", daysToMature = 7, harvestAmount = 2, regrowDays = 3, tint = new Color(1f, 0.4f, 0.35f), minSeason = Season.Spring });   // F-1: 고추 (가을에 말리기로)
         Register(new CropDef { id = "pumpkin", seedItem = "Pumpkin Seed", harvestItem = "Pumpkin", daysToMature = 6, tint = new Color(1f, 0.7f, 0.4f), minSeason = Season.Autumn });
     }
 

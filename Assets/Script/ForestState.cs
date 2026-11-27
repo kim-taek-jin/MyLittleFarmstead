@@ -94,11 +94,16 @@ public class ForestState
     }
 
     // 오늘의 채집물 정하기. wantAcorn이면 한 자리는 도토리 (빈 묘목 자리가 있고 도토리가 없을 때)
+    // F-1: 봄 뒷산엔 진달래와 쑥·달래 같은 봄나물
+    public static readonly string[] SpringItems = { "Wild Garlic", "Fern Sprout", "Azalea", "Morel" };
+    static readonly int[] SpringWeights = { 35, 25, 30, 10 };
+
     public void RollForage(int day, Season season, float heart, IList<(int x, int y)> spots, System.Random rng, bool wantAcorn)
     {
         Ensure();
         forageDay = day;
-        Forage.Roll(forage, spots, ForageCount(season, heart), rng, ForageItems, ForageWeights, wantAcorn ? "Acorn" : null);
+        bool spring = season == Season.Spring;
+        Forage.Roll(forage, spots, ForageCount(season, heart), rng, spring ? SpringItems : ForageItems, spring ? SpringWeights : ForageWeights, wantAcorn ? "Acorn" : null);
     }
 
     // 그 칸의 채집물을 주움 (없으면 null)

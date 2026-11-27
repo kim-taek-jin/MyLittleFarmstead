@@ -65,14 +65,23 @@ public static class SoundRules
         return outdoors ? 0.45f : indoors ? 0.1f : 0f;
     }
 
+    // F-1: 봄밤, 물 댄 논에서 개구리 (방 안에서도 작게)
+    public static float FrogsVolume(bool outdoors, bool indoors, bool floodedSpring, float hour)
+    {
+        float h = hour % 24f;
+        if (!floodedSpring || !(h >= 19.5f || h < 4f)) return 0f;
+        return outdoors ? 0.5f : indoors ? 0.12f : 0f;
+    }
+
     // 불 (아궁이, 달집): 가까울수록. distance = 가장 가까운 불까지 (없으면 큰 값)
     public static float FireVolume(float distance, float reach = 6f) => Clamp01(1f - distance / reach) * 0.7f;
 
     // 가끔 나는 소리: 지금 낼 만한 것 (Ambience가 몇십 초마다 하나 고름)
-    public static string Occasional(bool outdoors, float hour, float roll)
+    public static string Occasional(bool outdoors, float hour, float roll, bool spring = false)
     {
         if (!outdoors) return null;
         float h = hour % 24f;
+        if (spring && h >= 8f && h < 17f && roll >= 0.6f) return "lark";        // F-1: 봄 낮 들판 위 종달새
         if (h >= 6f && h < 10f) return roll < 0.6f ? "magpie" : null;         // 아침 까치 (반가운 소식)
         if (Night(hour)) return roll < 0.5f ? "dog_far" : null;               // 밤에 먼 데서 개
         return null;

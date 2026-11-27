@@ -127,7 +127,7 @@ public class MusicManager : MonoBehaviour
 // S-1: 바깥 소리. 겨울바람(낮), 밤바람, 불 타는 소리(가까울수록), 가끔 까치·먼 개·새벽 닭.
 public class Ambience : MonoBehaviour
 {
-    AudioSource wind, night, fire;
+    AudioSource wind, night, fire, frogs;
     float nextOccasional = 20f;
     int roosterDay = -1;
 
@@ -136,6 +136,7 @@ public class Ambience : MonoBehaviour
         wind = Loop("amb_wind_winter");
         night = Loop("amb_night");
         fire = Loop("amb_fire");
+        frogs = Loop("amb_frogs");
     }
 
     AudioSource Loop(string name)
@@ -165,6 +166,8 @@ public class Ambience : MonoBehaviour
         Ease(wind, SoundRules.WindVolume(outdoors, indoors, winter, d != null && d.snowing, hour) * k, dt);
         Ease(night, SoundRules.NightVolume(outdoors, indoors, hour) * k, dt);
         Ease(fire, (outdoors ? SoundRules.FireVolume(NearestFire(out float reach), reach) : 0f) * k, dt * 2f);
+        bool flooded = d != null && Spring.IsSpring(d.story) && d.story.spring.watered;
+        Ease(frogs, SoundRules.FrogsVolume(outdoors, indoors, flooded, hour) * k, dt);
 
         if (quiet) return;
         if (SoundRules.RoosterNow(hour, time.day, roosterDay))
@@ -176,7 +179,7 @@ public class Ambience : MonoBehaviour
         if (nextOccasional <= 0f)
         {
             nextOccasional = Random.Range(25f, 60f);
-            string s = SoundRules.Occasional(outdoors, hour, Random.value);
+            string s = SoundRules.Occasional(outdoors, hour, Random.value, d.CurrentSeason == Season.Spring);
             if (s != null) Sfx.Play(s, 0.8f, 1f, 0.05f);
         }
     }

@@ -135,7 +135,7 @@ public static class StoryEvents
         foreach (VillagerDef def in VillagerDB.All)
         {
             VillagerProgress p = story.Get(def.id);
-            int n = def.chapters.Length, done = System.Math.Min(p.wishIndex, n);
+            int n = Neighbors.InScope(def), done = System.Math.Min(p.wishIndex, n);
             string dots = new string('#', done) + new string('-', n - done);
             string status = Neighbors.Status(def, p, day);
             if (!p.met) status = "<color=#a0a0a0>" + status + "</color>";

@@ -47,7 +47,8 @@ public static class SeasonPacing
     public static bool Closed(Season s, StoryState st, int day)
     {
         if (s == Season.Winter) return st.rites.boreumDone;
-        return DaysIn(st, day) >= TargetDays[(int)s];       // F-1~F-3에서 각 계절의 절기로 바꿈
+        if (s == Season.Spring) return st.spring != null && st.spring.monaegiDone;   // F-1: 모내기
+        return DaysIn(st, day) >= TargetDays[(int)s];       // F-2, F-3에서 각 계절의 절기로 바꿈
     }
 
     public static int DaysIn(StoryState st, int day) => day - st.seasonStartDay;
@@ -85,6 +86,9 @@ public static class SeasonPacing
                 return st.rites.boreumDay > 0
                     ? Loc.T($"Spring comes after Jeongwol Daeboreum (day {st.rites.boreumDay})", $"정월대보름({st.rites.boreumDay}일째)이 지나면 봄")
                     : Loc.T("Spring comes after Jeongwol Daeboreum", "정월대보름이 지나면 봄");
+            case Season.Spring:
+                int md = st.seasonStartDay + Spring.MonaegiDay - 1;
+                return Loc.T($"Summer comes after the rice planting (day {md})", $"모내기({md}일째)가 지나면 여름");
             case Season.Autumn:
                 return Loc.T("The last season of the year", "한 해의 마지막 계절");
             default:

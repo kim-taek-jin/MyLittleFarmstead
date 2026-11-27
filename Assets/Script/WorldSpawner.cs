@@ -42,7 +42,8 @@ public static class WorldSpawner
         }
 
         NeighborScenes.CreateSpots(scene, mat);
-        RiteScenes.Create(scene, mat);            // K-4: 팥죽 솥, 대문, 달집   // K-3: 품앗이 자리 (떡 시루, 화덕, 연탄, 썰매) + 마을회관
+        RiteScenes.Create(scene, mat);
+        SpringScenes.Create(scene, mat);          // F-1: 모판, 물꼬, 모내기 줄, 논            // K-4: 팥죽 솥, 대문, 달집   // K-3: 품앗이 자리 (떡 시루, 화덕, 연탄, 썰매) + 마을회관
 
         Spirit.EnsureSpawned();
     }

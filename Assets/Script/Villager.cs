@@ -80,7 +80,7 @@ public class Villager : MonoBehaviour
     void RefreshVisual()
     {
         if (Progress == null || body == null || def == null) return;
-        int stage = Mathf.Clamp(Progress.wishIndex, 0, 3);
+        int stage = Neighbors.Stage(def, Progress);   // F-1: 넘긴 장의 비율 (장이 계절마다 이어짐)
         string key = sittingOut ? $"Villagers/{villagerId}_sit_{stage}" : $"Villagers/{villagerId}_{stage}";
         if (key != shownKey)
         {
@@ -172,13 +172,22 @@ public class Villager : MonoBehaviour
             Neighbors.Meet(p);
             Album.Report("villager_met", villagerId);
             var first = new List<string> { def.intro };
-            if (c != null && c.kind != ChapterKind.Letter) first.AddRange(Invite(c, p));
+            if (c != null && c.kind != ChapterKind.Letter && c.season <= Neighbors.SeasonNow) first.AddRange(Invite(c, p));   // F-1: 다음 계절 이야기는 그 계절에
             HUD.Say(def.name, first.ToArray(), Portrait);
             return;
         }
 
         // 절기 의식 (K-4): 동짓날 팥죽, 대보름 아침 부럼
         if (RiteScenes.TryTalk(def)) return;
+
+        // F-1: 삼짇날 마지막 화전을 받은 이웃이 한 번 고마워함
+        if (Spring.ThanksDue(Data.story.spring, def.id))
+        {
+            Data.story.spring.hwajeonThanked = true;
+            HUD.Say(def.name, new[] { SpringScenes.ThanksLine(def.id) }, Portrait);
+            Data.ChangeHeart(1f, null);
+            return;
+        }
 
         // W-1: 목이 마른 채로 오면 복순 할머니가 식혜 한 그릇 (하루 한 번)
         if (WaterRules.CanGetSikhye(Data.story, def.id, today, Data.thirst / Mathf.Max(1f, Data.maxThirst)))
@@ -243,6 +252,9 @@ public class Villager : MonoBehaviour
             return;
         }
 
+        // F-1: 행복슈퍼 명숙 아주머니는 계산대에 있으니, 할 이야기가 없으면 바로 장 보기
+        if (def.id == "myeong" && Neighbors.IsDay(hour) && InteriorRooms.Inside && Shop.OpenNow()) return;
+
         var lines = new List<string> { IdleLine() };
         if (c != null && c.kind == ChapterKind.Masil && Neighbors.Ready(def, p, today)) lines.Add(c.invite);
         HUD.Say(def.name, lines.ToArray(), Portrait);
@@ -263,6 +275,13 @@ public class Villager : MonoBehaviour
                     Data.AddItem("Fishing Rod", 1);
                     Data.story.Unlock("fishing");
                     lines.Add("<color=#9dff9d>" + Loc.T("Received:", "받은 것:") + "</color> " + ItemNames.Display("Fishing Rod"));
+                }
+                break;
+            case ChapterKind.Acorn:                           // F-1: 미나가 겨울 내내 모은 도토리
+                if (!Data.HasItem("Acorn"))
+                {
+                    Data.AddItem("Acorn", 2);
+                    lines.Add("<color=#9dff9d>" + Loc.T("Received:", "받은 것:") + "</color> " + ItemNames.Display("Acorn") + " x2");
                 }
                 break;
             case ChapterKind.Saecham:

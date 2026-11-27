@@ -127,7 +127,8 @@ def bamboo_spout():
 
 def bush(season):
     r = {'spring': P['leaf'], 'summer': SUMMER, 'autumn': AUT_RED, 'winter': P['leaf2']}[season]
-    return B.bush(30, 22, r, P['jam'] if season == 'spring' else None)
+    import spring as SP
+    return B.bush(30, 22, r, SP.AZALEA if season == 'spring' else None)   # F-1: azaleas (jindallae) in spring
 
 
 def seat():

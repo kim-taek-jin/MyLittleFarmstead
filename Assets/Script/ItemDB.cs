@@ -116,6 +116,12 @@ public static class ItemDB
         Register(new ItemDef { name = "Barley Tea", category = ItemCategory.Food, sellPrice = 10, thirst = 50f, color = new Color(0.6f, 0.38f, 0.16f), description = "Cold bottled barley tea from the corner store. Take it anywhere." });
         Register(new ItemDef { name = "Homemade Barley Tea", category = ItemCategory.Food, sellPrice = 10, thirst = 60f, heart = 1f, color = new Color(0.62f, 0.36f, 0.14f), description = "Barley tea boiled at your own agungi, kept in an old glass bottle. Tastes like home." });
         Register(new ItemDef { name = "Roasted Barley", category = ItemCategory.Resource, sellPrice = 4, color = new Color(0.5f, 0.3f, 0.12f), description = "Roasted barley grains. Boil them at the agungi for barley tea." });
+        // F-1: 봄
+        Register(new ItemDef { name = "Azalea", category = ItemCategory.Resource, sellPrice = 8, color = new Color(0.9f, 0.4f, 0.65f), description = "Azalea blossoms from the back hill. For flower pancakes." });
+        Register(new ItemDef { name = "Rice Flour", category = ItemCategory.Resource, sellPrice = 6, color = new Color(0.96f, 0.94f, 0.9f), description = "Glutinous rice flour from the corner store." });
+        Register(new ItemDef { name = "Azalea Hwajeon", category = ItemCategory.Food, sellPrice = 70, hunger = 15f, heart = 2f, color = new Color(0.95f, 0.85f, 0.88f), description = "Little rice pancakes with an azalea pressed into each. Spring on a plate." });
+        Register(new ItemDef { name = "Pepper Seedling", category = ItemCategory.Seed, sellPrice = 10, cropId = "pepper", color = new Color(0.3f, 0.6f, 0.3f), description = "A chili pepper seedling. Plant it in spring; it keeps fruiting into autumn." });
+        Register(new ItemDef { name = "Red Pepper", category = ItemCategory.Crop, sellPrice = 35, hunger = 2f, color = new Color(0.85f, 0.12f, 0.1f), description = "Ripe red chili. Dried in autumn, it becomes gochugaru." });
         Register(new ItemDef { name = "Compost", category = ItemCategory.Special, sellPrice = 0, color = new Color(0.4f, 0.3f, 0.2f), description = "Rich compost from the heap. Spread it on a gray, hardened plot to bring it back to life." });
         Register(new ItemDef { name = "Star Fragment", category = ItemCategory.Special, sellPrice = 50, color = new Color(1f, 0.9f, 0.4f), description = "A piece of a falling star. The dokkaebi fire loves it (all four colors)." });
 

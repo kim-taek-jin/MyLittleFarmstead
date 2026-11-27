@@ -39,6 +39,7 @@ public class DevKeys : MonoBehaviour
                 r.bureom = true;
                 Rites.Finish(r);
             }
+            else if (data.CurrentSeason == Season.Spring) Spring.FinishMonaegi(data.story.spring, data.story.spring.hope ?? "slow");   // F-1
             else data.story.seasonStartDay = data.Today - SeasonPacing.TargetDays[(int)data.CurrentSeason];
             data.DevEndDay();
             Reload();

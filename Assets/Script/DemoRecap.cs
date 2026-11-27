@@ -20,6 +20,7 @@ public static class DemoRecap
         int close = 0;
         foreach (VillagerDef d in VillagerDB.All)
         {
+            if (!Neighbors.Counted(d)) continue;   // F-1: 이 판에 이야기가 없는 이웃은 빼고
             VillagerProgress p = s.Get(d.id);
             if (Neighbors.Restored(d, p)) restored.Add(d.name);
             else if (p.wishIndex > 0) close++;

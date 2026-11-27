@@ -2,11 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // K-3: 이야기 한 장(章). 심부름 대신 "같이 하는 일" 하나 (품앗이, 새참, 마실, 그리고 그 사람만의 일)
-public enum ChapterKind { Pumasi, Saecham, Masil, Fish, Letter }
+public enum ChapterKind { Pumasi, Saecham, Masil, Fish, Letter, Acorn }   // F-1 Acorn: 미나와 뒷산에 도토리 심기
 
 public class ChapterDef
 {
     public ChapterKind kind;
+    public Season season = Season.Winter;   // F-1: 이 장이 열리는 계절 (겨울 장 3개 → 봄 장 → …)
     public string invite;                 // 이 장이 열려 있을 때 낮에 말을 걸면 하는 말
     public string[] scene;                // 장면 대사 (품앗이를 마쳤을 때, 새참을 먹을 때, 마실에서)
     public string hint;                   // 생활 일지·오늘 미리보기: 다음에 할 일
@@ -146,6 +147,35 @@ public static class VillagerDB
                     },
                     rewardItems = Items("Carrot Pancake", 2), heart = 6f,
                 },
+                // ---- 봄 (F-1) ----
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Saecham, needItem = "Spring Greens",
+                    invite = L("Spring greens season, and here I am with nothing on the table. He used to dig shepherd's purse on the back hill, and I'd season it...",
+                               "봄나물 무쳐 먹을 때가 됐는데. 영감이 뒷산에서 냉이 캐 오면 내가 조물조물 무쳤지..."),
+                    hint = L("Dig greens on the back hill, make Spring Greens, bring them as saecham", "뒷산 나물로 봄나물 무침을 만들어 새참으로 가져가기"),
+                    scene = new[]
+                    {
+                        L("(She picks up her chopsticks, puts them down, picks them up again.)", "(할머니가 젓가락을 들었다 놓았다 해요.)"),
+                        L("This is it. A little bitter. That's what spring tastes like.", "이 맛이여. 쌉싸름한 게, 봄 맛이지."),
+                        L("Maybe I'll climb the back hill myself this year. Slowly.", "올해는 나도 뒷산 한번 올라가 볼까. 천천히."),
+                    },
+                    heart = 3f,
+                },
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Masil,
+                    invite = L("Come sit with me on the bench this evening. I've something to tell you about flowers.", "오늘 저녁엔 평상에 와. 꽃 얘기 하나 해 줄게."),
+                    hint = L("In the evening, visit her on the bench in front of the mill (masil)", "저녁에 방앗간 앞 평상으로 마실 가기"),
+                    scene = new[]
+                    {
+                        L("Every Samjitnal he'd come down the hill with an armful of azaleas. He'd use a few petals for the pancakes and give me all the rest.",
+                          "삼짇날이면 영감이 진달래를 한 아름 꺾어 왔어. 화전에 꽃잎 몇 장 쓰고, 나머지는 다 나 주더라."),
+                        L("\"Flowers aren't for eating, they're for looking at,\" he'd say. Silly man.", "\"꽃은 먹는 게 아니라 보는 거여.\" 그러더라고. 싱거운 양반."),
+                        L("I didn't look at a single flower last year. This year I did. Thanks to you.", "작년엔 꽃 한 송이 안 봤어. 올해는 봤네. 자네 덕에."),
+                    },
+                    rewardItems = Items("Rice Flour", 2), heart = 5f,
+                },
             },
         });
 
@@ -222,6 +252,33 @@ public static class VillagerDB
                         L("Thanks. Here, the first decent hoe I've made in a year. It's yours. Don't argue.", "고맙다. 자, 일 년 만에 제대로 만든 괭이다. 자네 거야. 말 말고 받아."),
                     },
                     rewardItems = Items("Fertile Hoe", 1), heart = 6f,
+                },
+                // ---- 봄 (F-1) ----
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Masil,
+                    invite = L("Drop by the forge tonight. I... got something in the post.", "오늘 저녁에 가게 앞으로 와. 뭐가... 우편으로 왔어."),
+                    hint = L("In the evening, visit him in front of the store (masil)", "저녁에 철물점 쪽으로 마실 가기"),
+                    scene = new[]
+                    {
+                        L("A reply. From her. I've carried it in my pocket for three days.", "답장이야. 걔한테서. 사흘째 주머니에만 넣고 다녔어."),
+                        L("(He hands it to you. It's one line long: \"Dad, me too.\")", "(아저씨가 편지를 내밀어요. 딱 한 줄: \"아빠, 나도.\")"),
+                        L("...One line. A whole year, and one line. And it's the best thing anyone's sent me.", "...한 줄. 일 년 만에 한 줄. 근데 그게 내가 받아 본 것 중에 제일 좋다."),
+                    },
+                    heart = 4f,
+                },
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Pumasi, spot = "forge",
+                    invite = L("Rice-planting's coming and half the village's sickles are blunt. Work the bellows for me again?", "모내기 철인데 동네 낫이 죄다 무뎌. 또 풀무 좀 밟아 줄래?"),
+                    hint = L("By day, work the bellows at his forge (in front of the hardware store)", "낮에 철물점 앞 화덕에서 풀무질 거들기"),
+                    steps = new[] { L("You pump the bellows. The coals go white.", "풀무를 밟아요. 숯이 하얗게 달아올라요."), L("He hammers a sickle edge. Sparks.", "아저씨가 낫 날을 두드려요. 불티가 튀어요."), L("You dip it together. Steam hisses up.", "같이 물에 담가요. 치익, 김이 올라요.") },
+                    scene = new[]
+                    {
+                        L("Twelve sickles. Every house in the village. You know what they'll say? \"Dongsu's forge is going again.\"", "열두 자루. 마을 집집마다 하나씩. 다들 뭐라는 줄 알아? \"동수네 화덕이 다시 돈다.\""),
+                        L("Here. Grocery money from the village. Half's yours.", "자, 동네에서 걷은 품삯. 반은 자네 몫이야."),
+                    },
+                    gold = 120, heart = 4f,
                 },
             },
         });
@@ -301,6 +358,34 @@ public static class VillagerDB
                     rewardItems = Items("Sunflower Seed", 5), heart = 6f,
                     unlock = "shop_sunflower", unlockText = L("Sunflower Seeds are now sold at the market", "이제 장터에서 해바라기 씨앗을 팔아요"),
                 },
+                // ---- 봄 (F-1) ----
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Masil,
+                    invite = L("...Can I talk to you tonight? On the bench in your yard.", "...오늘 저녁에 얘기해도 돼? 너네 마당 평상에서."),
+                    hint = L("In the evening, sit with Mina on the bench in your yard (masil)", "저녁에 마당 평상에서 미나와 마실"),
+                    scene = new[]
+                    {
+                        L("School starts again. New class. The kids from town call me \"the country girl.\"", "개학이야. 새 반. 읍내 애들이 나보고 \"시골 애\"래."),
+                        L("You're from the city. Were city kids nicer?", "언니는 도시 사람이잖아. 도시 애들은 더 착했어?"),
+                        L("...Not really? Huh. Okay. Then I'll just be the country girl who knows where the fish are.", "...별로였어? 흠. 그럼 그냥 물고기 어디 있는지 아는 시골 애 할래."),
+                    },
+                    heart = 4f,
+                },
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Acorn,
+                    invite = L("Grandpa says there used to be a big oak on the back hill, where he played as a kid. It got cut down. Let's plant one! I saved acorns all winter.",
+                               "할아버지가 그러는데 뒷산에 큰 참나무가 있었대. 어릴 때 거기서 놀았대. 베어 버렸대. 우리가 심자! 겨울 내내 도토리 모았어."),
+                    hint = L("Plant an acorn with Mina in a clearing on the back hill", "뒷산 빈터에 미나와 도토리 심기"),
+                    scene = new[]
+                    {
+                        L("(Mina pats the earth down with both hands, very seriously.)", "(미나가 두 손으로 흙을 아주 진지하게 토닥여요.)"),
+                        L("Grandpa will be so old by the time it's big. And I'll be... a grown-up. Weird.", "이게 크면 할아버지는 엄청 늙었겠다. 나는... 어른이고. 이상해."),
+                        L("I'm going to tell him tonight. He'll pretend not to cry.", "오늘 밤에 할아버지한테 말할 거야. 안 우는 척하겠지."),
+                    },
+                    rewardItems = Items("Acorn", 2), heart = 5f,
+                },
             },
         });
 
@@ -373,6 +458,91 @@ public static class VillagerDB
                         L("But you came. A light came on in an empty house... you don't know how good that felt.", "근데 자네가 왔잖여. 빈집에 불이 켜지니께... 그게 그렇게 좋더라고."),
                     },
                     heart = 6f,
+                },
+                // ---- 봄 (F-1) ----
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Saecham,
+                    invite = L("Rice planting's coming and I'm counting hands. Twelve houses empty... I can't even eat for worrying.", "모내기가 코앞인디 일손을 세어 보면... 빈집이 열두 채라. 걱정에 밥이 안 넘어가."),
+                    hint = L("Bring the village head something to eat (any food)", "이장님께 새참 가져다드리기 (아무 음식)"),
+                    scene = new[]
+                    {
+                        L("You're a stubborn one, feeding me again. ...It does help.", "또 밥을 챙겨 오네. 고집도 세지. ...그래도 힘이 나."),
+                        L("You'll come to the planting? Good. With you that's one more pair of hands than last year.", "모내기 나올 거지? 됐다. 그럼 작년보다 손이 하나 는 거여."),
+                    },
+                    heart = 3f,
+                },
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Masil,
+                    invite = L("Sit with me by the hall stove tonight. I'm practicing tomorrow's announcement.", "오늘 저녁엔 회관 난롯가로 와. 내일 방송 연습 좀 하게."),
+                    hint = L("In the evening, visit him by the village hall stove (masil)", "저녁에 마을회관 난롯가로 마실 가기"),
+                    scene = new[]
+                    {
+                        L("\"Attention, residents...\" Ha. Fifteen years and I still rehearse.", "\"마을 주민 여러분께 알려 드립니다...\" 허허. 십오 년째 연습혀."),
+                        L("The year the school closed I almost quit. Who was I making announcements for?", "학교 닫던 해엔 그만둘라 했어. 누구 들으라고 방송을 하나 싶어서."),
+                        L("Now I know: for whoever's listening. Even one person. Even you.", "이제는 알어. 듣는 사람 있으면 하는 거여. 한 사람이라도. 자네라도."),
+                    },
+                    heart = 5f,
+                },
+            },
+        });
+
+        // ---------------- Mrs. Myeongsuk: Happy Mart, the corner store (Market) (F-1) ----------------
+        All.Add(new VillagerDef
+        {
+            id = "myeong",
+            name = L("Mrs. Myeongsuk", "명숙 아주머니"),
+            scene = "Market",
+            position = new Vector2(7.5f, 3.0f),                // the store counter (InteriorRooms.DayPosition moves her inside)
+            eveningPosition = new Vector2(8.7f, 1.15f),         // the blue plastic chair in front of the store
+            eveningPlace = L("the plastic chairs in front of Happy Mart", "행복슈퍼 앞 플라스틱 의자"),
+            intro = L("Welcome! ...Oh, you're the one in the empty house. I'm Myeongsuk, I run Happy Mart. Need anything, I've probably got it. Except company.",
+                      "어서 와요! ...아, 빈집에 온 사람이구나. 행복슈퍼 명숙이에요. 필요한 건 웬만하면 다 있어요. 말동무만 빼고."),
+            grayIdle = new[] { L("Same shelves, same faces. Well. Fewer faces.", "늘 그 선반, 늘 그 얼굴. 뭐... 얼굴은 줄었지."),
+                               L("My son's in Seoul. University. He's busy.", "우리 아들은 서울 있어요. 대학. 바쁘대.") },
+            colorIdle = new[] { L("Ice cream's half price for you. Don't tell the village head.", "아이스크림은 반값이에요. 이장님한텐 비밀."),
+                                L("He called yesterday! Talked for twenty minutes. Twenty!", "어제 아들이 전화했어요! 이십 분이나. 이십 분!") },
+            restored = L("Ha. The shelves look brighter. Or maybe it's me.", "하. 선반이 환해 보이네. 아니면 내가 환해졌나."),
+            seasonLines = new[]
+            {
+                L("Briquettes and instant noodles, that's winter in this village.", "이 동네 겨울은 연탄이랑 라면이에요."),
+                L("Seedlings are in! Peppers this year? Plant them by May.", "모종 들어왔어요! 올해 고추 심어요? 오월 전에 심어야 해."),
+                L("Watermelons in the cooler. The kids come for the ice cream.", "수박은 냉장고에. 애들은 아이스크림 사러 오고."),
+                L("Kimchi season. Salt's selling like crazy.", "김장철이라 소금이 불티나요."),
+            },
+            masilLines = new[]
+            {
+                L("Sit, sit. The store can watch itself for an hour.", "앉아요, 앉아. 가게는 한 시간쯤 혼자 있어도 돼."),
+                L("The street light hums. I like that sound.", "가로등이 웅웅거리죠. 난 그 소리가 좋아."),
+            },
+            chapters = new[]
+            {
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Saecham, needItem = "Homemade Barley Tea",
+                    invite = L("I sell barley tea all day and never drink any. The bottled stuff... it's not the same as boiled at home.",
+                               "하루 종일 보리차를 파는데 정작 난 못 마셔. 병에 든 건... 집에서 끓인 거랑 달라."),
+                    hint = L("Boil barley tea at your agungi and bring her a bottle", "아궁이에서 보리차를 끓여 한 병 가져다드리기"),
+                    scene = new[]
+                    {
+                        L("Oh. It's still a little warm. You brought it in this old glass bottle and everything.", "어머. 아직 미지근하네. 옛날 유리병에 담아 오고."),
+                        L("My mother kept barley tea in a bottle exactly like this. In the fridge door.", "우리 엄마가 꼭 이런 병에 보리차를 담아 냉장고 문짝에 뒀었어."),
+                    },
+                    heart = 3f,
+                },
+                new ChapterDef
+                {
+                    season = Season.Spring, kind = ChapterKind.Masil,
+                    invite = L("Come sit out front tonight, if you're not busy. I close up at eight.", "바쁘지 않으면 오늘 저녁에 가게 앞에 앉아요. 여덟 시에 문 닫아."),
+                    hint = L("In the evening, sit with her on the plastic chairs in front of Happy Mart (masil)", "저녁에 행복슈퍼 앞 플라스틱 의자로 마실 가기"),
+                    scene = new[]
+                    {
+                        L("I called my son today. He didn't pick up. He's busy, of course.", "오늘 아들한테 전화했는데 안 받더라. 바쁘겠지, 당연히."),
+                        L("You know what? I'm busy too. I just pretend I'm not, so he doesn't feel bad.", "근데 있잖아. 나도 바빠. 그냥 안 바쁜 척하는 거야. 걔 미안해할까 봐."),
+                        L("...I'll text him instead. \"Eat well.\" That's what moms say when they mean everything else.", "...문자나 보내야지. \"밥 잘 챙겨 먹어.\" 엄마들은 다른 말 대신 그렇게 해."),
+                    },
+                    rewardItems = Items("Barley Tea", 3), heart = 5f,
                 },
             },
         });

@@ -32,6 +32,19 @@ public class Shop : MonoBehaviour
     private bool isBuyMode = true;
     private DataManager dataManager;
 
+    // F-1: 명숙 아주머니(Villager)에게 말을 걸면 할 이야기가 없을 때 장 보기가 열림
+    public static Shop Current { get; private set; }
+    void Awake() { Current = this; }
+    void OnDestroy() { if (Current == this) Current = null; }
+
+    public static bool OpenNow()
+    {
+        if (Current == null || Current.shopPanel == null) return false;
+        Current.shopPanel.SetActive(true);
+        Current.ShowBuyPanel();
+        return true;
+    }
+
     void Start()
     {
         dataManager = DataManager.instance;
@@ -44,7 +57,8 @@ public class Shop : MonoBehaviour
     {
         if (shopPanel == null) return;
 
-        if (isPlayerInRange && Input.GetKeyDown(KeyCode.E))
+        bool talkFirst = Villager.InRange != null && Villager.InRange.villagerId == "myeong" && !shopPanel.activeSelf;   // 아주머니가 먼저 받음
+        if (isPlayerInRange && !talkFirst && Input.GetKeyDown(KeyCode.E))
         {
             bool isActive = !shopPanel.activeSelf;
             shopPanel.SetActive(isActive);
@@ -107,6 +121,9 @@ public class Shop : MonoBehaviour
                 // 마실 것 (W-1)
                 stock.Add(new ItemForSale { itemName = WaterRules.BottledTea, price = WaterRules.BottledTeaPrice });
                 stock.Add(new ItemForSale { itemName = WaterRules.RoastedBarley, price = WaterRules.RoastedBarleyPrice });
+                // 봄 (F-1)
+                if (dataManager.CurrentSeason >= Season.Spring) stock.Add(new ItemForSale { itemName = "Rice Flour", price = 15 });
+                if (dataManager.CurrentSeason == Season.Spring) stock.Add(new ItemForSale { itemName = "Pepper Seedling", price = 25 });
                 if (MarketState.IsMarketDay(dataManager.Today))
                     foreach (ItemStack fair in MarketState.FairStock) stock.Add(new ItemForSale { itemName = fair.itemName, price = fair.count });   // 장날 (count = 가격)
             }

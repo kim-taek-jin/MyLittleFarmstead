@@ -13,7 +13,7 @@ public static class NeighborScenes
     {
         Villager v = Villager.Find(id);
         if (v != null && v.Portrait != null) return v.Portrait;
-        int stage = Mathf.Clamp(Data.story.Get(id).wishIndex, 0, 3);
+        int stage = Neighbors.Stage(VillagerDB.Get(id), Data.story.Get(id));
         return PixelArt.Load($"Villagers/{id}_{stage}");
     }
 
@@ -46,7 +46,7 @@ public static class NeighborScenes
             if (restored)
             {
                 HUD.Announce("<size=40>" + Loc.T($"{def.name}'s colors have returned!", $"{def.name}에게 색이 돌아왔어요!") + "</size>\n\n"
-                    + Loc.T($"{Data.story.RestoredVillagers} / {VillagerDB.All.Count} neighbors", $"색을 되찾은 이웃 {Data.story.RestoredVillagers} / {VillagerDB.All.Count}"), 5f);
+                    + Loc.T($"{Data.story.RestoredVillagers} / {Neighbors.CountedVillagers(VillagerDB.All)} neighbors", $"색을 되찾은 이웃 {Data.story.RestoredVillagers} / {Neighbors.CountedVillagers(VillagerDB.All)}"), 5f);
                 Data.ChangeHeart(5f, Loc.T("The village feels a little brighter.", "마을이 조금 더 환해진 것 같아요."));
             }
             onDone?.Invoke();
@@ -139,6 +139,16 @@ public static class NeighborScenes
         VillagerProgress p = Data.story.Get("mina");
         ChapterDef c = Neighbors.Next(mina, p);
         if (c != null && c.kind == ChapterKind.Fish && p.met) Finish(mina, p, c);
+    }
+
+    // ---------------------------------------------------------------- F-1: 미나와 뒷산에 도토리를 심으면
+    public static void OnAcornPlanted()
+    {
+        VillagerDef mina = VillagerDB.Get("mina");
+        if (mina == null || Data == null) return;
+        VillagerProgress p = Data.story.Get("mina");
+        ChapterDef c = Neighbors.Next(mina, p);
+        if (c != null && c.kind == ChapterKind.Acorn && Neighbors.Ready(mina, p, Today)) Finish(mina, p, c);
     }
 
     // ---------------------------------------------------------------- 품앗이 자리 (떡 시루, 화덕 풀무, 썰매, 연탄)

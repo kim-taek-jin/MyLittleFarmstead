@@ -161,6 +161,7 @@ public class ForestArea : MonoBehaviour
         RefreshSaplings();
 
         foreach (string f in state.forage) AreaKit.SpawnForage(transform, f, material, "forest");
+        SamjitCrowd.Create(transform, seat, material);   // F-1: 삼짇날 화전놀이 (옹달샘 너럭바위)
 
         // 숲 입구 → 농장
         if (map.exits != null)
@@ -233,6 +234,7 @@ public class ForestArea : MonoBehaviour
             data.RemoveItem("Acorn", 1);
             state.Plant(i);
             HUD.Toast(Loc.T("You planted the acorn. Water it every day and it will grow.", "도토리를 심었어요. 날마다 물을 주면 자랄 거예요."), 3f);
+            NeighborScenes.OnAcornPlanted();   // F-1: 미나의 봄 이야기 (할아버지 참나무 자리)
         }
         else if (stage >= ForestState.RestoredStage)
         {
@@ -268,6 +270,7 @@ public class ForestArea : MonoBehaviour
         if (data == null || player == null || data.IsGameOver) return;
         Vector2 p = player.transform.position;
 
+        if (Vector2.Distance(p, seat) < 1.6f && SpringScenes.TrySamjit()) return;   // F-1: 삼짇날이면 화전놀이 먼저
         if (Vector2.Distance(p, seat) < 1.3f)
         {
             data.RefillThirst();

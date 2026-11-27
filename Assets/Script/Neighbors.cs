@@ -15,11 +15,45 @@ public static class Neighbors
     public static bool IsEvening(int hour) => hour >= EveningStart && hour < EveningEnd;
     public static bool IsDay(int hour) => hour >= 6 && hour < EveningStart;
 
-    public static bool Restored(VillagerDef d, VillagerProgress p) => p.wishIndex >= d.chapters.Length;
+    // F-1: 장마다 열리는 계절이 있음. SeasonNow = 지금 계절, Cap = 이 판에서 볼 수 있는 마지막 계절 (체험판은 겨울)
+    //  DataManager가 아침마다, 불러올 때 맞춰 둠
+    public static Season SeasonNow = Season.Winter;
+    public static Season Cap = Season.Autumn;
+
+    // 이 판에서 넘길 수 있는 장 수 (체험판은 겨울 장까지만 → 겨울 끝에 색을 다 되찾음)
+    public static int InScope(VillagerDef d)
+    {
+        int n = 0;
+        foreach (ChapterDef c in d.chapters) if (c.season <= Cap) n++;
+        return n;
+    }
+
+    public static bool Restored(VillagerDef d, VillagerProgress p) => p.wishIndex >= InScope(d);
+
+    // 이 판에서 이야기가 있는 이웃만 셈 (체험판엔 봄부터 이야기가 있는 명숙 아주머니는 빠짐)
+    public static bool Counted(VillagerDef d) => InScope(d) > 0;
+    public static int CountedVillagers(IList<VillagerDef> all) { int n = 0; foreach (var d in all) if (Counted(d)) n++; return n; }
     public static ChapterDef Next(VillagerDef d, VillagerProgress p) => p == null || Restored(d, p) ? null : d.chapters[p.wishIndex];
 
-    // 다음 장이 열렸는지 (만난 뒤, 지난 장에서 Gap일이 지남)
-    public static bool Ready(VillagerDef d, VillagerProgress p, int today) => p != null && p.met && !Restored(d, p) && today >= p.lastDay + Gap;
+    // 그림 단계 0(회색)~3(다 돌아온 색): 넘긴 장의 비율
+    public static int Stage(VillagerDef d, VillagerProgress p)
+    {
+        int n = InScope(d);
+        if (p == null || n <= 0) return 0;
+        int s = (int)System.Math.Round(3.0 * System.Math.Min(p.wishIndex, n) / n, System.MidpointRounding.AwayFromZero);
+        return System.Math.Max(0, System.Math.Min(3, s));
+    }
+
+    // 다음 장이 열렸는지 (만난 뒤, 지난 장에서 Gap일이 지남, 그 장의 계절이 됨)
+    public static bool Ready(VillagerDef d, VillagerProgress p, int today) =>
+        p != null && p.met && !Restored(d, p) && today >= p.lastDay + Gap && Next(d, p).season <= SeasonNow;
+
+    // 이 계절의 이야기는 다 넘겼는지 (다음 장이 다음 계절에 있음)
+    public static bool WaitingForSeason(VillagerDef d, VillagerProgress p)
+    {
+        ChapterDef c = Next(d, p);
+        return c != null && c.season > SeasonNow;
+    }
 
     // 지금 이 장을 할 수 있는 시간인지 (마실은 저녁, 나머지는 낮)
     public static bool RightTime(ChapterDef c, int hour) => c != null && (c.kind == ChapterKind.Masil ? IsEvening(hour) : IsDay(hour) || c.kind == ChapterKind.Fish);
@@ -76,6 +110,7 @@ public static class Neighbors
         if (p == null || !p.met) return Loc.T("not met yet", "아직 못 만났어요");
         if (Restored(d, p)) return Loc.T("colors restored", "색을 되찾았어요");
         ChapterDef c = Next(d, p);
+        if (c.season > SeasonNow) return Loc.T($"more in {SeasonSystem.Name(c.season)}", $"{SeasonSystem.Name(c.season)}에 이어져요");
         string next = Loc.T("Next: ", "다음: ") + c.hint;
         return Ready(d, p, today) ? next : next + Loc.T(" (give it a day or two)", " (하루이틀 뒤에)");
     }
