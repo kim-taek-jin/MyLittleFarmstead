@@ -44,6 +44,30 @@ public static class PixelFont
         }
     }
 
+    // 장면에 원래 있던 글자들(제작 창, 상점 창 등)은 TextMeshPro 기본 글꼴(LiberationSans)이라 한글이 □로 나왔음.
+    // 시작할 때 갈무리를 TextMeshPro 전체의 대체 글꼴로 등록 → 어느 글꼴이든 없는 한글은 갈무리에서 가져옴.
+    // 실행 중에 만든 글꼴이라 끝날 때 다시 빼 둠 (에디터에서 TMP Settings 파일에 빈 칸이 남지 않게).
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void RegisterGlobalFallback()
+    {
+        try
+        {
+            TMP_FontAsset h = Hangul;
+            if (h == null || TMP_Settings.instance == null) return;
+            var list = TMP_Settings.fallbackFontAssets;
+            if (list == null || list.Contains(h)) return;
+            list.Add(h);
+            Application.quitting += () =>
+            {
+                try { if (TMP_Settings.instance != null) TMP_Settings.fallbackFontAssets?.Remove(h); } catch { }
+            };
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[PixelFont] Could not add the Korean fallback font: " + e.Message);
+        }
+    }
+
     // 지금 언어에 맞는 글꼴
     public static TMP_FontAsset Asset => Loc.Ko ? (Hangul ?? Latin) : (Latin ?? Hangul);
 
