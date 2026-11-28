@@ -199,6 +199,7 @@ public static class ItemDB
             case ItemCategory.Seed:
             case ItemCategory.Food:
             case ItemCategory.Crop:
+            case ItemCategory.Fish:        // 잡은 물고기도 손에 들고 나누거나 팔 수 있게
             case ItemCategory.Special:
                 return true;
             default:
@@ -217,8 +218,9 @@ public static class ItemDB
             case ItemCategory.Seed: group = 1; break;
             case ItemCategory.Food: group = 2; break;
             case ItemCategory.Crop: group = 3; break;
-            case ItemCategory.Special: group = 4; break;
-            default: group = 5; break;
+            case ItemCategory.Fish: group = 4; break;
+            case ItemCategory.Special: group = 5; break;
+            default: group = 6; break;
         }
         return group * 1000 + order.IndexOf(def.name);
     }

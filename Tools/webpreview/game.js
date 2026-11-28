@@ -112,8 +112,8 @@ reg('Dried Persimmon', 'Food', { sell: 260, hunger: 18, heart: 3, desc: 'Chewy a
 const iconKey = n => 'Items/' + n.toLowerCase().replace(/'/g, '').replace(/ /g, '_');
 const edible = n => { const d = ITEMS[n]; return d && d.cat !== 'Tool' && d.cat !== 'Seed' && (d.hunger > 0 || d.thirst > 0 || d.heart > 0); };
 const canSell = n => { const d = ITEMS[n]; return d && d.cat !== 'Tool' && d.sell > 0; };
-const inHotbar = n => ['Tool', 'Seed', 'Food', 'Crop', 'Special'].includes((ITEMS[n] || {}).cat);
-const sortKey = n => ({ Tool: 0, Seed: 1, Food: 2, Crop: 3, Special: 4 }[ITEMS[n].cat] ?? 5) * 1000 + ORDER.indexOf(n);
+const inHotbar = n => ['Tool', 'Seed', 'Food', 'Crop', 'Fish', 'Special'].includes((ITEMS[n] || {}).cat);   // fish too (held to share or sell)
+const sortKey = n => ({ Tool: 0, Seed: 1, Food: 2, Crop: 3, Fish: 4, Special: 5 }[ITEMS[n].cat] ?? 6) * 1000 + ORDER.indexOf(n);
 
 const CROPS = {
   carrot: { harvest: 'Carrot', days: 3, regrow: 0, season: 0 },

@@ -44,6 +44,23 @@ public class Hotbar : MonoBehaviour
         Instance = this;
     }
 
+    // 핫바가 농장 장면에만 들어 있어서 장터·집에선 단축칸이 사라졌음 → 핫바가 없는 장면엔 하나 만들어 줌
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Init()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += (scene, mode) => EnsureIn(scene);
+        EnsureIn(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+    }
+
+    static void EnsureIn(UnityEngine.SceneManagement.Scene scene)
+    {
+        if (scene.name != "Farm" && scene.name != "Market" && scene.name != "Home") return;
+        if (FindFirstObjectByType<Hotbar>() != null) return;
+        var go = new GameObject("Hotbar (auto)");
+        UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go, scene);
+        go.AddComponent<Hotbar>();
+    }
+
     void OnDestroy()
     {
         if (Instance == this) Instance = null;

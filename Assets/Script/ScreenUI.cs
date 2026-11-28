@@ -76,6 +76,31 @@ public static class ScreenUI
         return b;
     }
 
+    // 장면마다 EventSystem이 하나씩 들어 있고, 이 코드가 만든 것(장면을 넘어 남음)이 따로 있어서
+    // 장터에 들어가면 둘이 되었음 ("There are 2 event systems"). 장면이 열릴 때마다 하나만 남김.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void KeepOneEventSystemOnLoad()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += (s, m) => KeepOneEventSystem();
+        KeepOneEventSystem();
+    }
+
+    public static void KeepOneEventSystem()
+    {
+        EventSystem[] all = Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        if (all.Length <= 1) return;
+        EventSystem keep = null;
+        foreach (EventSystem es in all)                                       // 장면을 넘어 남는 것이 있으면 그걸 남김
+            if (es.gameObject.scene.name == "DontDestroyOnLoad") { keep = es; break; }
+        if (keep == null) keep = all[0];
+        foreach (EventSystem es in all)
+        {
+            if (es == keep) continue;
+            es.enabled = false;                                               // 이번 프레임부터 바로 빠지게
+            Object.Destroy(es.gameObject);
+        }
+    }
+
     public static void EnsureEventSystem()
     {
         if (EventSystem.current != null || Object.FindFirstObjectByType<EventSystem>() != null) return;
